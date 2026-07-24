@@ -51,3 +51,25 @@
   background-color: var(--french-gray);
   border-radius: 3px;
 }
+
+/* Hide Clerk watermark logo and development mode footer, but keep sign up / sign in action links */
+.cl-internal-ph9w44,
+.cl-userButtonPopoverFooter,
+.cl-internal-10u9u1l,
+.cl-footerPages {
+  display: none !important;
+}
+
+
+/* Minimalist Dot Grid Background */
+.bg-dot-grid {
+  background-image: radial-gradient(rgba(148, 163, 184, 0.2) 1.2px, transparent 1.2px);
+  background-size: 24px 24px;
+}
+
+.dark .bg-dot-grid {
+  background-image: radial-gradient(rgba(255, 255, 255, 0.08) 1.2px, transparent 1.2px);
+  background-size: 24px 24px;
+}
+
+
