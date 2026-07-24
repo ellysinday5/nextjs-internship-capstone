@@ -1,10 +1,11 @@
 "use client"
 
 import type React from "react"
-
-import { useState, Suspense } from "react"
+import { useState, useEffect, Suspense } from "react"
 import Link from "next/link"
+import { UserButton } from "@clerk/nextjs"
 import { ThemeToggle } from "@/components/theme-toggle"
+import { CodeBackground } from "@/components/code-background"
 import { Home, FolderOpen, Users, Settings, Menu, X, BarChart3, Calendar, Bell, Search } from "lucide-react"
 
 const navigation = [
@@ -23,8 +24,18 @@ export default function DashboardLayout({
 }) {
   const [sidebarOpen, setSidebarOpen] = useState(false)
 
+  useEffect(() => {
+    // Sync user with Neon database upon entering the dashboard
+    fetch("/api/auth/sync").catch((err) => {
+      console.error("Auto sync failed:", err)
+    })
+  }, [])
+
   return (
-    <div className="min-h-screen bg-platinum-900 dark:bg-outer_space-600">
+    <div className="relative min-h-screen bg-platinum-900 dark:bg-outer_space-600 overflow-hidden">
+      {/* IT Theme Code Background */}
+      <CodeBackground />
+
       {/* Mobile sidebar overlay */}
       {sidebarOpen && (
         <div className="fixed inset-0 z-40 bg-black bg-opacity-50 lg:hidden" onClick={() => setSidebarOpen(false)} />
@@ -47,12 +58,6 @@ export default function DashboardLayout({
         </div>
 
         <nav className="mt-6 px-3">
-          <div className="mb-6 p-4 bg-yellow-50 dark:bg-yellow-900/20 rounded-lg border border-yellow-200 dark:border-yellow-800">
-            <p className="text-xs text-yellow-800 dark:text-yellow-200">
-              📋 <strong>Task 2.6:</strong> Create protected dashboard layout
-            </p>
-          </div>
-
           <ul className="space-y-1">
             {navigation.map((item) => (
               <li key={item.name}>
@@ -107,9 +112,7 @@ export default function DashboardLayout({
 
               <ThemeToggle />
 
-              <div className="w-8 h-8 bg-blue_munsell-500 rounded-full flex items-center justify-center text-white font-semibold">
-                U
-              </div>
+              <UserButton />
             </div>
           </div>
         </div>
