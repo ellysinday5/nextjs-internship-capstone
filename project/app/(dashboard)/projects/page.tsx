@@ -2,7 +2,6 @@
 
 import { useState, useMemo } from "react"
 import { Plus, Search, Filter, X, Code, Terminal, CheckCircle2, Clock, ShieldAlert, Sparkles, Layers } from "lucide-react"
-import { CodeBackground } from "@/components/code-background"
 
 interface ProjectItem {
   id: string
@@ -151,8 +150,6 @@ export default function ProjectsPage() {
   return (
     <div className="relative min-h-screen space-y-6 overflow-hidden">
       {/* IT Theme Code Background Overlay (Subtle, non-overcrowded) */}
-      <CodeBackground />
-
       <div className="relative z-10 space-y-6">
         {/* Header Title */}
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
