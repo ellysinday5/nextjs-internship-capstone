@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react"
 import Link from "next/link"
 import { ChevronRight, Hand, Users, CheckCircle2 } from "lucide-react"
-import { Navbar } from "@/components/navbar"
+import { Navbar } from "@/components/global/navbar"
 
 export default function HomePage() {
   const [now, setNow] = useState<Date | null>(null)
