@@ -5,7 +5,6 @@ import { useState, useEffect, Suspense } from "react"
 import Link from "next/link"
 import { UserButton } from "@clerk/nextjs"
 import { ThemeToggle } from "@/components/theme-toggle"
-import { CodeBackground } from "@/components/code-background"
 import { Home, FolderOpen, Users, Settings, Menu, X, BarChart3, Calendar, Bell, Search } from "lucide-react"
 
 const navigation = [
@@ -33,8 +32,6 @@ export default function DashboardLayout({
 
   return (
     <div className="relative min-h-screen bg-platinum-900 dark:bg-outer_space-600 overflow-hidden">
-      {/* IT Theme Code Background */}
-      <CodeBackground />
 
       {/* Mobile sidebar overlay */}
       {sidebarOpen && (

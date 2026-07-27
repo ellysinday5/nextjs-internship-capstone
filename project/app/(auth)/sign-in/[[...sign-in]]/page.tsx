@@ -1,61 +1,81 @@
+"use client"
+
 import { SignIn } from "@clerk/nextjs"
 import Link from "next/link"
-// import { CodeBackground } from "@/components/code-background"
+import { AuthIllustration } from "@/components/auth-illustration"
 
 export default function SignInPage() {
   return (
-    <div className="relative min-h-screen flex flex-col items-center justify-center bg-slate-950 text-white px-4 py-8 overflow-hidden">
-      {/* <CodeBackground /> */}
-
-      <div className="relative z-10 w-full max-w-md flex flex-col items-center">
-        {/* Clean Header Title requested by user */}
-        <h1 className="text-2xl font-bold text-white mb-6 text-center">
-          Sign in to <span className="text-indigo-400 font-extrabold">ProjectFlow</span>
-        </h1>
-
-        {/* Clerk Sign In Card */}
-        <div className="w-full flex justify-center">
-          <SignIn
-            signUpUrl="/sign-up"
-            appearance={{
-              elements: {
-                rootBox: "w-full shadow-2xl rounded-xl overflow-hidden backdrop-blur-md",
-                card: "bg-slate-900/90 border border-slate-800 shadow-xl w-full",
-                headerTitle: "hidden", // We use our custom header title above
-                headerSubtitle: "text-slate-300 text-center text-sm",
-                socialButtonsBlockButton:
-                  "bg-slate-800 hover:bg-slate-700 border-slate-700 text-white",
-                socialButtonsBlockButtonText: "text-white font-medium",
-                dividerLine: "bg-slate-700",
-                dividerText: "text-slate-300 font-medium",
-                formFieldLabel: "text-slate-200 font-semibold text-sm",
-                formFieldInput:
-                  "bg-slate-950 border-slate-700 text-white placeholder:text-slate-500 focus:border-indigo-500 focus:ring-indigo-500 font-mono text-sm",
-                formFieldInputShowPasswordButton:
-                  "text-indigo-400 hover:text-indigo-300 focus:text-indigo-300",
-                formFieldInputShowPasswordIcon: "w-5 h-5 text-indigo-400",
-                formFieldErrorText: "text-red-400 text-xs mt-1",
-                formFieldSuccessText: "text-emerald-400 text-xs mt-1",
-                formButtonPrimary:
-                  "bg-indigo-600 hover:bg-indigo-500 text-white font-semibold shadow-md transition-colors",
-                footerActionLink: "text-indigo-400 hover:text-indigo-300 font-semibold",
-                footerActionText: "text-slate-300",
-                identityPreviewText: "text-white font-medium",
-                identityPreviewEditButtonIcon: "text-indigo-400",
-              },
-            }}
-          />
+    <div className="min-h-screen w-full bg-white flex items-center justify-center p-4 sm:p-6 md:p-10 font-sans">
+      {/* Centered Dark Navy Container matching Canva reference UI */}
+      <div className="w-full max-w-[840px] bg-[#142843] rounded-2xl shadow-2xl overflow-hidden p-6 sm:p-8 md:p-10 flex flex-col md:flex-row items-center justify-between gap-8 md:gap-12 min-h-[460px]">
+        {/* Left Side: White Illustration Card with Animated Spaceship */}
+        <div className="w-full md:w-[350px] lg:w-[370px] h-[280px] sm:h-[320px] md:h-[360px] shrink-0">
+          <AuthIllustration />
         </div>
 
-        {/* Shortcut Button / Textlink for Sign Up at bottom of container */}
-        <div className="mt-6 text-sm text-slate-400 text-center">
-          Don&apos;t have an account?{" "}
-          <Link
-            href="/sign-up"
-            className="text-indigo-400 hover:text-indigo-300 font-semibold underline underline-offset-4 transition-colors"
-          >
-            Sign up
-          </Link>
+        {/* Right Side: Clerk Sign In Form */}
+        <div className="w-full md:w-[360px] flex flex-col items-center justify-center">
+          {/* Custom Header matching mockup */}
+          <div className="text-center mb-5">
+            <h1 className="text-white text-2xl sm:text-3xl font-bold tracking-tight">
+              Sign in to Syntra
+            </h1>
+            <p className="text-slate-300 text-xs sm:text-sm mt-1.5 font-normal">
+              Welcome back! Please enter your details to sign in.
+            </p>
+          </div>
+
+          <div className="w-full">
+            <SignIn
+              signUpUrl="/sign-up"
+              forceRedirectUrl="/dashboard"
+              appearance={{
+                // layout: {
+                //   unsafe_disableDevelopmentModeWarnings: true,
+                // },
+                elements: {
+                  rootBox: "w-full !bg-transparent",
+                  cardBox: "!bg-transparent !shadow-none !border-0 !p-0 !m-0 !w-full",
+                  card: "!bg-transparent !shadow-none !border-0 !p-0 !m-0 !w-full",
+                  main: "!bg-transparent",
+                  headerTitle: "hidden",
+                  headerSubtitle: "hidden",
+                  formFieldLabel: "!text-white !font-semibold !text-xs !mb-1",
+                  formFieldInput:
+                    "!bg-[#c8d3e6] !border-0 !text-[#1e293b] placeholder:!text-[#64748b] !rounded-full !px-4 !py-2.5 !text-sm !font-medium focus:!ring-2 focus:!ring-[#00b4d8]",
+                  socialButtonsBlockButton:
+                    "!bg-[#c8d3e6] hover:!bg-[#b8c7dc] !border-0 !rounded-full !text-[#1e293b] !font-medium !text-sm !py-2.5",
+                  socialButtonsBlockButtonText: "!text-[#1e293b] !font-semibold !text-xs",
+                  dividerLine: "!bg-white/40",
+                  dividerText: "!text-white/80 !text-xs !px-2",
+                  formButtonPrimary:
+                    "!bg-[#00b4d8] hover:!bg-[#0096b8] !text-white !font-bold !rounded-full !py-2.5 !text-sm transition-all shadow-md !mt-2",
+                  footer: "hidden",
+                  footerActionLink: "hidden",
+                  footerActionText: "hidden",
+                  identityPreviewText: "!text-white",
+                  identityPreviewEditButtonIcon: "!text-[#00b4d8]",
+                  formFieldRow: "!mb-3",
+                },
+                variables: {
+                  colorPrimary: "#00b4d8",
+                  colorBackground: "transparent",
+                  borderRadius: "12px",
+                },
+              }}
+            />
+            {/* Custom switch link exactly matching mockup style */}
+            <div className="mt-5 text-sm text-slate-300 text-center font-medium">
+              Don&apos;t you have an account?{" "}
+              <Link
+                href="/sign-up"
+                className="text-white hover:underline font-bold transition-all"
+              >
+                Sign up
+              </Link>
+            </div>
+          </div>
         </div>
       </div>
     </div>
