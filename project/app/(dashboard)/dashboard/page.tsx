@@ -5,9 +5,12 @@ import Link from "next/link"
 import { useUser } from "@clerk/nextjs"
 import {
   TrendingUp, Users, CheckCircle2, Clock, Search, Upload,
-  Plus, X, Calendar, Flag, Tag, FolderOpen, Activity,
-  AlertCircle, ArrowUpRight
+  Activity, AlertCircle, ArrowUpRight, Plus
 } from "lucide-react"
+
+import { CreateProjectModal } from "@/components/modals/create-project-modal"
+import { AddMemberModal } from "@/components/modals/add-member-modal"
+import { CreateTaskModal } from "@/components/modals/create-task-modal"
 
 /* ─── Stat cards data ────────────────────────────────── */
 const stats = [
@@ -46,252 +49,6 @@ const priorityColor: Record<string, string> = {
 }
 
 /* ═══════════════════════════════════════════════════════
-   Modal: Create Project
-═══════════════════════════════════════════════════════ */
-function CreateProjectModal({ onClose }: { onClose: () => void }) {
-  const [name, setName] = useState("")
-  const [desc, setDesc] = useState("")
-  const [due,  setDue]  = useState("")
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault()
-    // TODO: wire to real API
-    alert(`Project "${name}" created! (placeholder)`)
-    onClose()
-  }
-
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-      <div className="bg-white dark:bg-[#1a2e4a] rounded-2xl shadow-2xl w-full max-w-md border border-[#142843]/20 dark:border-white/10">
-        {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 dark:border-white/10">
-          <div className="flex items-center gap-2">
-            <div className="w-8 h-8 bg-[#0052cc] rounded-lg flex items-center justify-center">
-              <FolderOpen size={16} className="text-white" />
-            </div>
-            <h2 className="text-lg font-bold text-[#142843] dark:text-white">Create New Project</h2>
-          </div>
-          <button onClick={onClose} className="p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-white/10 transition-colors">
-            <X size={18} className="text-slate-500 dark:text-slate-400" />
-          </button>
-        </div>
-
-        {/* Form */}
-        <form onSubmit={handleSubmit} className="px-6 py-5 space-y-4">
-          <div>
-            <label className="block text-sm font-semibold text-[#142843] dark:text-slate-200 mb-1.5">
-              Project Name <span className="text-red-500">*</span>
-            </label>
-            <input
-              required
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              placeholder="e.g. Website Redesign"
-              className="w-full px-4 py-2.5 border-2 border-slate-200 dark:border-slate-600 rounded-xl text-sm bg-white dark:bg-[#142843] text-[#142843] dark:text-white placeholder-slate-400 focus:outline-none focus:border-[#0052cc] transition-colors"
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-semibold text-[#142843] dark:text-slate-200 mb-1.5">Description</label>
-            <textarea
-              rows={3}
-              value={desc}
-              onChange={(e) => setDesc(e.target.value)}
-              placeholder="What is this project about?"
-              className="w-full px-4 py-2.5 border-2 border-slate-200 dark:border-slate-600 rounded-xl text-sm bg-white dark:bg-[#142843] text-[#142843] dark:text-white placeholder-slate-400 focus:outline-none focus:border-[#0052cc] transition-colors resize-none"
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-semibold text-[#142843] dark:text-slate-200 mb-1.5">
-              <Calendar size={14} className="inline mr-1" />Due Date
-            </label>
-            <input
-              type="date"
-              value={due}
-              onChange={(e) => setDue(e.target.value)}
-              className="w-full px-4 py-2.5 border-2 border-slate-200 dark:border-slate-600 rounded-xl text-sm bg-white dark:bg-[#142843] text-[#142843] dark:text-white focus:outline-none focus:border-[#0052cc] transition-colors"
-            />
-          </div>
-
-          <div className="flex gap-3 pt-2">
-            <button
-              type="button"
-              onClick={onClose}
-              className="flex-1 py-2.5 border-2 border-slate-200 dark:border-slate-600 rounded-xl text-sm font-semibold text-[#142843] dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-white/5 transition-colors"
-            >
-              Cancel
-            </button>
-            <button
-              type="submit"
-              className="flex-1 py-2.5 bg-[#0052cc] hover:bg-[#003d99] text-white rounded-xl text-sm font-bold transition-colors flex items-center justify-center gap-2"
-            >
-              <Plus size={16} />
-              Create Project
-            </button>
-          </div>
-        </form>
-      </div>
-    </div>
-  )
-}
-
-/* ═══════════════════════════════════════════════════════
-   Modal: Add Team Member
-═══════════════════════════════════════════════════════ */
-function AddMemberModal({ onClose }: { onClose: () => void }) {
-  const [email, setEmail] = useState("")
-  const [role,  setRole]  = useState("Member")
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault()
-    alert(`Invite sent to ${email} as ${role}! (placeholder)`)
-    onClose()
-  }
-
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-      <div className="bg-white dark:bg-[#1a2e4a] rounded-2xl shadow-2xl w-full max-w-md border border-[#142843]/20 dark:border-white/10">
-        <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 dark:border-white/10">
-          <div className="flex items-center gap-2">
-            <div className="w-8 h-8 bg-[#6c7fd8] rounded-lg flex items-center justify-center">
-              <Users size={16} className="text-white" />
-            </div>
-            <h2 className="text-lg font-bold text-[#142843] dark:text-white">Add Team Member</h2>
-          </div>
-          <button onClick={onClose} className="p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-white/10 transition-colors">
-            <X size={18} className="text-slate-500 dark:text-slate-400" />
-          </button>
-        </div>
-        <form onSubmit={handleSubmit} className="px-6 py-5 space-y-4">
-          <div>
-            <label className="block text-sm font-semibold text-[#142843] dark:text-slate-200 mb-1.5">
-              Email Address <span className="text-red-500">*</span>
-            </label>
-            <input
-              required
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="teammate@company.com"
-              className="w-full px-4 py-2.5 border-2 border-slate-200 dark:border-slate-600 rounded-xl text-sm bg-white dark:bg-[#142843] text-[#142843] dark:text-white placeholder-slate-400 focus:outline-none focus:border-[#6c7fd8] transition-colors"
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-semibold text-[#142843] dark:text-slate-200 mb-1.5">Role</label>
-            <select
-              value={role}
-              onChange={(e) => setRole(e.target.value)}
-              className="w-full px-4 py-2.5 border-2 border-slate-200 dark:border-slate-600 rounded-xl text-sm bg-white dark:bg-[#142843] text-[#142843] dark:text-white focus:outline-none focus:border-[#6c7fd8] transition-colors"
-            >
-              <option>Admin</option>
-              <option>Member</option>
-              <option>Viewer</option>
-            </select>
-          </div>
-          <div className="flex gap-3 pt-2">
-            <button type="button" onClick={onClose}
-              className="flex-1 py-2.5 border-2 border-slate-200 dark:border-slate-600 rounded-xl text-sm font-semibold text-[#142843] dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-white/5 transition-colors">
-              Cancel
-            </button>
-            <button type="submit"
-              className="flex-1 py-2.5 bg-[#6c7fd8] hover:bg-[#5a6dc4] text-white rounded-xl text-sm font-bold transition-colors flex items-center justify-center gap-2">
-              <Plus size={16} />Send Invite
-            </button>
-          </div>
-        </form>
-      </div>
-    </div>
-  )
-}
-
-/* ═══════════════════════════════════════════════════════
-   Modal: Create Task
-═══════════════════════════════════════════════════════ */
-function CreateTaskModal({ onClose }: { onClose: () => void }) {
-  const [title,    setTitle]    = useState("")
-  const [priority, setPriority] = useState("Medium")
-  const [due,      setDue]      = useState("")
-  const [label,    setLabel]    = useState("")
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault()
-    alert(`Task "${title}" created with ${priority} priority! (placeholder)`)
-    onClose()
-  }
-
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-      <div className="bg-white dark:bg-[#1a2e4a] rounded-2xl shadow-2xl w-full max-w-md border border-[#142843]/20 dark:border-white/10">
-        <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 dark:border-white/10">
-          <div className="flex items-center gap-2">
-            <div className="w-8 h-8 bg-[#52cba3] rounded-lg flex items-center justify-center">
-              <CheckCircle2 size={16} className="text-white" />
-            </div>
-            <h2 className="text-lg font-bold text-[#142843] dark:text-white">Create Task</h2>
-          </div>
-          <button onClick={onClose} className="p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-white/10 transition-colors">
-            <X size={18} className="text-slate-500 dark:text-slate-400" />
-          </button>
-        </div>
-        <form onSubmit={handleSubmit} className="px-6 py-5 space-y-4">
-          <div>
-            <label className="block text-sm font-semibold text-[#142843] dark:text-slate-200 mb-1.5">
-              Task Title <span className="text-red-500">*</span>
-            </label>
-            <input
-              required
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              placeholder="e.g. Fix navigation bug"
-              className="w-full px-4 py-2.5 border-2 border-slate-200 dark:border-slate-600 rounded-xl text-sm bg-white dark:bg-[#142843] text-[#142843] dark:text-white placeholder-slate-400 focus:outline-none focus:border-[#52cba3] transition-colors"
-            />
-          </div>
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <label className="block text-sm font-semibold text-[#142843] dark:text-slate-200 mb-1.5">
-                <Flag size={13} className="inline mr-1" />Priority
-              </label>
-              <select value={priority} onChange={(e) => setPriority(e.target.value)}
-                className="w-full px-3 py-2.5 border-2 border-slate-200 dark:border-slate-600 rounded-xl text-sm bg-white dark:bg-[#142843] text-[#142843] dark:text-white focus:outline-none focus:border-[#52cba3] transition-colors">
-                <option>High</option>
-                <option>Medium</option>
-                <option>Low</option>
-              </select>
-            </div>
-            <div>
-              <label className="block text-sm font-semibold text-[#142843] dark:text-slate-200 mb-1.5">
-                <Calendar size={13} className="inline mr-1" />Due Date
-              </label>
-              <input type="date" value={due} onChange={(e) => setDue(e.target.value)}
-                className="w-full px-3 py-2.5 border-2 border-slate-200 dark:border-slate-600 rounded-xl text-sm bg-white dark:bg-[#142843] text-[#142843] dark:text-white focus:outline-none focus:border-[#52cba3] transition-colors"
-              />
-            </div>
-          </div>
-          <div>
-            <label className="block text-sm font-semibold text-[#142843] dark:text-slate-200 mb-1.5">
-              <Tag size={13} className="inline mr-1" />Label
-            </label>
-            <input value={label} onChange={(e) => setLabel(e.target.value)}
-              placeholder="e.g. bug, feature, design"
-              className="w-full px-4 py-2.5 border-2 border-slate-200 dark:border-slate-600 rounded-xl text-sm bg-white dark:bg-[#142843] text-[#142843] dark:text-white placeholder-slate-400 focus:outline-none focus:border-[#52cba3] transition-colors"
-            />
-          </div>
-          <div className="flex gap-3 pt-2">
-            <button type="button" onClick={onClose}
-              className="flex-1 py-2.5 border-2 border-slate-200 dark:border-slate-600 rounded-xl text-sm font-semibold text-[#142843] dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-white/5 transition-colors">
-              Cancel
-            </button>
-            <button type="submit"
-              className="flex-1 py-2.5 bg-[#52cba3] hover:bg-[#3db88f] text-white rounded-xl text-sm font-bold transition-colors flex items-center justify-center gap-2">
-              <Plus size={16} />Create Task
-            </button>
-          </div>
-        </form>
-      </div>
-    </div>
-  )
-}
-
-/* ═══════════════════════════════════════════════════════
    Main Dashboard Page
 ═══════════════════════════════════════════════════════ */
 export default function DashboardPage() {
@@ -306,9 +63,9 @@ export default function DashboardPage() {
   return (
     <>
       {/* ── Modals ── */}
-      {modal === "project" && <CreateProjectModal onClose={() => setModal(null)} />}
-      {modal === "member"  && <AddMemberModal     onClose={() => setModal(null)} />}
-      {modal === "task"    && <CreateTaskModal    onClose={() => setModal(null)} />}
+      <CreateProjectModal isOpen={modal === "project"} onClose={() => setModal(null)} />
+      <AddMemberModal     isOpen={modal === "member"}  onClose={() => setModal(null)} />
+      <CreateTaskModal    isOpen={modal === "task"}    onClose={() => setModal(null)} />
 
       <div className="space-y-6 w-full">
         {/* ── Top Header & Toolbar ── */}
@@ -330,11 +87,15 @@ export default function DashboardPage() {
                 onChange={(e) => setSearch(e.target.value)}
                 placeholder="Search projects, tasks..."
                 className="w-full pl-4 pr-10 py-2.5 bg-[#f0f4f8] dark:bg-[#1c304a] border border-[#142843]/20 dark:border-slate-600 rounded-xl text-sm text-[#142843] dark:text-slate-100 placeholder-slate-400 focus:outline-none focus:border-[#0052cc] transition-colors"
+                suppressHydrationWarning
               />
               <Search size={17} className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
             </div>
 
-            <button className="inline-flex items-center gap-2 px-4 py-2.5 bg-[#142843] hover:bg-[#1c304a] text-white rounded-xl text-sm font-bold transition-colors shadow-xs shrink-0">
+            <button
+              className="inline-flex items-center gap-2 px-4 py-2.5 bg-[#142843] hover:bg-[#1c304a] text-white rounded-xl text-sm font-bold transition-colors shadow-xs shrink-0"
+              suppressHydrationWarning
+            >
               <Upload size={15} />Export
             </button>
           </div>
@@ -409,18 +170,21 @@ export default function DashboardPage() {
               <button
                 onClick={() => setModal("project")}
                 className="w-full py-3.5 px-4 bg-[#0052cc] hover:bg-[#003d99] text-white rounded-xl font-bold text-sm flex items-center justify-center gap-2 shadow-md transition-all hover:scale-[1.02] active:scale-[0.98]"
+                suppressHydrationWarning
               >
                 <Plus size={17} />Create New Project
               </button>
               <button
                 onClick={() => setModal("member")}
                 className="w-full py-3.5 px-4 bg-[#f0f4f8] dark:bg-[#1c304a] border-2 border-[#142843]/20 dark:border-slate-600 text-[#142843] dark:text-slate-100 rounded-xl font-bold text-sm flex items-center justify-center gap-2 hover:bg-[#dce6f0] dark:hover:bg-[#253d5c] transition-all hover:scale-[1.02] active:scale-[0.98]"
+                suppressHydrationWarning
               >
                 <Plus size={16} />Add Team Member
               </button>
               <button
                 onClick={() => setModal("task")}
                 className="w-full py-3.5 px-4 bg-[#f0f4f8] dark:bg-[#1c304a] border-2 border-[#142843]/20 dark:border-slate-600 text-[#142843] dark:text-slate-100 rounded-xl font-bold text-sm flex items-center justify-center gap-2 hover:bg-[#dce6f0] dark:hover:bg-[#253d5c] transition-all hover:scale-[1.02] active:scale-[0.98]"
+                suppressHydrationWarning
               >
                 <Plus size={16} />Create Task
               </button>

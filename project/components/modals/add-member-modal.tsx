@@ -1,31 +1,30 @@
 "use client"
 
 import React, { useState } from "react"
-import { FolderOpen, Calendar, Plus, X } from "lucide-react"
+import { Users, Mail, Shield, Plus, X } from "lucide-react"
 import { sileo, swal } from "@/utils/alerts"
 
-interface CreateProjectModalProps {
+interface AddMemberModalProps {
   isOpen: boolean
   onClose: () => void
-  onSuccess?: (project: { name: string; desc: string; due: string }) => void
+  onSuccess?: (member: { email: string; role: string }) => void
 }
 
-export function CreateProjectModal({
+export function AddMemberModal({
   isOpen,
   onClose,
   onSuccess,
-}: CreateProjectModalProps) {
-  const [name, setName] = useState("")
-  const [desc, setDesc] = useState("")
-  const [due, setDue] = useState("")
+}: AddMemberModalProps) {
+  const [email, setEmail] = useState("")
+  const [role, setRole] = useState("Member")
 
   if (!isOpen) return null
 
   const handleCloseAttempt = async () => {
-    if (name.trim() || desc.trim() || due) {
+    if (email.trim()) {
       const confirm = await swal.confirm(
-        "Discard Changes?",
-        "You have unsaved form data. Are you sure you want to close?"
+        "Discard Invitation?",
+        "You have entered an email address. Are you sure you want to close?"
       )
       if (!confirm) return
     }
@@ -33,18 +32,17 @@ export function CreateProjectModal({
   }
 
   const resetAndClose = () => {
-    setName("")
-    setDesc("")
-    setDue("")
+    setEmail("")
+    setRole("Member")
     onClose()
   }
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
-    if (!name.trim()) return
+    if (!email.trim()) return
 
-    sileo.success(`Project "${name}" created successfully!`, "Project Created")
-    onSuccess?.({ name, desc, due })
+    sileo.success(`Invitation sent to ${email} as ${role}!`, "Member Invited")
+    onSuccess?.({ email, role })
     resetAndClose()
   }
 
@@ -59,15 +57,15 @@ export function CreateProjectModal({
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-5 border-b border-slate-100 dark:border-white/10 bg-slate-50/50 dark:bg-[#14263e]/50">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-[#0052cc] rounded-xl flex items-center justify-center shadow-md">
-              <FolderOpen size={20} className="text-white" />
+            <div className="w-10 h-10 bg-[#6c7fd8] rounded-xl flex items-center justify-center shadow-md">
+              <Users size={20} className="text-white" />
             </div>
             <div>
               <h2 className="text-xl font-extrabold text-[#142843] dark:text-white">
-                Create New Project
+                Add Team Member
               </h2>
               <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-                Set up a new workspace project for your team
+                Invite a colleague to join your team workspace
               </p>
             </div>
           </div>
@@ -83,43 +81,34 @@ export function CreateProjectModal({
         {/* Form Body */}
         <form onSubmit={handleSubmit} className="p-6 space-y-5">
           <div>
-            <label className="block text-sm font-bold text-[#142843] dark:text-slate-200 mb-1.5">
-              Project Name <span className="text-red-500">*</span>
+            <label className="block text-sm font-bold text-[#142843] dark:text-slate-200 mb-1.5 flex items-center gap-1.5">
+              <Mail size={15} className="text-[#6c7fd8]" /> Email Address <span className="text-red-500">*</span>
             </label>
             <input
               required
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              placeholder="e.g. Website Redesign v2"
-              className="w-full px-4 py-3 border-2 border-slate-200 dark:border-slate-600 rounded-xl text-sm bg-white dark:bg-[#142843] text-[#142843] dark:text-white placeholder-slate-400 focus:outline-none focus:border-[#0052cc] transition-colors"
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="e.g. teammate@company.com"
+              className="w-full px-4 py-3 border-2 border-slate-200 dark:border-slate-600 rounded-xl text-sm bg-white dark:bg-[#142843] text-[#142843] dark:text-white placeholder-slate-400 focus:outline-none focus:border-[#6c7fd8] transition-colors"
               suppressHydrationWarning
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-bold text-[#142843] dark:text-slate-200 mb-1.5">
-              Description
-            </label>
-            <textarea
-              rows={4}
-              value={desc}
-              onChange={(e) => setDesc(e.target.value)}
-              placeholder="Describe the key goals, objectives, and deliverables for this project..."
-              className="w-full px-4 py-3 border-2 border-slate-200 dark:border-slate-600 rounded-xl text-sm bg-white dark:bg-[#142843] text-[#142843] dark:text-white placeholder-slate-400 focus:outline-none focus:border-[#0052cc] transition-colors resize-none"
             />
           </div>
 
           <div>
             <label className="block text-sm font-bold text-[#142843] dark:text-slate-200 mb-1.5 flex items-center gap-1.5">
-              <Calendar size={15} className="text-[#0052cc]" /> Target Completion Date
+              <Shield size={15} className="text-[#6c7fd8]" /> Assigned Access Role
             </label>
-            <input
-              type="date"
-              value={due}
-              onChange={(e) => setDue(e.target.value)}
-              className="w-full px-4 py-3 border-2 border-slate-200 dark:border-slate-600 rounded-xl text-sm bg-white dark:bg-[#142843] text-[#142843] dark:text-white focus:outline-none focus:border-[#0052cc] transition-colors"
+            <select
+              value={role}
+              onChange={(e) => setRole(e.target.value)}
+              className="w-full px-4 py-3 border-2 border-slate-200 dark:border-slate-600 rounded-xl text-sm bg-white dark:bg-[#142843] text-[#142843] dark:text-white focus:outline-none focus:border-[#6c7fd8] transition-colors"
               suppressHydrationWarning
-            />
+            >
+              <option value="Admin">Admin — Full project management & edit rights</option>
+              <option value="Member">Member — Can create, edit & complete tasks</option>
+              <option value="Viewer">Viewer — Read-only access to projects</option>
+            </select>
           </div>
 
           {/* Footer Actions */}
@@ -134,11 +123,11 @@ export function CreateProjectModal({
             </button>
             <button
               type="submit"
-              className="px-6 py-3 bg-[#0052cc] hover:bg-[#003d99] text-white rounded-xl text-sm font-bold transition-all shadow-md flex items-center gap-2 hover:scale-[1.02] active:scale-[0.98]"
+              className="px-6 py-3 bg-[#6c7fd8] hover:bg-[#5a6dc4] text-white rounded-xl text-sm font-bold transition-all shadow-md flex items-center gap-2 hover:scale-[1.02] active:scale-[0.98]"
               suppressHydrationWarning
             >
               <Plus size={18} />
-              Create Project
+              Send Invitation
             </button>
           </div>
         </form>

@@ -1,6 +1,6 @@
 import { ArrowLeft, Settings, Users, Calendar, MoreHorizontal } from "lucide-react"
 import Link from "next/link"
-import { DashboardLayout } from "@/components/dashboard-layout"
+import { DashboardLayout } from "@/components/layout/dashboard-layout"
 
 export default function ProjectPage({ params }: { params: { id: string } }) {
   return (

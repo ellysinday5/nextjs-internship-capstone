@@ -2,7 +2,7 @@
 
 import { SignUp } from "@clerk/nextjs"
 import Link from "next/link"
-import { AuthIllustration } from "@/components/auth-illustration"
+import { AuthIllustration } from "@/components/auth/auth-illustration"
 
 export default function SignUpPage() {
   return (
