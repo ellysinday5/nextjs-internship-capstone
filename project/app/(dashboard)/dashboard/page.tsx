@@ -2,6 +2,7 @@
 
 import { useState } from "react"
 import Link from "next/link"
+import { useUser } from "@clerk/nextjs"
 import {
   TrendingUp, Users, CheckCircle2, Clock, Search, Upload,
   Plus, X, Calendar, Flag, Tag, FolderOpen, Activity,
@@ -294,8 +295,13 @@ function CreateTaskModal({ onClose }: { onClose: () => void }) {
    Main Dashboard Page
 ═══════════════════════════════════════════════════════ */
 export default function DashboardPage() {
+  const { user, isLoaded } = useUser()
   const [search, setSearch] = useState("")
   const [modal,  setModal]  = useState<"project" | "member" | "task" | null>(null)
+
+  const email = user?.primaryEmailAddress?.emailAddress || user?.emailAddresses?.[0]?.emailAddress
+  const emailPrefix = email ? email.split("@")[0] : ""
+  const greetingName = user?.firstName || user?.fullName || user?.username || emailPrefix || "User"
 
   return (
     <>
@@ -305,22 +311,33 @@ export default function DashboardPage() {
       {modal === "task"    && <CreateTaskModal    onClose={() => setModal(null)} />}
 
       <div className="space-y-6 w-full">
-        {/* ── Toolbar ── */}
-        <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
-          <div className="relative flex-1 max-w-sm">
-            <input
-              type="text"
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              placeholder="Search projects, tasks..."
-              className="w-full pl-4 pr-10 py-2.5 bg-white dark:bg-[#14263e] border-2 border-[#142843]/30 dark:border-slate-600 rounded-full text-sm text-[#142843] dark:text-slate-100 placeholder-slate-400 focus:outline-none focus:border-[#0052cc] transition-colors shadow-sm"
-            />
-            <Search size={17} className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
+        {/* ── Top Header & Toolbar ── */}
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white dark:bg-[#14263e] p-5 rounded-2xl border-2 border-[#142843]/20 dark:border-slate-700 shadow-sm">
+          <div>
+            <h1 className="text-xl sm:text-2xl font-extrabold text-[#142843] dark:text-white">
+              Hello, {greetingName}!
+            </h1>
+            <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 mt-1">
+              Here is your workspace overview and team activity for today.
+            </p>
           </div>
 
-          <button className="self-end sm:self-auto inline-flex items-center gap-2 px-5 py-2.5 bg-white dark:bg-[#14263e] border-2 border-[#142843]/30 dark:border-slate-600 rounded-xl text-sm font-bold text-[#142843] dark:text-slate-100 hover:bg-slate-100 dark:hover:bg-[#1c304a] transition-colors shadow-sm">
-            <Upload size={15} />Export
-          </button>
+          <div className="flex items-center gap-3">
+            <div className="relative flex-1 sm:w-64">
+              <input
+                type="text"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder="Search projects, tasks..."
+                className="w-full pl-4 pr-10 py-2.5 bg-[#f0f4f8] dark:bg-[#1c304a] border border-[#142843]/20 dark:border-slate-600 rounded-xl text-sm text-[#142843] dark:text-slate-100 placeholder-slate-400 focus:outline-none focus:border-[#0052cc] transition-colors"
+              />
+              <Search size={17} className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
+            </div>
+
+            <button className="inline-flex items-center gap-2 px-4 py-2.5 bg-[#142843] hover:bg-[#1c304a] text-white rounded-xl text-sm font-bold transition-colors shadow-xs shrink-0">
+              <Upload size={15} />Export
+            </button>
+          </div>
         </div>
 
         {/* ── Stat Cards ── */}
@@ -456,8 +473,8 @@ export default function DashboardPage() {
                     <p className={`text-sm font-bold ${d.overdue ? "text-red-700 dark:text-red-400" : "text-[#142843] dark:text-white"}`}>
                       {d.task}
                     </p>
-                    <p className={`text-xs mt-0.5 ${d.overdue ? "text-red-500" : "text-slate-500 dark:text-slate-400"}`}>
-                      {d.overdue ? "⚠ Overdue · " : ""}{d.due}
+                    <p className={`text-xs mt-0.5 ${d.overdue ? "text-red-500 font-medium" : "text-slate-500 dark:text-slate-400"}`}>
+                      {d.overdue ? "Overdue · " : ""}{d.due}
                     </p>
                   </div>
                   <span className={`text-xs px-2.5 py-1 rounded-full font-bold ${priorityColor[d.priority]}`}>
