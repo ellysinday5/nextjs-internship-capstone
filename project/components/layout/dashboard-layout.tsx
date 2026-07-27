@@ -4,7 +4,7 @@ import type React from "react"
 
 import { useState } from "react"
 import Link from "next/link"
-import { useTheme } from "./theme-provider"
+import { useTheme } from "@/components/ui/theme-provider"
 import { Home, FolderOpen, Users, Settings, Moon, Sun, Menu, X, BarChart3, Calendar } from "lucide-react"
 
 const navigation = [

@@ -4,7 +4,9 @@ import { Inter } from "next/font/google"
 import "./globals.css"
 import { ClerkProvider } from "@clerk/nextjs"
 //import { ClerkProvider, Show, SignInButton, SignUpButton, UserButton } from '@clerk/nextjs'
-import { ThemeProvider } from "@/components/theme-provider"
+import { ThemeProvider } from "@/components/ui/theme-provider"
+import { AuthToast } from "@/components/auth/auth-toast"
+import { SileoToaster } from "@/components/ui/sileo-toaster"
 
 const inter = Inter({ subsets: ["latin"] })
 
@@ -30,7 +32,11 @@ export default function RootLayout({
             },
           }}
         >
-          <ThemeProvider>{children}</ThemeProvider>
+          <ThemeProvider>
+            <AuthToast />
+            <SileoToaster />
+            {children}
+          </ThemeProvider>
         </ClerkProvider>
         {/* <ClerkProvider>
           <header className="flex justify-end items-center p-4 gap-4 h-16">
