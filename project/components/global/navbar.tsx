@@ -4,9 +4,11 @@ import { useState } from "react"
 import Link from "next/link"
 import Image from "next/image"
 import { Moon, Sun } from "lucide-react"
+import { useUser, UserButton } from "@clerk/nextjs"
 
 export function Navbar() {
     const [isDark, setIsDark] = useState(false)
+    const { isSignedIn } = useUser()
 
     const toggleTheme = () => {
         setIsDark((prev) => !prev)
@@ -37,12 +39,25 @@ export function Navbar() {
                         >
                             {isDark ? <Sun size={18} /> : <Moon size={18} />}
                         </button>
-                        <Link
-                            href="/sign-in"
-                            className="text-white/90 hover:text-white text-sm sm:text-base font-medium transition-colors"
-                        >
-                            Sign In
-                        </Link>
+
+                        {isSignedIn ? (
+                            <>
+                                <Link
+                                    href="/dashboard"
+                                    className="text-white/90 hover:text-white text-sm sm:text-base font-medium transition-colors"
+                                >
+                                    Dashboard
+                                </Link>
+                                <UserButton />
+                            </>
+                        ) : (
+                            <Link
+                                href="/sign-in"
+                                className="text-white/90 hover:text-white text-sm sm:text-base font-medium transition-colors"
+                            >
+                                Sign In
+                            </Link>
+                        )}
                     </div>
                 </div>
             </div>

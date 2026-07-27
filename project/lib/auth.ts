@@ -1,7 +1,21 @@
-import { currentUser } from "@clerk/nextjs/server";
+import { auth, currentUser } from "@clerk/nextjs/server";
 import { db } from "@/lib/db";
 import { users } from "@/lib/db/schema";
 import { eq } from "drizzle-orm";
+
+/**
+ * Retrieves session auth data (userId, sessionId, orgId, etc.) in Server Components.
+ */
+export async function getAuthSession() {
+  return await auth();
+}
+
+/**
+ * Retrieves full Clerk user object in Server Components.
+ */
+export async function getClerkUser() {
+  return await currentUser();
+}
 
 /**
  * Synchronizes the currently logged-in Clerk user with the Neon database.
