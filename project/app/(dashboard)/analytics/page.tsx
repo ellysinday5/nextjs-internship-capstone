@@ -1,10 +1,12 @@
-import { BarChart3, TrendingUp, Users, Clock } from "lucide-react"
+import { BarChart3, TrendingUp, Users, Clock } from "lucide-react";
 
 export default function AnalyticsPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-3xl font-bold text-outer_space-500 dark:text-platinum-500">Analytics</h1>
+        <h1 className="text-3xl font-bold text-outer_space-500 dark:text-platinum-500">
+          Analytics
+        </h1>
         <p className="text-payne's_gray-500 dark:text-french_gray-500 mt-2">
           Track project performance and team productivity
         </p>
@@ -24,8 +26,20 @@ export default function AnalyticsPage() {
       {/* Analytics Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         {[
-          { title: "Project Velocity", value: "8.5", unit: "tasks/week", icon: TrendingUp, color: "blue" },
-          { title: "Team Efficiency", value: "92%", unit: "completion rate", icon: BarChart3, color: "green" },
+          {
+            title: "Project Velocity",
+            value: "8.5",
+            unit: "tasks/week",
+            icon: TrendingUp,
+            color: "blue",
+          },
+          {
+            title: "Team Efficiency",
+            value: "92%",
+            unit: "completion rate",
+            icon: BarChart3,
+            color: "green",
+          },
           { title: "Active Users", value: "24", unit: "this week", icon: Users, color: "purple" },
           { title: "Avg. Task Time", value: "2.3", unit: "days", icon: Clock, color: "orange" },
         ].map((metric, index) => (
@@ -40,9 +54,15 @@ export default function AnalyticsPage() {
                 <metric.icon className={`text-${metric.color}-500`} size={20} />
               </div>
             </div>
-            <div className="text-2xl font-bold text-outer_space-500 dark:text-platinum-500 mb-1">{metric.value}</div>
-            <div className="text-sm text-payne's_gray-500 dark:text-french_gray-400 mb-2">{metric.unit}</div>
-            <div className="text-xs font-medium text-outer_space-500 dark:text-platinum-500">{metric.title}</div>
+            <div className="text-2xl font-bold text-outer_space-500 dark:text-platinum-500 mb-1">
+              {metric.value}
+            </div>
+            <div className="text-sm text-payne's_gray-500 dark:text-french_gray-400 mb-2">
+              {metric.unit}
+            </div>
+            <div className="text-xs font-medium text-outer_space-500 dark:text-platinum-500">
+              {metric.title}
+            </div>
           </div>
         ))}
       </div>
@@ -50,7 +70,9 @@ export default function AnalyticsPage() {
       {/* Charts Placeholder */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <div className="bg-white dark:bg-outer_space-500 rounded-lg border border-french_gray-300 dark:border-payne's_gray-400 p-6">
-          <h3 className="text-lg font-semibold text-outer_space-500 dark:text-platinum-500 mb-4">Project Progress</h3>
+          <h3 className="text-lg font-semibold text-outer_space-500 dark:text-platinum-500 mb-4">
+            Project Progress
+          </h3>
           <div className="h-64 bg-platinum-800 dark:bg-outer_space-400 rounded-lg flex items-center justify-center">
             <div className="text-center text-payne's_gray-500 dark:text-french_gray-400">
               <BarChart3 size={48} className="mx-auto mb-2" />
@@ -61,7 +83,9 @@ export default function AnalyticsPage() {
         </div>
 
         <div className="bg-white dark:bg-outer_space-500 rounded-lg border border-french_gray-300 dark:border-payne's_gray-400 p-6">
-          <h3 className="text-lg font-semibold text-outer_space-500 dark:text-platinum-500 mb-4">Team Activity</h3>
+          <h3 className="text-lg font-semibold text-outer_space-500 dark:text-platinum-500 mb-4">
+            Team Activity
+          </h3>
           <div className="h-64 bg-platinum-800 dark:bg-outer_space-400 rounded-lg flex items-center justify-center">
             <div className="text-center text-payne's_gray-500 dark:text-french_gray-400">
               <TrendingUp size={48} className="mx-auto mb-2" />
@@ -72,5 +96,5 @@ export default function AnalyticsPage() {
         </div>
       </div>
     </div>
-  )
+  );
 }

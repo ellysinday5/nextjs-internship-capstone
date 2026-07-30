@@ -1,12 +1,12 @@
-"use client"
+"use client";
 
-import { Bell, Menu } from "lucide-react"
-import { UserMenu } from "@/components/auth/user-menu"
-import { ThemeToggle } from "@/components/ui/theme-toggle"
+import { Bell, Menu } from "lucide-react";
+import { UserMenu } from "@/components/auth/user-menu";
+import { ThemeToggle } from "@/components/ui/theme-toggle";
 
 interface HeaderProps {
-  onMenuClick?: () => void
-  pageTitle?: string
+  onMenuClick?: () => void;
+  pageTitle?: string;
 }
 
 export function Header({ onMenuClick, pageTitle = "Dashboard" }: HeaderProps) {
@@ -53,5 +53,5 @@ export function Header({ onMenuClick, pageTitle = "Dashboard" }: HeaderProps) {
         </div>
       </div>
     </header>
-  )
+  );
 }

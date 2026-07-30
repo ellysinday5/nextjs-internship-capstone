@@ -1,4 +1,4 @@
-import { Calendar, Users, Settings, MoreHorizontal } from "lucide-react"
+import { Calendar, Users, Settings, MoreHorizontal } from "lucide-react";
 
 export function ProjectHeader({ projectId }: { projectId: string }) {
   return (
@@ -7,7 +7,9 @@ export function ProjectHeader({ projectId }: { projectId: string }) {
         <div className="flex-1">
           <div className="flex items-center space-x-3 mb-2">
             <div className="w-3 h-3 bg-blue_munsell-500 rounded-full" />
-            <h1 className="text-2xl font-bold text-outer_space-500 dark:text-platinum-500">Website Redesign</h1>
+            <h1 className="text-2xl font-bold text-outer_space-500 dark:text-platinum-500">
+              Website Redesign
+            </h1>
           </div>
 
           <p className="text-payne's_gray-500 dark:text-french_gray-400 mb-4">
@@ -39,5 +41,5 @@ export function ProjectHeader({ projectId }: { projectId: string }) {
         </div>
       </div>
     </div>
-  )
+  );
 }

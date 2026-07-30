@@ -1,4 +1,4 @@
-import Link from "next/link"
+import Link from "next/link";
 
 export function Footer() {
   return (
@@ -8,7 +8,8 @@ export function Footer() {
           <div>
             <h3 className="text-2xl font-bold text-blue_munsell-400 mb-4">TaskFlow</h3>
             <p className="text-french_gray-400">
-              The modern project management platform that helps teams collaborate and deliver results.
+              The modern project management platform that helps teams collaborate and deliver
+              results.
             </p>
           </div>
 
@@ -16,17 +17,26 @@ export function Footer() {
             <h4 className="font-semibold mb-4">Product</h4>
             <ul className="space-y-2">
               <li>
-                <Link href="#" className="text-french_gray-400 hover:text-platinum-500 transition-colors">
+                <Link
+                  href="#"
+                  className="text-french_gray-400 hover:text-platinum-500 transition-colors"
+                >
                   Features
                 </Link>
               </li>
               <li>
-                <Link href="#" className="text-french_gray-400 hover:text-platinum-500 transition-colors">
+                <Link
+                  href="#"
+                  className="text-french_gray-400 hover:text-platinum-500 transition-colors"
+                >
                   Pricing
                 </Link>
               </li>
               <li>
-                <Link href="#" className="text-french_gray-400 hover:text-platinum-500 transition-colors">
+                <Link
+                  href="#"
+                  className="text-french_gray-400 hover:text-platinum-500 transition-colors"
+                >
                   Security
                 </Link>
               </li>
@@ -37,17 +47,26 @@ export function Footer() {
             <h4 className="font-semibold mb-4">Company</h4>
             <ul className="space-y-2">
               <li>
-                <Link href="#" className="text-french_gray-400 hover:text-platinum-500 transition-colors">
+                <Link
+                  href="#"
+                  className="text-french_gray-400 hover:text-platinum-500 transition-colors"
+                >
                   About
                 </Link>
               </li>
               <li>
-                <Link href="#" className="text-french_gray-400 hover:text-platinum-500 transition-colors">
+                <Link
+                  href="#"
+                  className="text-french_gray-400 hover:text-platinum-500 transition-colors"
+                >
                   Blog
                 </Link>
               </li>
               <li>
-                <Link href="#" className="text-french_gray-400 hover:text-platinum-500 transition-colors">
+                <Link
+                  href="#"
+                  className="text-french_gray-400 hover:text-platinum-500 transition-colors"
+                >
                   Careers
                 </Link>
               </li>
@@ -58,17 +77,26 @@ export function Footer() {
             <h4 className="font-semibold mb-4">Support</h4>
             <ul className="space-y-2">
               <li>
-                <Link href="#" className="text-french_gray-400 hover:text-platinum-500 transition-colors">
+                <Link
+                  href="#"
+                  className="text-french_gray-400 hover:text-platinum-500 transition-colors"
+                >
                   Help Center
                 </Link>
               </li>
               <li>
-                <Link href="#" className="text-french_gray-400 hover:text-platinum-500 transition-colors">
+                <Link
+                  href="#"
+                  className="text-french_gray-400 hover:text-platinum-500 transition-colors"
+                >
                   Contact
                 </Link>
               </li>
               <li>
-                <Link href="#" className="text-french_gray-400 hover:text-platinum-500 transition-colors">
+                <Link
+                  href="#"
+                  className="text-french_gray-400 hover:text-platinum-500 transition-colors"
+                >
                   API Docs
                 </Link>
               </li>
@@ -81,5 +109,5 @@ export function Footer() {
         </div>
       </div>
     </footer>
-  )
+  );
 }

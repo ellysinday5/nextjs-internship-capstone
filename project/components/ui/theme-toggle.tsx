@@ -1,16 +1,16 @@
-"use client"
+"use client";
 
-import { useState, useEffect } from "react"
-import { Moon, Sun } from "lucide-react"
-import { useTheme } from "./theme-provider"
+import { useState, useEffect } from "react";
+import { Moon, Sun } from "lucide-react";
+import { useTheme } from "./theme-provider";
 
 export function ThemeToggle() {
-  const { theme, setTheme } = useTheme()
-  const [mounted, setMounted] = useState(false)
+  const { theme, setTheme } = useTheme();
+  const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
-    setMounted(true)
-  }, [])
+    setMounted(true);
+  }, []);
 
   return (
     <button
@@ -19,13 +19,7 @@ export function ThemeToggle() {
       aria-label="Toggle theme"
       suppressHydrationWarning
     >
-      {!mounted ? (
-        <Sun size={18} />
-      ) : theme === "light" ? (
-        <Moon size={18} />
-      ) : (
-        <Sun size={18} />
-      )}
+      {!mounted ? <Sun size={18} /> : theme === "light" ? <Moon size={18} /> : <Sun size={18} />}
     </button>
-  )
+  );
 }

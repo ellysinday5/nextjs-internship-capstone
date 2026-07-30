@@ -66,10 +66,7 @@ export function Modal({
         className={`relative flex w-full ${maxWidthClassName} max-h-[90vh] flex-col rounded-2xl bg-white shadow-xl outline-none dark:bg-slate-900`}
       >
         <div className="flex items-center justify-between gap-4 border-b border-slate-200 px-5 py-4 dark:border-slate-700">
-          <h2
-            id="modal-title"
-            className="text-lg font-semibold text-slate-900 dark:text-slate-100"
-          >
+          <h2 id="modal-title" className="text-lg font-semibold text-slate-900 dark:text-slate-100">
             {title}
           </h2>
           {showCloseButton && (

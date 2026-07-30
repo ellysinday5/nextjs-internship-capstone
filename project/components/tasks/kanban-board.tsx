@@ -1,6 +1,6 @@
-"use client"
+"use client";
 
-import { useState } from "react"
+import { useState } from "react";
 
 // TODO: Task 5.1 - Design responsive Kanban board layout
 // TODO: Task 5.2 - Implement drag-and-drop functionality with dnd-kit
@@ -118,23 +118,23 @@ const initialColumns = [
       },
     ],
   },
-]
+];
 
 export function KanbanBoard({ projectId }: { projectId: string }) {
-  const [columns, setColumns] = useState(initialColumns)
+  const [columns, setColumns] = useState(initialColumns);
 
   const getPriorityColor = (priority: string) => {
     switch (priority) {
       case "high":
-        return "bg-red-100 text-red-700 dark:bg-red-900 dark:text-red-300"
+        return "bg-red-100 text-red-700 dark:bg-red-900 dark:text-red-300";
       case "medium":
-        return "bg-yellow-100 text-yellow-700 dark:bg-yellow-900 dark:text-yellow-300"
+        return "bg-yellow-100 text-yellow-700 dark:bg-yellow-900 dark:text-yellow-300";
       case "low":
-        return "bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300"
+        return "bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300";
       default:
-        return "bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300"
+        return "bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300";
     }
-  }
+  };
 
   return (
     <div className="bg-white dark:bg-outer_space-500 rounded-lg border border-french_gray-300 dark:border-payne's_gray-400 p-6">
@@ -148,5 +148,5 @@ export function KanbanBoard({ projectId }: { projectId: string }) {
         </div>
       </div>
     </div>
-  )
+  );
 }

@@ -1,4 +1,4 @@
-import { User, Bell, Shield, Palette } from "lucide-react"
+import { User, Bell, Shield, Palette } from "lucide-react";
 
 export default function SettingsPage() {
   return (
@@ -25,7 +25,9 @@ export default function SettingsPage() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Settings Navigation */}
         <div className="bg-white dark:bg-outer_space-500 rounded-lg border border-french_gray-300 dark:border-payne's_gray-400 p-6">
-          <h3 className="text-lg font-semibold text-outer_space-500 dark:text-platinum-500 mb-4">Settings</h3>
+          <h3 className="text-lg font-semibold text-outer_space-500 dark:text-platinum-500 mb-4">
+            Settings
+          </h3>
           <nav className="space-y-2">
             {[
               { name: "Profile", icon: User, active: true },
@@ -50,7 +52,9 @@ export default function SettingsPage() {
 
         {/* Settings Content */}
         <div className="lg:col-span-2 bg-white dark:bg-outer_space-500 rounded-lg border border-french_gray-300 dark:border-payne's_gray-400 p-6">
-          <h3 className="text-lg font-semibold text-outer_space-500 dark:text-platinum-500 mb-6">Profile Settings</h3>
+          <h3 className="text-lg font-semibold text-outer_space-500 dark:text-platinum-500 mb-6">
+            Profile Settings
+          </h3>
 
           <div className="space-y-6">
             <div>
@@ -76,7 +80,9 @@ export default function SettingsPage() {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-outer_space-500 dark:text-platinum-500 mb-2">Role</label>
+              <label className="block text-sm font-medium text-outer_space-500 dark:text-platinum-500 mb-2">
+                Role
+              </label>
               <select className="w-full px-3 py-2 border border-french_gray-300 dark:border-payne's_gray-400 rounded-lg bg-white dark:bg-outer_space-400 text-outer_space-500 dark:text-platinum-500 focus:outline-none focus:ring-2 focus:ring-blue_munsell-500">
                 <option>Project Manager</option>
                 <option>Developer</option>
@@ -97,5 +103,5 @@ export default function SettingsPage() {
         </div>
       </div>
     </div>
-  )
+  );
 }

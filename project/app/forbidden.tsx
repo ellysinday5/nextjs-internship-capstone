@@ -1,5 +1,5 @@
-import Link from "next/link"
-import { Lock, ArrowLeft } from "lucide-react"
+import Link from "next/link";
+import { Lock, ArrowLeft } from "lucide-react";
 
 export default function ForbiddenPage() {
   return (
@@ -8,7 +8,9 @@ export default function ForbiddenPage() {
         <div className="w-16 h-16 bg-amber-100 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400 rounded-full flex items-center justify-center mx-auto mb-4">
           <Lock size={32} />
         </div>
-        <h1 className="text-2xl font-extrabold text-[#142843] dark:text-white mb-2">403 - Access Forbidden</h1>
+        <h1 className="text-2xl font-extrabold text-[#142843] dark:text-white mb-2">
+          403 - Access Forbidden
+        </h1>
         <p className="text-sm text-slate-500 dark:text-slate-400 mb-6">
           You do not have permission to access this resource or project workspace.
         </p>
@@ -21,5 +23,5 @@ export default function ForbiddenPage() {
         </Link>
       </div>
     </div>
-  )
+  );
 }

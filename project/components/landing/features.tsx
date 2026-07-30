@@ -1,10 +1,11 @@
-import { Kanban, Users, Calendar, BarChart3, Shield, Zap } from "lucide-react"
+import { Kanban, Users, Calendar, BarChart3, Shield, Zap } from "lucide-react";
 
 const features = [
   {
     icon: Kanban,
     title: "Kanban Boards",
-    description: "Visualize your workflow with intuitive drag-and-drop Kanban boards that keep your team organized.",
+    description:
+      "Visualize your workflow with intuitive drag-and-drop Kanban boards that keep your team organized.",
   },
   {
     icon: Users,
@@ -14,7 +15,8 @@ const features = [
   {
     icon: Calendar,
     title: "Timeline Management",
-    description: "Track deadlines and milestones with integrated calendar views and due date reminders.",
+    description:
+      "Track deadlines and milestones with integrated calendar views and due date reminders.",
   },
   {
     icon: BarChart3,
@@ -31,7 +33,7 @@ const features = [
     title: "Lightning Fast",
     description: "Optimized performance delivers instant updates and smooth user experience.",
   },
-]
+];
 
 export function Features() {
   return (
@@ -42,7 +44,8 @@ export function Features() {
             Everything You Need to Succeed
           </h2>
           <p className="text-xl text-payne's_gray-500 dark:text-french_gray-500 max-w-2xl mx-auto">
-            Powerful features designed to help teams collaborate effectively and deliver projects on time.
+            Powerful features designed to help teams collaborate effectively and deliver projects on
+            time.
           </p>
         </div>
 
@@ -58,11 +61,13 @@ export function Features() {
               <h3 className="text-xl font-semibold text-outer_space-500 dark:text-platinum-500 mb-2">
                 {feature.title}
               </h3>
-              <p className="text-payne's_gray-500 dark:text-french_gray-500">{feature.description}</p>
+              <p className="text-payne's_gray-500 dark:text-french_gray-500">
+                {feature.description}
+              </p>
             </div>
           ))}
         </div>
       </div>
     </section>
-  )
+  );
 }

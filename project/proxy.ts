@@ -1,14 +1,15 @@
 import { clerkMiddleware, createRouteMatcher } from "@clerk/nextjs/server";
 import { NextResponse } from "next/server";
 
-// ── Route groups ──────────────────────────────────────────────────────────────
 
-/** Routes anyone can access without being signed in */
+/*Routes anyone can access without being signed in */
 const isPublicRoute = createRouteMatcher([
   "/",
   "/sign-in(.*)",
   "/sign-up(.*)",
   "/api/webhooks(.*)",
+   "/forbidden",
+  "/unauthorized",
 ]);
 
 /** Auth pages — signed-in users should be bounced to /dashboard */

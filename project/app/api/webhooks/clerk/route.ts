@@ -44,7 +44,8 @@ export async function POST(req: Request) {
   const eventType = evt.type;
 
   if (eventType === "user.created" || eventType === "user.updated") {
-    const { id, email_addresses, primary_email_address_id, first_name, last_name, username } = evt.data;
+    const { id, email_addresses, primary_email_address_id, first_name, last_name, username } =
+      evt.data;
 
     const primaryEmail =
       email_addresses?.find((e: any) => e.id === primary_email_address_id)?.email_address ||
@@ -57,10 +58,7 @@ export async function POST(req: Request) {
       primaryEmail.split("@")[0] ||
       "User";
 
-    const existing = await db
-      .select()
-      .from(users)
-      .where(eq(users.clerkId, id));
+    const existing = await db.select().from(users).where(eq(users.clerkId, id));
 
     if (existing.length > 0) {
       await db

@@ -41,5 +41,5 @@ export function ProjectCard() {
         TODO: Implement ProjectCard component
       </p>
     </div>
-  )
+  );
 }

@@ -1,4 +1,4 @@
-import { UserPlus, Mail, MoreHorizontal } from "lucide-react"
+import { UserPlus, Mail, MoreHorizontal } from "lucide-react";
 
 export default function TeamPage() {
   return (
@@ -6,7 +6,9 @@ export default function TeamPage() {
       <div className="flex justify-between items-center">
         <div>
           <h1 className="text-3xl font-bold text-outer_space-500 dark:text-platinum-500">Team</h1>
-          <p className="text-payne's_gray-500 dark:text-french_gray-500 mt-2">Manage team members and permissions</p>
+          <p className="text-payne's_gray-500 dark:text-french_gray-500 mt-2">
+            Manage team members and permissions
+          </p>
         </div>
         <button className="inline-flex items-center px-4 py-2 bg-blue_munsell-500 text-white rounded-lg hover:bg-blue_munsell-600 transition-colors">
           <UserPlus size={20} className="mr-2" />
@@ -45,8 +47,12 @@ export default function TeamPage() {
                   {member.avatar}
                 </div>
                 <div>
-                  <h3 className="font-semibold text-outer_space-500 dark:text-platinum-500">{member.name}</h3>
-                  <p className="text-sm text-payne's_gray-500 dark:text-french_gray-400">{member.role}</p>
+                  <h3 className="font-semibold text-outer_space-500 dark:text-platinum-500">
+                    {member.name}
+                  </h3>
+                  <p className="text-sm text-payne's_gray-500 dark:text-french_gray-400">
+                    {member.role}
+                  </p>
                 </div>
               </div>
               <button className="p-1 hover:bg-platinum-500 dark:hover:bg-payne's_gray-400 rounded">
@@ -71,5 +77,5 @@ export default function TeamPage() {
         ))}
       </div>
     </div>
-  )
+  );
 }

@@ -1,10 +1,10 @@
-"use client"
+"use client";
 
-import { useState } from "react"
-import { Plus, X } from "lucide-react"
+import { useState } from "react";
+import { Plus, X } from "lucide-react";
 
 export function CreateProjectButton() {
-  const [isOpen, setIsOpen] = useState(false)
+  const [isOpen, setIsOpen] = useState(false);
 
   return (
     <>
@@ -20,7 +20,9 @@ export function CreateProjectButton() {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
           <div className="bg-white dark:bg-outer_space-500 rounded-lg p-6 w-full max-w-md mx-4">
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-semibold text-outer_space-500 dark:text-platinum-500">Create New Project</h3>
+              <h3 className="text-lg font-semibold text-outer_space-500 dark:text-platinum-500">
+                Create New Project
+              </h3>
               <button
                 onClick={() => setIsOpen(false)}
                 className="p-1 hover:bg-platinum-500 dark:hover:bg-payne's_gray-400 rounded"
@@ -82,5 +84,5 @@ export function CreateProjectButton() {
         </div>
       )}
     </>
-  )
+  );
 }

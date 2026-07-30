@@ -1,13 +1,8 @@
-"use client"
+"use client";
 
-import React, { useEffect, useState } from "react"
-import {
-  subscribeToToasts,
-  subscribeToSwal,
-  ToastItem,
-  SwalModalOptions,
-} from "@/utils/alerts"
-import { Check, X, AlertTriangle, Info, HelpCircle } from "lucide-react"
+import React, { useEffect, useState } from "react";
+import { subscribeToToasts, subscribeToSwal, ToastItem, SwalModalOptions } from "@/utils/alerts";
+import { Check, X, AlertTriangle, Info, HelpCircle } from "lucide-react";
 
 // Color scheme per variant (Red for error, Green for success)
 const variantStyles = {
@@ -35,45 +30,45 @@ const variantStyles = {
     circle: "bg-white/25 text-white",
     icon: Info,
   },
-}
+};
 
 export function SileoToaster() {
-  const [toasts, setToasts] = useState<ToastItem[]>([])
-  const [activeSwal, setActiveSwal] = useState<SwalModalOptions | null>(null)
+  const [toasts, setToasts] = useState<ToastItem[]>([]);
+  const [activeSwal, setActiveSwal] = useState<SwalModalOptions | null>(null);
 
   // Listen for toast & swal events
   useEffect(() => {
     const unsubToasts = subscribeToToasts((item) => {
-      setToasts((prev) => [...prev, item])
+      setToasts((prev) => [...prev, item]);
 
       const timer = setTimeout(() => {
-        setToasts((prev) => prev.filter((t) => t.id !== item.id))
-      }, item.duration || 4000)
+        setToasts((prev) => prev.filter((t) => t.id !== item.id));
+      }, item.duration || 4000);
 
-      return () => clearTimeout(timer)
-    })
+      return () => clearTimeout(timer);
+    });
 
     const unsubSwal = subscribeToSwal((swalOptions) => {
-      setActiveSwal(swalOptions)
-    })
+      setActiveSwal(swalOptions);
+    });
 
     return () => {
-      unsubToasts()
-      unsubSwal()
-    }
-  }, [])
+      unsubToasts();
+      unsubSwal();
+    };
+  }, []);
 
   const removeToast = (id: string) => {
-    setToasts((prev) => prev.filter((t) => t.id !== id))
-  }
+    setToasts((prev) => prev.filter((t) => t.id !== id));
+  };
 
   return (
     <>
       {/* ── SILEO TOAST CONTAINER (Top-Right) ── */}
       <div className="fixed top-6 right-6 z-[10000] flex flex-col items-end gap-3 pointer-events-none">
         {toasts.map((toast) => {
-          const style = variantStyles[toast.type] || variantStyles.info
-          const IconComponent = style.icon
+          const style = variantStyles[toast.type] || variantStyles.info;
+          const IconComponent = style.icon;
 
           return (
             <div
@@ -115,7 +110,7 @@ export function SileoToaster() {
                 {toast.message}
               </div>
             </div>
-          )
+          );
         })}
       </div>
 
@@ -129,33 +124,23 @@ export function SileoToaster() {
           >
             {/* Icon */}
             <div className="mx-auto mb-4 flex items-center justify-center w-14 h-14 rounded-full bg-slate-100 dark:bg-white/10">
-              {activeSwal.type === "success" && (
-                <Check className="w-8 h-8 text-emerald-500" />
-              )}
-              {activeSwal.type === "error" && (
-                <X className="w-8 h-8 text-red-500" />
-              )}
+              {activeSwal.type === "success" && <Check className="w-8 h-8 text-emerald-500" />}
+              {activeSwal.type === "error" && <X className="w-8 h-8 text-red-500" />}
               {activeSwal.type === "warning" && (
                 <AlertTriangle className="w-8 h-8 text-amber-500" />
               )}
-              {activeSwal.type === "question" && (
-                <HelpCircle className="w-8 h-8 text-blue-500" />
-              )}
+              {activeSwal.type === "question" && <HelpCircle className="w-8 h-8 text-blue-500" />}
               {activeSwal.type === "loading" && (
                 <div className="w-7 h-7 border-3 border-blue-500 border-t-transparent rounded-full animate-spin" />
               )}
             </div>
 
             {/* Title */}
-            <h3 className="text-xl font-bold text-slate-900 dark:text-white">
-              {activeSwal.title}
-            </h3>
+            <h3 className="text-xl font-bold text-slate-900 dark:text-white">{activeSwal.title}</h3>
 
             {/* Text */}
             {activeSwal.text && (
-              <p className="mt-2 text-sm text-slate-600 dark:text-slate-300">
-                {activeSwal.text}
-              </p>
+              <p className="mt-2 text-sm text-slate-600 dark:text-slate-300">{activeSwal.text}</p>
             )}
 
             {/* Action Buttons */}
@@ -163,8 +148,8 @@ export function SileoToaster() {
               {activeSwal.showCancelButton && (
                 <button
                   onClick={() => {
-                    activeSwal.onCancel?.()
-                    setActiveSwal(null)
+                    activeSwal.onCancel?.();
+                    setActiveSwal(null);
                   }}
                   className="px-5 py-2.5 rounded-xl border border-slate-300 dark:border-slate-600 text-sm font-semibold text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-white/10 transition-colors"
                 >
@@ -174,8 +159,8 @@ export function SileoToaster() {
 
               <button
                 onClick={() => {
-                  activeSwal.onConfirm?.()
-                  setActiveSwal(null)
+                  activeSwal.onConfirm?.();
+                  setActiveSwal(null);
                 }}
                 className="px-6 py-2.5 rounded-xl bg-[#142843] dark:bg-blue-600 text-white text-sm font-semibold hover:opacity-90 transition-opacity"
               >
@@ -186,5 +171,5 @@ export function SileoToaster() {
         </div>
       )}
     </>
-  )
+  );
 }

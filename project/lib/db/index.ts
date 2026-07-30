@@ -6,7 +6,6 @@ const sql = neon(process.env.DATABASE_URL!);
 
 export const db = drizzle(sql, { schema });
 
-// TODO: Task 4.1 / Task 4.4 - Implement real CRUD operations using `db`
 export const queries = {
   projects: {
     getAll: () => {
