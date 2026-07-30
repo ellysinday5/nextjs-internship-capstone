@@ -1,5 +1,5 @@
-import Link from "next/link"
-import { ArrowRight, CheckCircle, Users, Zap } from "lucide-react"
+import Link from "next/link";
+import { ArrowRight, CheckCircle, Users, Zap } from "lucide-react";
 
 export function Hero() {
   return (
@@ -12,8 +12,8 @@ export function Hero() {
           </h1>
 
           <p className="text-xl text-payne's_gray-500 dark:text-french_gray-500 mb-8 max-w-2xl mx-auto">
-            Organize tasks, collaborate with your team, and deliver projects on time with our intuitive Kanban-style
-            project management platform.
+            Organize tasks, collaborate with your team, and deliver projects on time with our
+            intuitive Kanban-style project management platform.
           </p>
 
           <div className="flex flex-col sm:flex-row gap-4 justify-center mb-12">
@@ -47,5 +47,5 @@ export function Hero() {
         </div>
       </div>
     </section>
-  )
+  );
 }

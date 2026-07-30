@@ -1,6 +1,6 @@
-import { ArrowLeft, Settings, Users, Calendar, MoreHorizontal } from "lucide-react"
-import Link from "next/link"
-import { DashboardLayout } from "@/components/layout/dashboard-layout"
+import { ArrowLeft, Settings, Users, Calendar, MoreHorizontal } from "lucide-react";
+import Link from "next/link";
+import { DashboardLayout } from "@/components/layout/dashboard-layout";
 
 export default function ProjectPage({ params }: { params: { id: string } }) {
   return (
@@ -16,7 +16,9 @@ export default function ProjectPage({ params }: { params: { id: string } }) {
               <ArrowLeft size={20} />
             </Link>
             <div>
-              <h1 className="text-3xl font-bold text-outer_space-500 dark:text-platinum-500">Project #{params.id}</h1>
+              <h1 className="text-3xl font-bold text-outer_space-500 dark:text-platinum-500">
+                Project #{params.id}
+              </h1>
               <p className="text-payne's_gray-500 dark:text-french_gray-500 mt-1">
                 Kanban board view for project management
               </p>
@@ -133,5 +135,5 @@ export default function ProjectPage({ params }: { params: { id: string } }) {
         </div>
       </div>
     </DashboardLayout>
-  )
+  );
 }

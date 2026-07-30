@@ -1,4 +1,4 @@
-import { Calendar, Users, MoreHorizontal } from "lucide-react"
+import { Calendar, Users, MoreHorizontal } from "lucide-react";
 
 const projects = [
   {
@@ -61,7 +61,7 @@ const projects = [
     status: "Review",
     color: "bg-indigo-500",
   },
-]
+];
 
 export function ProjectGrid() {
   return (
@@ -78,7 +78,9 @@ export function ProjectGrid() {
             </button>
           </div>
 
-          <h3 className="text-lg font-semibold text-outer_space-500 dark:text-platinum-500 mb-2">{project.name}</h3>
+          <h3 className="text-lg font-semibold text-outer_space-500 dark:text-platinum-500 mb-2">
+            {project.name}
+          </h3>
 
           <p className="text-sm text-payne's_gray-500 dark:text-french_gray-400 mb-4 line-clamp-2">
             {project.description}
@@ -98,7 +100,9 @@ export function ProjectGrid() {
           <div className="mb-4">
             <div className="flex items-center justify-between text-sm mb-2">
               <span className="text-payne's_gray-500 dark:text-french_gray-400">Progress</span>
-              <span className="text-outer_space-500 dark:text-platinum-500 font-medium">{project.progress}%</span>
+              <span className="text-outer_space-500 dark:text-platinum-500 font-medium">
+                {project.progress}%
+              </span>
             </div>
             <div className="w-full bg-french_gray-300 dark:bg-payne's_gray-400 rounded-full h-2">
               <div
@@ -124,5 +128,5 @@ export function ProjectGrid() {
         </div>
       ))}
     </div>
-  )
+  );
 }

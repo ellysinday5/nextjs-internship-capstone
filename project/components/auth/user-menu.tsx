@@ -1,9 +1,9 @@
-"use client"
+"use client";
 
-import { useState, useRef, useEffect } from "react"
-import { useUser, useClerk } from "@clerk/nextjs"
-import Image from "next/image"
-import { LogOut, ChevronDown } from "lucide-react"
+import { useState, useRef, useEffect } from "react";
+import { useUser, useClerk } from "@clerk/nextjs";
+import Image from "next/image";
+import { LogOut, ChevronDown } from "lucide-react";
 import {
   AlertDialog,
   AlertDialogContent,
@@ -13,38 +13,38 @@ import {
   AlertDialogFooter,
   AlertDialogAction,
   AlertDialogCancel,
-} from "@/components/ui/alert-dialog"
+} from "@/components/ui/alert-dialog";
 
 export function UserMenu() {
-  const { user } = useUser()
-  const { signOut } = useClerk()
-  const [dropdownOpen, setDropdownOpen] = useState(false)
-  const [confirmOpen, setConfirmOpen] = useState(false)
-  const dropdownRef = useRef<HTMLDivElement>(null)
+  const { user } = useUser();
+  const { signOut } = useClerk();
+  const [dropdownOpen, setDropdownOpen] = useState(false);
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
 
   // Close dropdown on outside click
   useEffect(() => {
     const handler = (e: MouseEvent) => {
       if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
-        setDropdownOpen(false)
+        setDropdownOpen(false);
       }
-    }
-    document.addEventListener("mousedown", handler)
-    return () => document.removeEventListener("mousedown", handler)
-  }, [])
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, []);
 
   const handleSignOut = () => {
-    setDropdownOpen(false)
-    setConfirmOpen(true)
-  }
+    setDropdownOpen(false);
+    setConfirmOpen(true);
+  };
 
   const confirmSignOut = () => {
-    signOut({ redirectUrl: "/sign-in" })
-  }
+    signOut({ redirectUrl: "/sign-in" });
+  };
 
-  const initials = user?.firstName?.[0] || user?.username?.[0] || "U"
-  const displayName = user?.fullName || user?.username || "User"
-  const displayEmail = user?.primaryEmailAddress?.emailAddress || ""
+  const initials = user?.firstName?.[0] || user?.username?.[0] || "U";
+  const displayName = user?.fullName || user?.username || "User";
+  const displayEmail = user?.primaryEmailAddress?.emailAddress || "";
 
   return (
     <>
@@ -132,9 +132,7 @@ export function UserMenu() {
           </AlertDialogHeader>
 
           <AlertDialogFooter>
-            <AlertDialogCancel onClick={() => setConfirmOpen(false)}>
-              Cancel
-            </AlertDialogCancel>
+            <AlertDialogCancel onClick={() => setConfirmOpen(false)}>Cancel</AlertDialogCancel>
             <AlertDialogAction
               onClick={confirmSignOut}
               className="bg-red-600 hover:bg-red-700 text-white"
@@ -145,6 +143,5 @@ export function UserMenu() {
         </AlertDialogContent>
       </AlertDialog>
     </>
-  )
+  );
 }
-

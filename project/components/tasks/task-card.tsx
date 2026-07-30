@@ -44,5 +44,5 @@ export function TaskCard() {
         TODO: Implement TaskCard component
       </p>
     </div>
-  )
+  );
 }

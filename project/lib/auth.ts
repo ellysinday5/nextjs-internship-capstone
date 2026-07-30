@@ -30,9 +30,7 @@ export async function syncUser() {
   }
 
   const primaryEmail =
-    clerkUser.emailAddresses.find(
-      (e) => e.id === clerkUser.primaryEmailAddressId
-    )?.emailAddress ||
+    clerkUser.emailAddresses.find((e) => e.id === clerkUser.primaryEmailAddressId)?.emailAddress ||
     clerkUser.emailAddresses[0]?.emailAddress ||
     "";
 
@@ -44,10 +42,7 @@ export async function syncUser() {
 
   try {
     // Check if user already exists in DB
-    const existingUsers = await db
-      .select()
-      .from(users)
-      .where(eq(users.clerkId, clerkUser.id));
+    const existingUsers = await db.select().from(users).where(eq(users.clerkId, clerkUser.id));
 
     if (existingUsers.length > 0) {
       const existingUser = existingUsers[0];

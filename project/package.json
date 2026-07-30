@@ -20,25 +20,32 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
+    "biome:check": "biome check .",
+    "biome:format": "biome format --write .",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate",
     "db:studio": "drizzle-kit studio"
   },
   "dependencies": {
     "@clerk/nextjs": "^7.5.22",
+    "@hookform/resolvers": "^5.5.7",
     "@neondatabase/serverless": "^1.1.0",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "drizzle-orm": "^0.45.2",
+    "framer-motion": "^12.42.2",
     "lucide-react": "^0.454.0",
     "next": "^16.0.0",
     "react": "^19",
     "react-dom": "^19",
+    "react-hook-form": "^7.83.0",
     "svix": "^1.99.1",
     "tailwind-merge": "^2.5.5",
-    "tailwindcss-animate": "^1.0.7"
+    "tailwindcss-animate": "^1.0.7",
+    "zod": "^4.4.3"
   },
   "devDependencies": {
+    "@biomejs/biome": "^1.9.4",
     "@types/node": "^22",
     "@types/react": "^19",
     "@types/react-dom": "^19",

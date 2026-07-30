@@ -1,148 +1,189 @@
-"use client"
+"use client";
 
-import React, { useState } from "react"
-import { FolderOpen, Calendar, Plus, X } from "lucide-react"
-import { sileo, swal } from "@/utils/alerts"
+import React, { useState } from "react";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { sileo } from "@/utils/alerts";
+import { createProjectSchema, CreateProjectFormValues } from "@/lib/project-schemas";
+import { createProjectAction } from "@/app/actions/project-actions";
+import { Modal } from "@/components/modals/BaseModal";
+import { ConfirmationModal } from "@/components/modals/ConfirmationModal";
 
 interface CreateProjectModalProps {
-  isOpen: boolean
-  onClose: () => void
-  onSuccess?: (project: { name: string; desc: string; due: string }) => void
+  isOpen: boolean;
+  onClose: () => void;
+  onSuccess?: () => void;
 }
 
-export function CreateProjectModal({
-  isOpen,
-  onClose,
-  onSuccess,
-}: CreateProjectModalProps) {
-  const [name, setName] = useState("")
-  const [desc, setDesc] = useState("")
-  const [due, setDue] = useState("")
+export function CreateProjectModal({ isOpen, onClose, onSuccess }: CreateProjectModalProps) {
+  const [serverError, setServerError] = useState<string | null>(null);
+  const [showDiscardConfirm, setShowDiscardConfirm] = useState(false);
 
-  if (!isOpen) return null
+  const {
+    register,
+    handleSubmit,
+    reset,
+    watch,
+    formState: { errors, isSubmitting, isDirty },
+  } = useForm<CreateProjectFormValues>({
+    resolver: zodResolver(createProjectSchema),
+    defaultValues: {
+      name: "",
+      description: "",
+      dueDate: "",
+    },
+  });
 
-  const handleCloseAttempt = async () => {
-    if (name.trim() || desc.trim() || due) {
-      const confirm = await swal.confirm(
-        "Discard Changes?",
-        "You have unsaved form data. Are you sure you want to close?"
-      )
-      if (!confirm) return
+  const handleCloseAttempt = () => {
+    if (isDirty) {
+      setShowDiscardConfirm(true);
+      return;
     }
-    resetAndClose()
-  }
+    resetAndClose();
+  };
 
   const resetAndClose = () => {
-    setName("")
-    setDesc("")
-    setDue("")
-    onClose()
-  }
+    reset();
+    setServerError(null);
+    setShowDiscardConfirm(false);
+    onClose();
+  };
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault()
-    if (!name.trim()) return
+  const onSubmit = async (data: CreateProjectFormValues) => {
+    setServerError(null);
+    const res = await createProjectAction(data);
 
-    sileo.success(`Project "${name}" created successfully!`, "Project Created")
-    onSuccess?.({ name, desc, due })
-    resetAndClose()
-  }
+    if (res.success) {
+      sileo.success(`Project "${data.name}" created successfully!`, "Project Created");
+      resetAndClose();
+      onSuccess?.();
+    } else {
+      setServerError(res.error || "Failed to create project");
+      sileo.error(res.error || "Failed to create project", "Error");
+    }
+  };
 
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 sm:p-6 animate-fade-in"
-      onClick={(e) => {
-        if (e.target === e.currentTarget) handleCloseAttempt()
-      }}
-    >
-      <div className="bg-white dark:bg-[#1a2e4a] rounded-2xl shadow-2xl w-full max-w-xl border border-[#142843]/20 dark:border-white/10 overflow-hidden animate-zoom-in">
-        {/* Header */}
-        <div className="flex items-center justify-between px-6 py-5 border-b border-slate-100 dark:border-white/10 bg-slate-50/50 dark:bg-[#14263e]/50">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-[#0052cc] rounded-xl flex items-center justify-center shadow-md">
-              <FolderOpen size={20} className="text-white" />
-            </div>
-            <div>
-              <h2 className="text-xl font-extrabold text-[#142843] dark:text-white">
-                Create New Project
-              </h2>
-              <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-                Set up a new workspace project for your team
-              </p>
-            </div>
-          </div>
-          <button
-            onClick={handleCloseAttempt}
-            className="p-2 rounded-xl text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-white/10 transition-colors"
-            aria-label="Close modal"
-          >
-            <X size={20} />
-          </button>
-        </div>
-
-        {/* Form Body */}
-        <form onSubmit={handleSubmit} className="p-6 space-y-5">
-          <div>
-            <label className="block text-sm font-bold text-[#142843] dark:text-slate-200 mb-1.5">
-              Project Name <span className="text-red-500">*</span>
-            </label>
-            <input
-              required
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              placeholder="e.g. Website Redesign v2"
-              className="w-full px-4 py-3 border-2 border-slate-200 dark:border-slate-600 rounded-xl text-sm bg-white dark:bg-[#142843] text-[#142843] dark:text-white placeholder-slate-400 focus:outline-none focus:border-[#0052cc] transition-colors"
-              suppressHydrationWarning
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-bold text-[#142843] dark:text-slate-200 mb-1.5">
-              Description
-            </label>
-            <textarea
-              rows={4}
-              value={desc}
-              onChange={(e) => setDesc(e.target.value)}
-              placeholder="Describe the key goals, objectives, and deliverables for this project..."
-              className="w-full px-4 py-3 border-2 border-slate-200 dark:border-slate-600 rounded-xl text-sm bg-white dark:bg-[#142843] text-[#142843] dark:text-white placeholder-slate-400 focus:outline-none focus:border-[#0052cc] transition-colors resize-none"
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-bold text-[#142843] dark:text-slate-200 mb-1.5 flex items-center gap-1.5">
-              <Calendar size={15} className="text-[#0052cc]" /> Target Completion Date
-            </label>
-            <input
-              type="date"
-              value={due}
-              onChange={(e) => setDue(e.target.value)}
-              className="w-full px-4 py-3 border-2 border-slate-200 dark:border-slate-600 rounded-xl text-sm bg-white dark:bg-[#142843] text-[#142843] dark:text-white focus:outline-none focus:border-[#0052cc] transition-colors"
-              suppressHydrationWarning
-            />
-          </div>
-
-          {/* Footer Actions */}
-          <div className="flex items-center justify-end gap-3 pt-4 border-t border-slate-100 dark:border-white/10">
+    <>
+      <Modal
+        isOpen={isOpen}
+        onClose={handleCloseAttempt}
+        title="Create New Project"
+        showCloseButton={false}
+        maxWidthClassName="max-w-2xl"
+        footer={
+          <>
             <button
               type="button"
               onClick={handleCloseAttempt}
-              className="px-5 py-3 border-2 border-slate-200 dark:border-slate-600 rounded-xl text-sm font-bold text-[#142843] dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-white/5 transition-colors"
-              suppressHydrationWarning
+              className="rounded-lg px-5 py-2.5 text-sm font-semibold text-slate-700 transition-colors hover:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-800"
             >
               Cancel
             </button>
             <button
               type="submit"
-              className="px-6 py-3 bg-[#0052cc] hover:bg-[#003d99] text-white rounded-xl text-sm font-bold transition-all shadow-md flex items-center gap-2 hover:scale-[1.02] active:scale-[0.98]"
-              suppressHydrationWarning
+              form="create-project-form"
+              className="rounded-lg bg-[#0033a0] px-5 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-[#002a80] disabled:cursor-not-allowed disabled:opacity-60"
             >
-              <Plus size={18} />
               Create Project
             </button>
+          </>
+        }
+      >
+        {serverError && (
+          <div className="mb-4 rounded-lg border border-red-200 bg-red-50 px-3.5 py-2.5 text-xs font-semibold text-red-600 dark:border-red-800 dark:bg-red-900/30 dark:text-red-400">
+            {serverError}
+          </div>
+        )}
+
+        <form
+          id="create-project-form"
+          onSubmit={handleSubmit(onSubmit)}
+          className="space-y-5"
+          noValidate
+        >
+          <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
+            <div>
+              <label className="mb-1.5 block text-sm font-medium text-slate-700 dark:text-slate-200">
+                Project Name <span className="text-red-500">*</span>
+              </label>
+              <input
+                {...register("name")}
+                className={`w-full rounded-xl border-2 px-4 py-3 text-sm text-slate-900 outline-none transition-colors placeholder:text-slate-400 dark:bg-slate-900 dark:text-slate-100 ${
+                  errors.name
+                    ? "border-red-400 focus:border-red-500"
+                    : "border-slate-200 focus:border-[#0033a0] dark:border-slate-700"
+                }`}
+              />
+              {errors.name && (
+                <p className="mt-1 text-xs font-semibold text-red-500">{errors.name.message}</p>
+              )}
+            </div>
+
+            <div>
+              <label className="mb-1.5 block text-sm font-medium text-slate-700 dark:text-slate-200">
+                Target Completion Date <span className="text-red-500">*</span>
+              </label>
+              <input
+                type="date"
+                {...register("dueDate")}
+                className={`w-full rounded-xl border-2 px-4 py-3 text-sm text-slate-900 outline-none transition-colors [color-scheme:light] dark:[color-scheme:dark] dark:bg-slate-900 dark:text-slate-100 ${
+                  errors.dueDate
+                    ? "border-red-400 focus:border-red-500"
+                    : "border-slate-200 focus:border-[#0033a0] dark:border-slate-700"
+                }`}
+              />
+              {errors.dueDate && (
+                <p className="mt-1 text-xs font-semibold text-red-500">{errors.dueDate.message}</p>
+              )}
+            </div>
+          </div>
+
+          <div>
+            <label className="mb-1.5 flex items-center justify-between">
+              <span className="text-sm font-medium text-slate-700 dark:text-slate-200">
+                Description{" "}
+                <span className="text-xs font-normal text-slate-400 dark:text-slate-500">
+                  (optional)
+                </span>
+              </span>
+              <span
+                className={`text-xs font-medium ${
+                  (watch("description")?.length ?? 0) > 500
+                    ? "text-red-500"
+                    : "text-slate-400 dark:text-slate-500"
+                }`}
+              >
+                {watch("description")?.length ?? 0}/500
+              </span>
+            </label>
+            <textarea
+              rows={5}
+              {...register("description")}
+              maxLength={500}
+              placeholder="Describe the key goals, objectives, and deliverables for this project..."
+              className={`w-full resize-none rounded-xl border-2 px-4 py-3 text-sm text-slate-900 outline-none transition-colors placeholder:text-slate-400 dark:bg-slate-900 dark:text-slate-100 ${
+                errors.description
+                  ? "border-red-400 focus:border-red-500"
+                  : "border-slate-200 focus:border-[#0033a0] dark:border-slate-700"
+              }`}
+            />
+            {errors.description && (
+              <p className="mt-1 text-xs font-semibold text-red-500">
+                {errors.description.message}
+              </p>
+            )}
           </div>
         </form>
-      </div>
-    </div>
-  )
+      </Modal>
+
+      <ConfirmationModal
+        isOpen={showDiscardConfirm}
+        onClose={() => setShowDiscardConfirm(false)}
+        onConfirm={resetAndClose}
+        variant="discard"
+        showCloseButton={false}
+      />
+    </>
+  );
 }

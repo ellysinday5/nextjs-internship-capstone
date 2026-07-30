@@ -1,11 +1,22 @@
-"use client"
+"use client";
 
-import type React from "react"
+import type React from "react";
 
-import { useState } from "react"
-import Link from "next/link"
-import { useTheme } from "@/components/ui/theme-provider"
-import { Home, FolderOpen, Users, Settings, Moon, Sun, Menu, X, BarChart3, Calendar } from "lucide-react"
+import { useState } from "react";
+import Link from "next/link";
+import { useTheme } from "@/components/ui/theme-provider";
+import {
+  Home,
+  FolderOpen,
+  Users,
+  Settings,
+  Moon,
+  Sun,
+  Menu,
+  X,
+  BarChart3,
+  Calendar,
+} from "lucide-react";
 
 const navigation = [
   { name: "Dashboard", href: "/dashboard", icon: Home },
@@ -14,17 +25,20 @@ const navigation = [
   { name: "Analytics", href: "/analytics", icon: BarChart3 },
   { name: "Calendar", href: "/calendar", icon: Calendar },
   { name: "Settings", href: "/settings", icon: Settings },
-]
+];
 
 export function DashboardLayout({ children }: { children: React.ReactNode }) {
-  const [sidebarOpen, setSidebarOpen] = useState(false)
-  const { theme, setTheme } = useTheme()
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const { theme, setTheme } = useTheme();
 
   return (
     <div className="min-h-screen bg-platinum-900 dark:bg-outer_space-600">
       {/* Mobile sidebar overlay */}
       {sidebarOpen && (
-        <div className="fixed inset-0 z-40 bg-black bg-opacity-50 lg:hidden" onClick={() => setSidebarOpen(false)} />
+        <div
+          className="fixed inset-0 z-40 bg-black bg-opacity-50 lg:hidden"
+          onClick={() => setSidebarOpen(false)}
+        />
       )}
 
       {/* Sidebar */}
@@ -92,5 +106,5 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
         <main className="py-8 px-4 sm:px-6 lg:px-8">{children}</main>
       </div>
     </div>
-  )
+  );
 }

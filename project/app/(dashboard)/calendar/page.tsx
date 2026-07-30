@@ -1,11 +1,13 @@
-import { Calendar, ChevronLeft, ChevronRight, Plus } from "lucide-react"
+import { Calendar, ChevronLeft, ChevronRight, Plus } from "lucide-react";
 
 export default function CalendarPage() {
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-3xl font-bold text-outer_space-500 dark:text-platinum-500">Calendar</h1>
+          <h1 className="text-3xl font-bold text-outer_space-500 dark:text-platinum-500">
+            Calendar
+          </h1>
           <p className="text-payne's_gray-500 dark:text-french_gray-500 mt-2">
             View project deadlines and team schedules
           </p>
@@ -34,7 +36,9 @@ export default function CalendarPage() {
             <button className="p-2 hover:bg-platinum-500 dark:hover:bg-payne's_gray-400 rounded-lg">
               <ChevronLeft size={20} />
             </button>
-            <h2 className="text-xl font-semibold text-outer_space-500 dark:text-platinum-500">December 2024</h2>
+            <h2 className="text-xl font-semibold text-outer_space-500 dark:text-platinum-500">
+              December 2024
+            </h2>
             <button className="p-2 hover:bg-platinum-500 dark:hover:bg-payne's_gray-400 rounded-lg">
               <ChevronRight size={20} />
             </button>
@@ -64,7 +68,9 @@ export default function CalendarPage() {
 
       {/* Upcoming Events */}
       <div className="bg-white dark:bg-outer_space-500 rounded-lg border border-french_gray-300 dark:border-payne's_gray-400 p-6">
-        <h3 className="text-lg font-semibold text-outer_space-500 dark:text-platinum-500 mb-4">Upcoming Deadlines</h3>
+        <h3 className="text-lg font-semibold text-outer_space-500 dark:text-platinum-500 mb-4">
+          Upcoming Deadlines
+        </h3>
         <div className="space-y-3">
           {[
             { title: "Website Redesign", date: "Dec 15, 2024", type: "Project Deadline" },
@@ -76,14 +82,20 @@ export default function CalendarPage() {
               className="flex items-center justify-between p-3 bg-platinum-800 dark:bg-outer_space-400 rounded-lg"
             >
               <div>
-                <div className="font-medium text-outer_space-500 dark:text-platinum-500">{event.title}</div>
-                <div className="text-sm text-payne's_gray-500 dark:text-french_gray-400">{event.type}</div>
+                <div className="font-medium text-outer_space-500 dark:text-platinum-500">
+                  {event.title}
+                </div>
+                <div className="text-sm text-payne's_gray-500 dark:text-french_gray-400">
+                  {event.type}
+                </div>
               </div>
-              <div className="text-sm text-payne's_gray-500 dark:text-french_gray-400">{event.date}</div>
+              <div className="text-sm text-payne's_gray-500 dark:text-french_gray-400">
+                {event.date}
+              </div>
             </div>
           ))}
         </div>
       </div>
     </div>
-  )
+  );
 }
