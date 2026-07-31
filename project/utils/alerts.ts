@@ -1,4 +1,4 @@
-"use client"
+"use client";
 
 /*
   Unified Alert & Toast Notification System (TypeScript)
@@ -154,4 +154,5 @@ export const swal = {
 // Regie / Legacy helpers
 export const showSuccessAlert = (title: string, text: string = "") => swal.success(title, text);
 export const showErrorAlert = (title: string, text: string = "") => swal.error(title, text);
-export const showConfirmationAlert = (title: string, text: string = "") => swal.confirm(title, text);
+export const showConfirmationAlert = (title: string, text: string = "") =>
+  swal.confirm(title, text);
