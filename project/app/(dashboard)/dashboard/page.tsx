@@ -75,7 +75,6 @@ const recentProjects = [
   },
 ];
 
-/* ─── Activity feed ──────────────────────────────────── */
 const activities = [
   {
     id: 1,

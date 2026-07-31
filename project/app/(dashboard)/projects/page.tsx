@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useMemo, useEffect, useCallback } from "react";
+import { useRouter } from "next/navigation";
 import {
   Plus,
   Search,
@@ -18,6 +19,14 @@ import { CreateProjectModal } from "@/components/modals/create-project-modal";
 import { EditProjectModal } from "@/components/modals/edit-project-modal";
 import { DeleteProjectModal } from "@/components/modals/delete-project-modal";
 import { getProjectsAction, ProjectWithStats } from "@/app/actions/project-actions";
+
+/* Convert a project name to a URL-friendly slug */
+function toSlug(name: string): string {
+  return name
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/(^-|-$)/g, "");
+}
 
 interface ProjectItem {
   id: string;
@@ -116,6 +125,8 @@ export default function ProjectsPage() {
     setDbProjects(result);
     setLoading(false);
   }, []);
+
+  const router = useRouter();
 
   useEffect(() => {
     fetchProjects();
@@ -343,7 +354,11 @@ export default function ProjectsPage() {
             {filteredProjects.map((project) => (
               <div
                 key={project.id}
-                className="group relative bg-white dark:bg-[#14263e] rounded-2xl border border-slate-200 dark:border-slate-700 p-6 hover:shadow-xl hover:border-[#00b4d8]/50 transition-all duration-200 flex flex-col justify-between"
+                role="button"
+                tabIndex={0}
+                onClick={() => router.push(`/projects/${toSlug(project.name)}`)}
+                onKeyDown={(e) => e.key === "Enter" && router.push(`/projects/${toSlug(project.name)}`)}
+                className="group relative bg-white dark:bg-[#14263e] rounded-2xl border border-slate-200 dark:border-slate-700 p-6 hover:shadow-xl hover:border-[#00b4d8]/50 transition-all duration-200 flex flex-col justify-between cursor-pointer select-none"
               >
                 <div>
                   {/* Top Bar: Category, Priority, & Actions */}
@@ -373,12 +388,12 @@ export default function ProjectsPage() {
                         {project.priority} Prio
                       </span>
 
-                      {/* Edit / Delete Buttons for DB projects or custom projects */}
+                      {/* Edit / Delete Buttons for DB projects */}
                       {project.isDb && project.dbProject && (
                         <div className="flex items-center gap-1 ml-1">
                           <button
                             type="button"
-                            onClick={() => setEditingProject(project.dbProject!)}
+                            onClick={(e) => { e.stopPropagation(); setEditingProject(project.dbProject!); }}
                             className="p-1.5 rounded-lg text-slate-400 hover:text-[#00b4d8] hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
                             title="Edit project"
                             aria-label="Edit project"
@@ -388,7 +403,7 @@ export default function ProjectsPage() {
                           </button>
                           <button
                             type="button"
-                            onClick={() => setDeletingProject(project.dbProject!)}
+                            onClick={(e) => { e.stopPropagation(); setDeletingProject(project.dbProject!); }}
                             className="p-1.5 rounded-lg text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-950/30 transition-colors cursor-pointer"
                             title="Delete project"
                             aria-label="Delete project"

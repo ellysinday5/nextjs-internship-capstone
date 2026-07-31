@@ -63,7 +63,7 @@ export function useTasks(projectId: string) {
 
 // Placeholder to prevent import errors
 export function useTasks(projectId: string) {
-  console.log(`TODO: Implement useTasks hook for project ${projectId}`)
+  console.log(`TODO: Implement useTasks hook for project ${projectId}`);
   return {
     tasks: [],
     isLoading: false,
@@ -73,5 +73,5 @@ export function useTasks(projectId: string) {
     deleteTask: (id: string) => console.log(`TODO: Delete task ${id}`),
     moveTask: (taskId: string, newListId: string, position: number) =>
       console.log(`TODO: Move task ${taskId} to list ${newListId} at position ${position}`),
-  }
+  };
 }
