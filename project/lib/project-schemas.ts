@@ -30,7 +30,7 @@ export const createProjectSchema = z.object({
     .optional()
     .or(z.literal("")),
   dueDate: z.string().optional().or(z.literal("")),
-  categories: z.array(z.enum(PROJECT_CATEGORIES)).min(1, "Pick at least one category"),
+  categories: z.array(z.string()).min(1, "Pick at least one category"),
   techStack: z.array(z.string()).min(1, "Add at least one tech stack item"),
   status: z.enum(PROJECT_STATUSES),
   priority: z.enum(PROJECT_PRIORITIES),

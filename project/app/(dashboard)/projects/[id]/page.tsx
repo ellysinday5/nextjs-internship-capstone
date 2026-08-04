@@ -1,20 +1,22 @@
 "use client";
 
-import React, { use, useState } from "react";
-import Link from "next/link";
+import React, { use, useState, useRef, useEffect, useMemo } from "react";
 import {
-  ArrowLeft,
-  Settings,
-  Users,
-  MoreHorizontal,
+  CheckCircle2,
+  ChevronDown,
   Plus,
-  LayoutGrid,
-  List,
-  UserCircle2,
-  SlidersHorizontal,
 } from "lucide-react";
+import { TaskDetailsPane, TaskItem } from "@/components/tasks/task-details";
+import { ProjectHeader } from "@/components/projects/details/project-header";
+import { ProjectTabs } from "@/components/projects/details/project-tabs";
+import { ProjectToolbar } from "@/components/projects/details/project-toolbar";
+import { OverviewTab } from "@/components/projects/details/overview-tab";
+import { BoardTab } from "@/components/projects/details/board-tab";
+import { TimelineTab } from "@/components/projects/details/timeline-tab";
+import { DashboardTab } from "@/components/projects/details/dashboard-tab";
+import { CalendarTab } from "@/components/projects/details/calendar-tab";
+import { Section, ProjectStatusType } from "@/components/projects/details/types";
 
-/* Convert URL slug back to a readable title */
 function slugToTitle(slug: string): string {
   return slug
     .split("-")
@@ -22,405 +24,393 @@ function slugToTitle(slug: string): string {
     .join(" ");
 }
 
-/* ─────────────────────────────────────────────────────────────
-   Types
-───────────────────────────────────────────────────────────── */
-interface Task {
-  id: string;
-  title: string;
-  description: string;
-  priority: "high" | "medium" | "low";
-  assignee: string;
-  tag?: string;
-}
-
-interface Column {
-  id: string;
-  title: string;
-  color: string;
-  tasks: Task[];
-}
-
-/* ─────────────────────────────────────────────────────────────
-   Placeholder Board Data
-───────────────────────────────────────────────────────────── */
-const initialColumns: Column[] = [
+const initialSections: Section[] = [
   {
-    id: "todo",
-    title: "To Do",
-    color: "#6366f1",
+    id: "to-do",
+    title: "To do",
     tasks: [
-      { id: "t1", title: "Design homepage mockup", description: "Create initial design concepts", priority: "high", assignee: "J", tag: "Design" },
-      { id: "t2", title: "Research competitors", description: "Analyze competitor websites", priority: "medium", assignee: "S", tag: "Research" },
-      { id: "t3", title: "Define user personas", description: "Create detailed user personas", priority: "low", assignee: "M", tag: "UX" },
+      {
+        id: "t1",
+        title: "Task 1",
+        sectionId: "To do",
+        assignee: { name: "Ellen Grace Sinday", initials: "ES" },
+        dueDate: "Jul 20 – 22",
+        priority: "Low",
+        status: "On track",
+      },
+      {
+        id: "t2",
+        title: "Task 2",
+        sectionId: "To do",
+        assignee: { name: "Ellen Grace Sinday", initials: "ES" },
+        dueDate: "Jul 21 – 23",
+        priority: "Medium",
+        status: "At risk",
+      },
+      {
+        id: "t3",
+        title: "Task 3",
+        sectionId: "To do",
+        dueDate: "Jul 22 – 24",
+        priority: "High",
+        status: "Off track",
+      },
     ],
   },
   {
-    id: "in-progress",
-    title: "In Progress",
-    color: "#f59e0b",
-    tasks: [
-      { id: "t4", title: "Develop navigation component", description: "Build responsive navigation bar", priority: "high", assignee: "A", tag: "Dev" },
-      { id: "t5", title: "Content strategy planning", description: "Plan content structure and flow", priority: "medium", assignee: "T", tag: "Content" },
-    ],
-  },
-  {
-    id: "review",
-    title: "In Review",
-    color: "#8b5cf6",
-    tasks: [
-      { id: "t6", title: "Logo design options", description: "Present logo variations to stakeholders", priority: "high", assignee: "L", tag: "Design" },
-    ],
+    id: "doing",
+    title: "Doing",
+    tasks: [],
   },
   {
     id: "done",
     title: "Done",
-    color: "#10b981",
-    tasks: [
-      { id: "t7", title: "Project kickoff meeting", description: "Initial team meeting completed", priority: "medium", assignee: "J", tag: "Planning" },
-      { id: "t8", title: "Requirements gathering", description: "All requirements collected and documented", priority: "high", assignee: "S", tag: "Planning" },
-    ],
+    tasks: [],
   },
 ];
 
-/* ─────────────────────────────────────────────────────────────
-   Priority Badge
-───────────────────────────────────────────────────────────── */
-function PriorityBadge({ priority }: { priority: Task["priority"] }) {
-  const map = {
-    high: "bg-rose-500/10 text-rose-500 border border-rose-500/20",
-    medium: "bg-amber-500/10 text-amber-600 border border-amber-500/20",
-    low: "bg-emerald-500/10 text-emerald-600 border border-emerald-500/20",
-  };
-  return (
-    <span className={`text-[10px] font-bold uppercase px-2 py-0.5 rounded-full ${map[priority]}`}>
-      {priority}
-    </span>
-  );
-}
-
-/* ─────────────────────────────────────────────────────────────
-   Assignee Avatar
-───────────────────────────────────────────────────────────── */
-function Avatar({ letter }: { letter: string }) {
-  return (
-    <div className="w-6 h-6 rounded-full bg-[#00b4d8] flex items-center justify-center text-white text-[10px] font-bold flex-shrink-0">
-      {letter}
-    </div>
-  );
-}
-
-/* ─────────────────────────────────────────────────────────────
-   Task Card
-───────────────────────────────────────────────────────────── */
-function TaskCard({ task }: { task: Task }) {
-  return (
-    <div className="bg-white dark:bg-[#0f1d31] rounded-xl border border-slate-200 dark:border-slate-700/60 p-3.5 shadow-sm hover:shadow-md hover:border-[#00b4d8]/40 transition-all duration-150 cursor-pointer group">
-      {task.tag && (
-        <span className="inline-block text-[10px] font-bold px-2 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 mb-2">
-          {task.tag}
-        </span>
-      )}
-      <h4 className="text-sm font-semibold text-[#142843] dark:text-white mb-1 group-hover:text-[#00b4d8] transition-colors leading-snug">
-        {task.title}
-      </h4>
-      <p className="text-[11px] text-slate-400 dark:text-slate-500 mb-3 leading-relaxed line-clamp-2">
-        {task.description}
-      </p>
-      <div className="flex items-center justify-between">
-        <PriorityBadge priority={task.priority} />
-        <Avatar letter={task.assignee} />
-      </div>
-    </div>
-  );
-}
-
-/* ─────────────────────────────────────────────────────────────
-   Kanban Column
-───────────────────────────────────────────────────────────── */
-function KanbanColumn({ column }: { column: Column }) {
-  return (
-    <div className="flex-shrink-0 w-72 flex flex-col">
-      {/* Column Header */}
-      <div className="flex items-center justify-between mb-3 px-1">
-        <div className="flex items-center gap-2">
-          <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: column.color }} />
-          <span className="text-sm font-bold text-[#142843] dark:text-white">{column.title}</span>
-          <span className="text-[11px] font-bold px-2 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-500">
-            {column.tasks.length}
-          </span>
-        </div>
-        <button
-          type="button"
-          className="p-1 rounded-lg text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
-          aria-label="Column options"
-        >
-          <MoreHorizontal size={15} />
-        </button>
-      </div>
-
-      {/* Divider accent */}
-      <div className="h-0.5 rounded-full mb-3" style={{ backgroundColor: column.color, opacity: 0.5 }} />
-
-      {/* Tasks */}
-      <div className="flex flex-col gap-2.5 flex-1">
-        {column.tasks.map((task) => (
-          <TaskCard key={task.id} task={task} />
-        ))}
-
-        {/* Add task button */}
-        <button
-          type="button"
-          className="w-full py-2.5 flex items-center justify-center gap-1.5 rounded-xl border-2 border-dashed border-slate-200 dark:border-slate-700 text-slate-400 dark:text-slate-500 text-xs font-semibold hover:border-[#00b4d8] hover:text-[#00b4d8] transition-colors mt-1"
-        >
-          <Plus size={13} />
-          Add task
-        </button>
-      </div>
-    </div>
-  );
-}
-
-/* ─────────────────────────────────────────────────────────────
-   List View (simple table-style)
-───────────────────────────────────────────────────────────── */
-function ListView({ columns }: { columns: Column[] }) {
-  const allTasks = columns.flatMap((col) =>
-    col.tasks.map((t) => ({ ...t, status: col.title, statusColor: col.color }))
-  );
-
-  return (
-    <div className="bg-white dark:bg-[#14263e] rounded-2xl border border-slate-200 dark:border-slate-700 overflow-hidden">
-      <div className="grid grid-cols-[1fr_auto_auto_auto] gap-x-4 px-5 py-3 bg-slate-50 dark:bg-[#0f1d31] border-b border-slate-200 dark:border-slate-700 text-[11px] font-bold text-slate-400 uppercase tracking-wider">
-        <span>Task</span>
-        <span>Status</span>
-        <span>Priority</span>
-        <span>Assignee</span>
-      </div>
-      {allTasks.map((task) => (
-        <div
-          key={task.id}
-          className="grid grid-cols-[1fr_auto_auto_auto] gap-x-4 items-center px-5 py-3.5 border-b border-slate-100 dark:border-slate-700/50 last:border-0 hover:bg-slate-50 dark:hover:bg-[#1c304a] transition-colors cursor-pointer"
-        >
-          <div>
-            <p className="text-sm font-semibold text-[#142843] dark:text-white">{task.title}</p>
-            <p className="text-[11px] text-slate-400 mt-0.5">{task.description}</p>
-          </div>
-          <span
-            className="text-[10px] font-bold px-2.5 py-1 rounded-full whitespace-nowrap"
-            style={{ backgroundColor: `${task.statusColor}1a`, color: task.statusColor }}
-          >
-            {task.status}
-          </span>
-          <PriorityBadge priority={task.priority} />
-          <Avatar letter={task.assignee} />
-        </div>
-      ))}
-    </div>
-  );
-}
-
-/* ─────────────────────────────────────────────────────────────
-   Members Tab Placeholder
-───────────────────────────────────────────────────────────── */
-function MembersView() {
-  const members = [
-    { name: "John Doe", role: "Project Lead", avatar: "J", status: "Active" },
-    { name: "Sarah Wilson", role: "Frontend Dev", avatar: "S", status: "Active" },
-    { name: "Mike Johnson", role: "UX Designer", avatar: "M", status: "Active" },
-    { name: "Anna Chen", role: "Backend Dev", avatar: "A", status: "Away" },
-    { name: "Tom Brown", role: "Content Strategist", avatar: "T", status: "Offline" },
-  ];
-  const statusMap: Record<string, string> = {
-    Active: "bg-emerald-500/10 text-emerald-600 border border-emerald-500/20",
-    Away: "bg-amber-500/10 text-amber-600 border border-amber-500/20",
-    Offline: "bg-slate-200 text-slate-500 dark:bg-slate-800 dark:text-slate-400",
-  };
-
-  return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-      {members.map((m) => (
-        <div key={m.name} className="bg-white dark:bg-[#14263e] rounded-2xl border border-slate-200 dark:border-slate-700 p-5 flex items-center gap-4 hover:shadow-md transition-shadow">
-          <div className="w-12 h-12 rounded-full bg-[#00b4d8] flex items-center justify-center text-white text-lg font-bold flex-shrink-0">
-            {m.avatar}
-          </div>
-          <div className="min-w-0">
-            <p className="text-sm font-bold text-[#142843] dark:text-white truncate">{m.name}</p>
-            <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">{m.role}</p>
-            <span className={`inline-block mt-1.5 text-[10px] font-bold px-2 py-0.5 rounded-full ${statusMap[m.status]}`}>
-              {m.status}
-            </span>
-          </div>
-        </div>
-      ))}
-      <button
-        type="button"
-        className="bg-white dark:bg-[#14263e] rounded-2xl border-2 border-dashed border-slate-200 dark:border-slate-700 p-5 flex items-center justify-center gap-2 text-sm font-semibold text-slate-400 hover:border-[#00b4d8] hover:text-[#00b4d8] transition-colors"
-      >
-        <Plus size={16} />
-        Invite Member
-      </button>
-    </div>
-  );
-}
-
-/* ─────────────────────────────────────────────────────────────
-   Settings Tab Placeholder
-───────────────────────────────────────────────────────────── */
-function SettingsView({ projectId }: { projectId: string }) {
-  return (
-    <div className="max-w-2xl space-y-6">
-      <div className="bg-white dark:bg-[#14263e] rounded-2xl border border-slate-200 dark:border-slate-700 p-6 space-y-4">
-        <h3 className="text-base font-bold text-[#142843] dark:text-white">General Settings</h3>
-        <div className="space-y-3">
-          <div>
-            <label className="text-xs font-bold text-slate-500 dark:text-slate-400 block mb-1">Project ID</label>
-            <p className="text-sm font-mono text-slate-700 dark:text-slate-300 bg-slate-50 dark:bg-[#0f1d31] px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700">{projectId}</p>
-          </div>
-          <div>
-            <label className="text-xs font-bold text-slate-500 dark:text-slate-400 block mb-1">Visibility</label>
-            <select className="w-full py-2.5 px-3 bg-slate-50 dark:bg-[#1c304a] border border-slate-200 dark:border-slate-600 rounded-xl text-sm text-[#142843] dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-[#00b4d8]">
-              <option>Team — visible to all members</option>
-              <option>Private — only you</option>
-            </select>
-          </div>
-        </div>
-      </div>
-      <div className="bg-rose-50 dark:bg-rose-950/20 rounded-2xl border border-rose-200 dark:border-rose-800/40 p-6">
-        <h3 className="text-base font-bold text-rose-700 dark:text-rose-400 mb-1">Danger Zone</h3>
-        <p className="text-xs text-rose-500 dark:text-rose-400/80 mb-4">These actions are irreversible. Please proceed with caution.</p>
-        <button
-          type="button"
-          className="px-4 py-2 bg-rose-500 text-white text-sm font-bold rounded-xl hover:bg-rose-600 transition-colors"
-        >
-          Delete Project
-        </button>
-      </div>
-    </div>
-  );
-}
-
-/* ─────────────────────────────────────────────────────────────
-   Tab definitions
-───────────────────────────────────────────────────────────── */
-type Tab = "board" | "list" | "members" | "settings";
-
-const tabs: { id: Tab; label: string; icon: React.ElementType }[] = [
-  { id: "board", label: "Board", icon: LayoutGrid },
-  { id: "list", label: "List", icon: List },
-  { id: "members", label: "Members", icon: UserCircle2 },
-  { id: "settings", label: "Settings", icon: SlidersHorizontal },
-];
-
-/* ─────────────────────────────────────────────────────────────
-   Project Page
-───────────────────────────────────────────────────────────── */
-export default function ProjectPage({ params }: { params: Promise<{ id: string }> }) {
+export default function AsanaProjectPage({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}) {
   const { id: slug } = use(params);
-  const projectTitle = slugToTitle(slug);
-  const [activeTab, setActiveTab] = useState<Tab>("board");
-  const [columns] = useState<Column[]>(initialColumns);
+  const initialTitle = slugToTitle(slug);
+
+  // State
+  const [projectTitle, setProjectTitle] = useState(initialTitle);
+  const [sections, setSections] = useState<Section[]>(initialSections);
+  const [availableTabs, setAvailableTabs] = useState<string[]>([
+    "Overview",
+    "List",
+    "Board",
+    "Timeline",
+    "Dashboard",
+    "Calendar",
+  ]);
+  const [activeTab, setActiveTab] = useState("Overview");
+  const [selectedTask, setSelectedTask] = useState<TaskItem | null>(null);
+
+  // Filter & Search State
+  const [searchQuery, setSearchQuery] = useState("");
+  const [selectedPriorityFilter, setSelectedPriorityFilter] = useState("All");
+  const [selectedStatusFilter, setSelectedStatusFilter] = useState("All");
+  const [sortBy, setSortBy] = useState<"default" | "name" | "priority">("default");
+
+  // Project Header Customization & Status State
+  const [projectColor, setProjectColor] = useState("#3b82f6");
+  const [selectedIconIndex, setSelectedIconIndex] = useState(0);
+  const [status, setStatus] = useState<ProjectStatusType>("On track");
+  const [description, setDescription] = useState("What's this project about?");
+
+  // Inline Add Task State
+  const [inlineAddingSectionId, setInlineAddingSectionId] = useState<string | null>(null);
+  const [newTaskTitle, setNewTaskTitle] = useState("");
+  const inlineInputRef = useRef<HTMLInputElement | null>(null);
+
+  useEffect(() => {
+    if (inlineAddingSectionId && inlineInputRef.current) {
+      inlineInputRef.current.focus();
+    }
+  }, [inlineAddingSectionId]);
+
+  const triggerAddTask = (sectionId: string = "to-do") => {
+    setInlineAddingSectionId(sectionId);
+    if (activeTab === "Overview") {
+      setActiveTab("List");
+    }
+  };
+
+  const handleSaveInlineTask = (sectionId: string) => {
+    if (!newTaskTitle.trim()) {
+      setInlineAddingSectionId(null);
+      return;
+    }
+
+    const newTask: TaskItem = {
+      id: Date.now().toString(),
+      title: newTaskTitle,
+      sectionId: sections.find((s) => s.id === sectionId)?.title || "To do",
+      status: "On track",
+      priority: "Medium",
+    };
+
+    setSections((prev) =>
+      prev.map((sec) =>
+        sec.id === sectionId ? { ...sec, tasks: [...sec.tasks, newTask] } : sec
+      )
+    );
+
+    setNewTaskTitle("");
+    setInlineAddingSectionId(null);
+  };
+
+  const handleUpdateTask = (updatedTask: TaskItem) => {
+    setSelectedTask(updatedTask);
+    setSections((prev) =>
+      prev.map((sec) => ({
+        ...sec,
+        tasks: sec.tasks.map((t) => (t.id === updatedTask.id ? updatedTask : t)),
+      }))
+    );
+  };
+
+  const handleDeleteTask = (taskId: string) => {
+    setSections((prev) =>
+      prev.map((sec) => ({
+        ...sec,
+        tasks: sec.tasks.filter((t) => t.id !== taskId),
+      }))
+    );
+  };
+
+  const handleAddTab = (tabName: string) => {
+    if (!availableTabs.includes(tabName)) {
+      setAvailableTabs((prev) => [...prev, tabName]);
+    }
+    setActiveTab(tabName);
+  };
+
+  const handleAddSection = () => {
+    const newSecTitle = prompt("Enter section name:");
+    if (newSecTitle) {
+      setSections((prev) => [
+        ...prev,
+        { id: newSecTitle.toLowerCase().replace(/\s+/g, "-"), title: newSecTitle, tasks: [] },
+      ]);
+    }
+  };
+
+  // Filtered & Sorted Sections
+  const filteredSections = useMemo(() => {
+    return sections.map((sec) => {
+      let filtered = sec.tasks.filter((task) => {
+        const matchesSearch =
+          !searchQuery.trim() ||
+          task.title.toLowerCase().includes(searchQuery.toLowerCase());
+        const matchesPriority =
+          selectedPriorityFilter === "All" || task.priority === selectedPriorityFilter;
+        const matchesStatus =
+          selectedStatusFilter === "All" || task.status === selectedStatusFilter;
+
+        return matchesSearch && matchesPriority && matchesStatus;
+      });
+
+      if (sortBy === "name") {
+        filtered = [...filtered].sort((a, b) => a.title.localeCompare(b.title));
+      } else if (sortBy === "priority") {
+        const pRank = { High: 1, Medium: 2, Low: 3 };
+        filtered = [...filtered].sort(
+          (a, b) => (pRank[a.priority || "Low"] || 9) - (pRank[b.priority || "Low"] || 9)
+        );
+      }
+
+      return { ...sec, tasks: filtered };
+    });
+  }, [sections, searchQuery, selectedPriorityFilter, selectedStatusFilter, sortBy]);
 
   return (
-    <div className="space-y-0 -mt-2">
-      {/* ── Page Header ── */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
-        <div className="flex items-center gap-3">
-          <Link
-            href="/projects"
-            className="p-2 rounded-xl text-slate-500 dark:text-slate-400 hover:text-[#142843] dark:hover:text-white hover:bg-white dark:hover:bg-[#14263e] border border-transparent hover:border-slate-200 dark:hover:border-slate-700 transition-all"
-            aria-label="Back to projects"
-          >
-            <ArrowLeft size={18} />
-          </Link>
-          <div>
-            <h1 className="text-xl sm:text-2xl font-extrabold text-[#142843] dark:text-white leading-tight">
-              {projectTitle}
-            </h1>
-          </div>
-        </div>
+    <div className="flex h-screen bg-white dark:bg-[#0f1d31] text-slate-800 dark:text-slate-100 overflow-hidden font-sans">
+      <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
+        {/* Header (Title, Customization, Set Status, Share, Favorites) */}
+        <ProjectHeader
+          projectTitle={projectTitle}
+          setProjectTitle={setProjectTitle}
+          projectColor={projectColor}
+          setProjectColor={setProjectColor}
+          selectedIconIndex={selectedIconIndex}
+          setSelectedIconIndex={setSelectedIconIndex}
+          status={status}
+          setStatus={setStatus}
+        />
 
-        {/* Action buttons */}
-        <div className="flex items-center gap-2">
-          <button
-            type="button"
-            className="p-2 rounded-xl text-slate-500 dark:text-slate-400 hover:text-[#00b4d8] hover:bg-white dark:hover:bg-[#14263e] border border-transparent hover:border-slate-200 dark:hover:border-slate-700 transition-all"
-            aria-label="Members"
-            title="Members"
-            onClick={() => setActiveTab("members")}
-          >
-            <Users size={18} />
-          </button>
-          <button
-            type="button"
-            className="p-2 rounded-xl text-slate-500 dark:text-slate-400 hover:text-[#00b4d8] hover:bg-white dark:hover:bg-[#14263e] border border-transparent hover:border-slate-200 dark:hover:border-slate-700 transition-all"
-            aria-label="Settings"
-            title="Settings"
-            onClick={() => setActiveTab("settings")}
-          >
-            <Settings size={18} />
-          </button>
-          <button
-            type="button"
-            className="p-2 rounded-xl text-slate-500 dark:text-slate-400 hover:text-[#00b4d8] hover:bg-white dark:hover:bg-[#14263e] border border-transparent hover:border-slate-200 dark:hover:border-slate-700 transition-all"
-            aria-label="More options"
-          >
-            <MoreHorizontal size={18} />
-          </button>
-          <button
-            type="button"
-            className="inline-flex items-center gap-1.5 px-4 py-2 bg-[#00b4d8] hover:bg-[#0096b8] text-white rounded-xl text-sm font-bold shadow-sm transition-all hover:scale-[1.02]"
-          >
-            <Plus size={15} />
-            Add Task
-          </button>
-        </div>
-      </div>
+        {/* Tabs Navigation Bar */}
+        <ProjectTabs
+          activeTab={activeTab}
+          setActiveTab={setActiveTab}
+          availableTabs={availableTabs}
+          onAddTab={handleAddTab}
+        />
 
-      {/* ── Tab Bar ── */}
-      <div className="flex items-center gap-1 border-b border-slate-200 dark:border-slate-700/60 mb-6">
-        {tabs.map(({ id, label, icon: Icon }) => (
-          <button
-            key={id}
-            type="button"
-            onClick={() => setActiveTab(id)}
-            className={`inline-flex items-center gap-1.5 px-4 py-2.5 text-sm font-semibold border-b-2 transition-all -mb-px ${
-              activeTab === id
-                ? "border-[#00b4d8] text-[#00b4d8]"
-                : "border-transparent text-slate-500 dark:text-slate-400 hover:text-[#142843] dark:hover:text-white hover:border-slate-300 dark:hover:border-slate-600"
-            }`}
-          >
-            <Icon size={15} />
-            {label}
-          </button>
-        ))}
-      </div>
+        {/* Main Content View per Tab */}
+        <div className="flex-1 overflow-auto flex flex-col">
+          {activeTab === "Overview" ? (
+            <OverviewTab
+              status={status}
+              setStatus={setStatus}
+              description={description}
+              setDescription={setDescription}
+              ownerName="Ellen Grace Sinday"
+              ownerInitials="ES"
+            />
+          ) : activeTab === "Board" ? (
+            <BoardTab
+              sections={filteredSections}
+              onSelectTask={setSelectedTask}
+              onAddTask={triggerAddTask}
+              onAddSection={handleAddSection}
+            />
+          ) : activeTab === "Timeline" || activeTab === "Gantt" ? (
+            <TimelineTab
+              sections={filteredSections}
+              onSelectTask={setSelectedTask}
+              onAddTask={triggerAddTask}
+              onDeleteTask={handleDeleteTask}
+            />
+          ) : activeTab === "Dashboard" ? (
+            <DashboardTab sections={filteredSections} />
+          ) : activeTab === "Calendar" ? (
+            <CalendarTab
+              sections={filteredSections}
+              onSelectTask={setSelectedTask}
+              onAddTask={triggerAddTask}
+            />
+          ) : (
+            /* List View */
+            <div className="flex flex-col h-full">
+              {/* Toolbar (Search, Filter, Sort, Add Task) */}
+              <ProjectToolbar
+                onAddTask={triggerAddTask}
+                searchQuery={searchQuery}
+                setSearchQuery={setSearchQuery}
+                selectedPriorityFilter={selectedPriorityFilter}
+                setSelectedPriorityFilter={setSelectedPriorityFilter}
+                selectedStatusFilter={selectedStatusFilter}
+                setSelectedStatusFilter={setSelectedStatusFilter}
+                sortBy={sortBy}
+                setSortBy={setSortBy}
+                onAddSection={handleAddSection}
+              />
 
-      {/* ── Tab Content ── */}
-      {activeTab === "board" && (
-        <div className="overflow-x-auto pb-6">
-          <div className="flex gap-5 min-w-max px-0.5 pt-0.5 pb-1">
-            {columns.map((col) => (
-              <KanbanColumn key={col.id} column={col} />
-            ))}
+              {/* List Table Content */}
+              <div className="flex-1 overflow-auto">
+                <div className="grid grid-cols-[1fr_180px_140px_120px_120px_40px] border-b border-slate-200 dark:border-slate-800 text-[11px] font-semibold text-slate-400 px-6 py-1.5 bg-slate-50/30 dark:bg-[#0f1d31]/30">
+                  <div>Name</div>
+                  <div>Assignee</div>
+                  <div>Due date</div>
+                  <div>Priority</div>
+                  <div>Status</div>
+                  <div className="text-center">+</div>
+                </div>
 
-            {/* Add column button */}
-            <div className="flex-shrink-0 w-72 flex items-start pt-8">
-              <button
-                type="button"
-                className="w-full py-3 flex items-center justify-center gap-2 rounded-xl border-2 border-dashed border-slate-200 dark:border-slate-700 text-slate-400 dark:text-slate-500 text-sm font-semibold hover:border-[#00b4d8] hover:text-[#00b4d8] transition-colors"
-              >
-                <Plus size={15} />
-                Add Column
-              </button>
+                <div className="divide-y divide-slate-100 dark:divide-slate-800">
+                  {filteredSections.map((section) => (
+                    <div key={section.id} className="py-2">
+                      <div className="flex items-center gap-2 px-6 py-2">
+                        <ChevronDown size={14} className="text-slate-400" />
+                        <span className="font-bold text-sm text-slate-800 dark:text-slate-100">
+                          {section.title}
+                        </span>
+                      </div>
+
+                      <div className="divide-y divide-slate-100 dark:divide-slate-800/40">
+                        {section.tasks.map((task) => (
+                          <div
+                            key={task.id}
+                            onClick={() => setSelectedTask(task)}
+                            className={`grid grid-cols-[1fr_180px_140px_120px_120px_40px] items-center px-6 py-1.5 hover:bg-sky-50/50 dark:hover:bg-sky-950/20 cursor-pointer text-xs transition-colors ${
+                              selectedTask?.id === task.id ? "bg-sky-50 dark:bg-sky-950/30" : ""
+                            }`}
+                          >
+                            <div className="flex items-center gap-2.5 pr-2">
+                              <CheckCircle2 size={16} className="text-slate-300 dark:text-slate-600 hover:text-emerald-500 shrink-0" />
+                              <span className="font-medium text-slate-800 dark:text-slate-200 truncate">
+                                {task.title}
+                              </span>
+                            </div>
+
+                            <div>
+                              {task.assignee ? (
+                                <div className="flex items-center gap-1.5">
+                                  <span className="w-5 h-5 rounded-full bg-amber-400 text-amber-900 font-bold text-[10px] flex items-center justify-center shrink-0">
+                                    {task.assignee.initials}
+                                  </span>
+                                  <span className="text-slate-600 dark:text-slate-400 truncate text-[11px]">
+                                    {task.assignee.name}
+                                  </span>
+                                </div>
+                              ) : (
+                                <span className="w-5 h-5 rounded-full border border-dashed border-slate-300 flex items-center justify-center text-slate-400 text-[10px]">
+                                  +
+                                </span>
+                              )}
+                            </div>
+
+                            <div>
+                              {task.dueDate && (
+                                <span className="text-rose-500 font-medium text-[11px]">
+                                  {task.dueDate}
+                                </span>
+                              )}
+                            </div>
+
+                            <div>
+                              {task.priority && (
+                                <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-amber-100 text-amber-700 dark:bg-amber-950/50 dark:text-amber-400">
+                                  {task.priority}
+                                </span>
+                              )}
+                            </div>
+
+                            <div>
+                              {task.status && (
+                                <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-sky-100 text-sky-700 dark:bg-sky-950/50 dark:text-sky-400">
+                                  {task.status}
+                                </span>
+                              )}
+                            </div>
+                            <div />
+                          </div>
+                        ))}
+
+                        {inlineAddingSectionId === section.id ? (
+                          <div className="grid grid-cols-[1fr_180px_140px_120px_120px_40px] items-center px-6 py-1.5 bg-sky-50/30 border-l-2 border-sky-500">
+                            <div className="flex items-center gap-2.5">
+                              <CheckCircle2 size={16} className="text-slate-300" />
+                              <input
+                                ref={inlineInputRef}
+                                type="text"
+                                value={newTaskTitle}
+                                onChange={(e) => setNewTaskTitle(e.target.value)}
+                                onKeyDown={(e) => {
+                                  if (e.key === "Enter") handleSaveInlineTask(section.id);
+                                  if (e.key === "Escape") setInlineAddingSectionId(null);
+                                }}
+                                onBlur={() => handleSaveInlineTask(section.id)}
+                                placeholder="Write a task name"
+                                className="w-full text-xs bg-transparent border-none outline-none text-slate-800 dark:text-slate-100 placeholder-slate-400 p-0"
+                              />
+                            </div>
+                          </div>
+                        ) : (
+                          <div className="px-6 py-2">
+                            <button
+                              onClick={() => triggerAddTask(section.id)}
+                              className="text-xs text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 font-medium"
+                            >
+                              Add task...
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
             </div>
-          </div>
+          )}
         </div>
-      )}
+      </div>
 
-      {activeTab === "list" && <ListView columns={columns} />}
-      {activeTab === "members" && <MembersView />}
-      {activeTab === "settings" && <SettingsView projectId={slug} />}
+      {/* Slide-over Task Details Modal Pane */}
+      {selectedTask && (
+        <TaskDetailsPane
+          task={selectedTask}
+          projectName={projectTitle}
+          onClose={() => setSelectedTask(null)}
+          onUpdateTask={handleUpdateTask}
+        />
+      )}
     </div>
   );
 }

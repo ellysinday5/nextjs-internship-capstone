@@ -265,14 +265,14 @@ export default function DashboardPage() {
           <div className="bg-white dark:bg-[#14263e] border-2 border-[#142843]/20 dark:border-slate-700 rounded-2xl p-5 shadow-sm flex flex-col gap-4">
             <h2 className="text-lg font-bold text-[#142843] dark:text-white">Quick Actions</h2>
             <div className="space-y-3 flex-1">
-              <button
-                onClick={() => setModal("project")}
+              <Link
+                href="/projects/create"
                 className="w-full py-3.5 px-4 bg-[#0052cc] hover:bg-[#003d99] text-white rounded-xl font-bold text-sm flex items-center justify-center gap-2 shadow-md transition-all hover:scale-[1.02] active:scale-[0.98]"
                 suppressHydrationWarning
               >
                 <Plus size={17} />
                 Create New Project
-              </button>
+              </Link>
               <button
                 onClick={() => setModal("member")}
                 className="w-full py-3.5 px-4 bg-[#f0f4f8] dark:bg-[#1c304a] border-2 border-[#142843]/20 dark:border-slate-600 text-[#142843] dark:text-slate-100 rounded-xl font-bold text-sm flex items-center justify-center gap-2 hover:bg-[#dce6f0] dark:hover:bg-[#253d5c] transition-all hover:scale-[1.02] active:scale-[0.98]"

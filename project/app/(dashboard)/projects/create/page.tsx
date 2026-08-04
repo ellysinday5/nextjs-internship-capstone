@@ -1,0 +1,159 @@
+"use client";
+
+import React, { useState } from "react";
+import { useRouter } from "next/navigation";
+import { ArrowLeft, X } from "lucide-react";
+import { sileo } from "@/utils/alerts";
+import { createProjectAction } from "@/app/actions/project-actions";
+import { ConfirmationModal } from "@/components/modals/ConfirmationModal";
+import { StepOneForm } from "@/components/projects/create-project/step-one-form";
+import { StepTwoViews } from "@/components/projects/create-project/step-two-views";
+import { ProjectPreview } from "@/components/projects/create-project/project-preview";
+import { CreateProjectFormValues, ViewId } from "@/components/projects/create-project/types";
+
+export default function CreateProjectPage() {
+  const router = useRouter();
+  const [step, setStep] = useState<1 | 2>(1);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [serverError, setServerError] = useState<string | null>(null);
+  const [showDiscardConfirm, setShowDiscardConfirm] = useState(false);
+
+  const [formData, setFormData] = useState<CreateProjectFormValues>({
+    name: "",
+    access: "private",
+    shareWith: ["Ellen's first team"],
+    selectedViews: ["overview", "list", "board", "timeline", "dashboard"],
+    activePreviewTab: "overview",
+  });
+
+  const isDirty = formData.name.trim().length > 0;
+
+  const handleCloseAttempt = () => {
+    if (isDirty) {
+      setShowDiscardConfirm(true);
+    } else {
+      router.push("/projects");
+    }
+  };
+
+  const handleConfirmDiscard = () => {
+    setShowDiscardConfirm(false);
+    router.push("/projects");
+  };
+
+  const handleBackToStepOne = () => {
+    setStep(1);
+  };
+
+  const handleStepOneContinue = () => {
+    setStep(2);
+  };
+
+  const handleSelectPreviewTab = (tab: ViewId) => {
+    setFormData((prev) => ({ ...prev, activePreviewTab: tab }));
+  };
+
+  const handleCreateProject = async () => {
+    if (!formData.name.trim()) {
+      sileo.error("Project name is required", "Error");
+      setStep(1);
+      return;
+    }
+
+    setIsSubmitting(true);
+    setServerError(null);
+
+    const res = await createProjectAction({
+      name: formData.name.trim(),
+      description: `Project shared with: ${formData.shareWith.join(", ") || "None"}`,
+      categories: ["Frontend"],
+      techStack: ["Next.js", "TypeScript", "TailwindCSS"],
+      status: "In Progress",
+      priority: "Medium",
+      dueDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split("T")[0],
+      members: [{ name: "Ellen Grace Sinday", role: "Owner" }],
+    });
+
+    setIsSubmitting(false);
+
+    if (res.success) {
+      sileo.success(`Project "${formData.name}" created successfully!`, "Project Created");
+      router.push("/projects");
+      router.refresh();
+    } else {
+      setServerError(res.error || "Failed to create project");
+      sileo.error(res.error || "Failed to create project", "Error");
+    }
+  };
+
+  return (
+    <div className="relative min-h-[calc(100vh-6rem)] w-full rounded-2xl bg-white p-4 sm:p-6 lg:p-8 shadow-xs border border-slate-200/80 dark:border-slate-800 dark:bg-slate-950 flex flex-col justify-between">
+      {/* Top Navigation Control Bar (Arrow Left & Close X) */}
+      <div className="flex items-center justify-between pb-4">
+        <button
+          type="button"
+          onClick={step === 2 ? handleBackToStepOne : handleCloseAttempt}
+          className="rounded-lg p-2 text-slate-500 hover:bg-slate-100 hover:text-slate-700 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-slate-200 transition-colors"
+          title={step === 2 ? "Back to step 1" : "Cancel & back to projects"}
+        >
+          <ArrowLeft size={20} />
+        </button>
+
+        <button
+          type="button"
+          onClick={handleCloseAttempt}
+          className="rounded-lg p-2 text-slate-500 hover:bg-slate-100 hover:text-slate-700 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-slate-200 transition-colors"
+          title="Close"
+        >
+          <X size={20} />
+        </button>
+      </div>
+
+      {serverError && (
+        <div className="mb-4 rounded-xl border border-red-200 bg-red-50 p-3 text-xs font-semibold text-red-600 dark:border-red-800 dark:bg-red-900/30 dark:text-red-400">
+          {serverError}
+        </div>
+      )}
+
+      {/* Main 2-Column Split Layout */}
+      <div className="grid grid-cols-1 gap-8 lg:grid-cols-12 flex-1 items-stretch">
+        {/* Left Column: Interactive Form Steps */}
+        <div className="lg:col-span-5 flex flex-col justify-between">
+          {step === 1 ? (
+            <StepOneForm
+              formData={formData}
+              setFormData={setFormData}
+              onContinue={handleStepOneContinue}
+            />
+          ) : (
+            <StepTwoViews
+              formData={formData}
+              setFormData={setFormData}
+              onBack={handleBackToStepOne}
+              onSubmit={handleCreateProject}
+              isSubmitting={isSubmitting}
+            />
+          )}
+        </div>
+
+        {/* Right Column: Dynamic Live Preview */}
+        <div className="lg:col-span-7 h-full min-h-[380px]">
+          <ProjectPreview
+            formData={formData}
+            onSelectTab={handleSelectPreviewTab}
+            step={step}
+          />
+        </div>
+      </div>
+
+      {/* Discard Confirmation Modal */}
+      <ConfirmationModal
+        isOpen={showDiscardConfirm}
+        onClose={() => setShowDiscardConfirm(false)}
+        onConfirm={handleConfirmDiscard}
+        variant="discard"
+        showCloseButton={false}
+      />
+    </div>
+  );
+}

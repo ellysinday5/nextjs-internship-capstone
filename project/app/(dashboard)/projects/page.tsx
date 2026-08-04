@@ -1,122 +1,90 @@
 "use client";
 
-import { useState, useMemo, useEffect, useCallback } from "react";
-import { useRouter } from "next/navigation";
+import { useState, useMemo, useEffect, useCallback, useRef } from "react";
 import {
   Plus,
   Search,
-  Filter,
   X,
   Sparkles,
-  Edit3,
-  Trash2,
   FolderOpen,
+  Filter,
+  ArrowUpDown,
+  ChevronDown,
+  LayoutGrid,
+  Table as TableIcon,
+  User,
   Users,
-  ClipboardList,
+  Shield,
 } from "lucide-react";
 
-import { CreateProjectModal } from "@/components/modals/create-project-modal";
-import { EditProjectModal } from "@/components/modals/edit-project-modal";
+import Link from "next/link";
 import { DeleteProjectModal } from "@/components/modals/delete-project-modal";
 import { getProjectsAction, ProjectWithStats } from "@/app/actions/project-actions";
 
-/* Convert a project name to a URL-friendly slug */
-function toSlug(name: string): string {
-  return name
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/(^-|-$)/g, "");
-}
+import {
+  ProjectItem,
+  initialProjects,
+  categories,
+  statuses,
+  priorities,
+  owners,
+  teamsList,
+  membersFilterOptions,
+} from "@/lib/project-data";
 
-interface ProjectItem {
-  id: string;
-  name: string;
-  description: string;
-  techStack: string[];
-  category: string;
-  status: string;
-  priority: string;
-  progress: number;
-  members: number;
-  tasksCount: number;
-  updatedAt: string;
-  color: string;
-  isDb?: boolean;
-  dbProject?: ProjectWithStats;
-}
+import { FilterDropdown } from "@/components/projects/filter-dropdown";
+import { ProjectCardItem } from "@/components/projects/project-card-item";
+import { ProjectTableView } from "@/components/projects/project-table-view";
 
-const initialProjects: ProjectItem[] = [
-  {
-    id: "proj-1",
-    name: "ProjectFlow Next.js Architecture",
-    description:
-      "Full-stack project management web app with Next.js 16, Drizzle ORM, and Clerk Auth.",
-    techStack: ["Next.js", "TypeScript", "TailwindCSS", "PostgreSQL"],
-    category: "Frontend",
-    status: "In Progress",
-    priority: "High",
-    progress: 75,
-    members: 5,
-    tasksCount: 18,
-    updatedAt: "2 hours ago",
-    color: "bg-[#00b4d8]",
-  },
-  {
-    id: "proj-2",
-    name: "Cloud Native API Gateway",
-    description: "High-performance Microservice API Gateway deployed on AWS Kubernetes cluster.",
-    techStack: ["Node.js", "Docker", "Kubernetes", "AWS"],
-    category: "Backend",
-    status: "In Progress",
-    priority: "High",
-    progress: 50,
-    members: 8,
-    tasksCount: 24,
-    updatedAt: "4 hours ago",
-    color: "bg-emerald-500",
-  },
-  {
-    id: "proj-3",
-    name: "AI Code Assistant Integration",
-    description: "Integrating Gemini LLM code suggestions and automated pull request summaries.",
-    techStack: ["Python", "FastAPI", "OpenAI", "VectorDB"],
-    category: "AI & Data",
-    status: "Review",
-    priority: "Medium",
-    progress: 88,
-    members: 4,
-    tasksCount: 12,
-    updatedAt: "1 day ago",
-    color: "bg-purple-500",
-  },
-];
-
-const categories = [
-  "All",
-  "Frontend",
-  "Backend",
-  "Cloud & DevOps",
-  "Cybersecurity",
-  "AI & Data",
-  "Mobile",
-];
-const statuses = ["All", "In Progress", "Review", "Planning", "Completed"];
-const priorities = ["All", "High", "Medium", "Low"];
+type ViewMode = "grid" | "table";
+type DropdownKey = "status" | "priority" | "category" | "owner" | "team" | "members" | null;
 
 export default function ProjectsPage() {
   const [dbProjects, setDbProjects] = useState<ProjectWithStats[]>([]);
   const [loading, setLoading] = useState(true);
+  // Local (non-DB) project overrides — stores edited versions in state
+  const [localProjectOverrides, setLocalProjectOverrides] = useState<Record<string, Partial<ProjectItem>>>({});
 
   /* Modal state */
   const [isCreateOpen, setIsCreateOpen] = useState(false);
-  const [editingProject, setEditingProject] = useState<ProjectWithStats | null>(null);
   const [deletingProject, setDeletingProject] = useState<ProjectWithStats | null>(null);
+
+  // We no longer handle local save via modal callback. 
+  // State is hydrated from localStorage instead (saved by the EditProjectPage).
+  useEffect(() => {
+    try {
+      const stored = localStorage.getItem("syntraflow_local_project_overrides");
+      if (stored) {
+        setLocalProjectOverrides(JSON.parse(stored));
+      }
+    } catch {}
+  }, []);
 
   /* Filter state */
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("All");
   const [selectedStatus, setSelectedStatus] = useState("All");
   const [selectedPriority, setSelectedPriority] = useState("All");
+  const [selectedOwner, setSelectedOwner] = useState("All");
+  const [selectedTeam, setSelectedTeam] = useState("All");
+  const [selectedMembers, setSelectedMembers] = useState("All");
+  const [openDropdown, setOpenDropdown] = useState<DropdownKey>(null);
+
+  /* View mode: grid or table */
+  const [viewMode, setViewMode] = useState<ViewMode>("grid");
+
+  const filterBarRef = useRef<HTMLDivElement>(null);
+
+  /* Close open dropdown when clicking outside the filter bar */
+  useEffect(() => {
+    function handleClickOutside(e: MouseEvent) {
+      if (filterBarRef.current && !filterBarRef.current.contains(e.target as Node)) {
+        setOpenDropdown(null);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
 
   /* Fetch DB Projects */
   const fetchProjects = useCallback(async () => {
@@ -126,17 +94,18 @@ export default function ProjectsPage() {
     setLoading(false);
   }, []);
 
-  const router = useRouter();
-
   useEffect(() => {
     fetchProjects();
   }, [fetchProjects]);
 
-  /* Combine DB projects and initial fallback projects */
+  /* Combine DB projects and initial fallback projects (with local overrides applied) */
   const allProjectItems = useMemo<ProjectItem[]>(() => {
-    const formattedDbItems: ProjectItem[] = dbProjects.map((p) => {
+    const formattedDbItems: ProjectItem[] = dbProjects.map((p, idx) => {
       const completionPercent =
         p.taskCount > 0 ? Math.round((p.completedTaskCount / p.taskCount) * 100) : 0;
+
+      const ownerOptions = ["Ellen Grace Sinday", "Aj Lopez", "John Doe"];
+      const teamOptions = ["Core Platform", "Frontend Squad", "AI & Mobile", "DevOps Team"];
 
       return {
         id: p.id,
@@ -148,6 +117,8 @@ export default function ProjectsPage() {
         priority: "High",
         progress: completionPercent,
         members: 1,
+        owner: ownerOptions[idx % ownerOptions.length],
+        teamName: teamOptions[idx % teamOptions.length],
         tasksCount: p.taskCount,
         updatedAt: p.updatedAt ? new Date(p.updatedAt).toLocaleDateString() : "Just now",
         color: "bg-[#00b4d8]",
@@ -156,8 +127,14 @@ export default function ProjectsPage() {
       };
     });
 
-    return [...formattedDbItems, ...initialProjects];
-  }, [dbProjects]);
+    // Apply any local overrides (saved edits) to the initial static projects
+    const patchedInitial = initialProjects.map((proj) => ({
+      ...proj,
+      ...(localProjectOverrides[proj.id] || {}),
+    }));
+
+    return [...formattedDbItems, ...patchedInitial];
+  }, [dbProjects, localProjectOverrides]);
 
   /* Filtered projects */
   const filteredProjects = useMemo(() => {
@@ -166,43 +143,72 @@ export default function ProjectsPage() {
         searchQuery === "" ||
         project.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
         project.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        project.owner.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        project.teamName.toLowerCase().includes(searchQuery.toLowerCase()) ||
         project.techStack.some((tech) => tech.toLowerCase().includes(searchQuery.toLowerCase()));
 
       const matchesCategory = selectedCategory === "All" || project.category === selectedCategory;
       const matchesStatus = selectedStatus === "All" || project.status === selectedStatus;
       const matchesPriority = selectedPriority === "All" || project.priority === selectedPriority;
+      const matchesOwner = selectedOwner === "All" || project.owner === selectedOwner;
+      const matchesTeam = selectedTeam === "All" || project.teamName === selectedTeam;
 
-      return matchesSearch && matchesCategory && matchesStatus && matchesPriority;
+      let matchesMembers = true;
+      if (selectedMembers === "1 Dev") {
+        matchesMembers = project.members === 1;
+      } else if (selectedMembers === "2-4 Devs") {
+        matchesMembers = project.members >= 2 && project.members <= 4;
+      } else if (selectedMembers === "5+ Devs") {
+        matchesMembers = project.members >= 5;
+      }
+
+      return (
+        matchesSearch &&
+        matchesCategory &&
+        matchesStatus &&
+        matchesPriority &&
+        matchesOwner &&
+        matchesTeam &&
+        matchesMembers
+      );
     });
-  }, [allProjectItems, searchQuery, selectedCategory, selectedStatus, selectedPriority]);
+  }, [
+    allProjectItems,
+    searchQuery,
+    selectedCategory,
+    selectedStatus,
+    selectedPriority,
+    selectedOwner,
+    selectedTeam,
+    selectedMembers,
+  ]);
 
   const hasActiveFilters =
     searchQuery !== "" ||
     selectedCategory !== "All" ||
     selectedStatus !== "All" ||
-    selectedPriority !== "All";
+    selectedPriority !== "All" ||
+    selectedOwner !== "All" ||
+    selectedTeam !== "All" ||
+    selectedMembers !== "All";
 
   const clearFilters = () => {
     setSearchQuery("");
     setSelectedCategory("All");
     setSelectedStatus("All");
     setSelectedPriority("All");
+    setSelectedOwner("All");
+    setSelectedTeam("All");
+    setSelectedMembers("All");
+  };
+
+  const toggleDropdown = (key: DropdownKey) => {
+    setOpenDropdown((prev) => (prev === key ? null : key));
   };
 
   return (
     <div className="relative min-h-screen space-y-6 overflow-hidden">
-      {/* ── Modals ── */}
-      <CreateProjectModal
-        isOpen={isCreateOpen}
-        onClose={() => setIsCreateOpen(false)}
-        onSuccess={fetchProjects}
-      />
-      <EditProjectModal
-        isOpen={Boolean(editingProject)}
-        project={editingProject}
-        onClose={() => setEditingProject(null)}
-        onSuccess={fetchProjects}
-      />
+      {/* Modals */}
       <DeleteProjectModal
         isOpen={Boolean(deletingProject)}
         project={deletingProject}
@@ -212,280 +218,220 @@ export default function ProjectsPage() {
 
       <div className="relative z-10 space-y-6">
         {/* Header Title */}
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-          <div>
-            <h1 className="text-2xl sm:text-3xl font-extrabold text-[#142843] dark:text-white">
-              Projects
-            </h1>
-            <p className="text-slate-500 dark:text-slate-400 text-xs sm:text-sm mt-1">
-              Search, filter, create, and manage your team projects and workflows
-            </p>
+        <div className="min-w-0">
+          <h1 className="text-2xl sm:text-3xl font-extrabold text-[#142843] dark:text-white truncate">
+            Projects
+          </h1>
+          <p className="text-slate-500 dark:text-slate-400 text-xs sm:text-sm mt-1">
+            Search, filter, create, and manage your team projects and workflows
+          </p>
+        </div>
+
+        {/* Filter Bar & New Project Button */}
+        <div ref={filterBarRef} className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+          <div className="flex flex-wrap items-center gap-2.5">
+            {/* Search Input — fixed shorter width */}
+          <div className="relative w-56">
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Search projects, owner, team..."
+              className="w-full pl-4 pr-9 py-2 bg-white dark:bg-[#14263e] border-2 border-[#142843]/70 dark:border-slate-500 rounded-xl text-xs font-medium text-[#142843] dark:text-slate-100 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-[#00b4d8] focus:border-[#00b4d8] transition-all"
+              suppressHydrationWarning
+            />
+            {searchQuery ? (
+              <button
+                type="button"
+                onClick={() => setSearchQuery("")}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
+                aria-label="Clear search"
+                suppressHydrationWarning
+              >
+                <X size={14} />
+              </button>
+            ) : (
+              <Search
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-[#142843] dark:text-slate-300 pointer-events-none"
+                size={14}
+              />
+            )}
           </div>
-          <button
-            type="button"
-            onClick={() => setIsCreateOpen(true)}
-            className="inline-flex items-center px-4 py-2.5 bg-[#00b4d8] hover:bg-[#0096b8] text-white rounded-xl shadow-md font-bold text-sm transition-all hover:scale-[1.02] cursor-pointer"
+
+          {/* Owner Filter */}
+          <FilterDropdown
+            label="Owner"
+            icon={<User size={14} />}
+            value={selectedOwner}
+            options={owners}
+            isOpen={openDropdown === "owner"}
+            onToggle={() => toggleDropdown("owner")}
+            onSelect={(val) => {
+              setSelectedOwner(val);
+              setOpenDropdown(null);
+            }}
+          />
+
+          {/* Team Filter */}
+          <FilterDropdown
+            label="Team"
+            icon={<Shield size={14} />}
+            value={selectedTeam}
+            options={teamsList}
+            isOpen={openDropdown === "team"}
+            onToggle={() => toggleDropdown("team")}
+            onSelect={(val) => {
+              setSelectedTeam(val);
+              setOpenDropdown(null);
+            }}
+          />
+
+          {/* Members Filter */}
+          <FilterDropdown
+            label="Members"
+            icon={<Users size={14} />}
+            value={selectedMembers}
+            options={membersFilterOptions}
+            isOpen={openDropdown === "members"}
+            onToggle={() => toggleDropdown("members")}
+            onSelect={(val) => {
+              setSelectedMembers(val);
+              setOpenDropdown(null);
+            }}
+          />
+
+          {/* Category */}
+          <FilterDropdown
+            label="Category"
+            icon={<ChevronDown size={14} />}
+            value={selectedCategory}
+            options={categories}
+            isOpen={openDropdown === "category"}
+            onToggle={() => toggleDropdown("category")}
+            onSelect={(val) => {
+              setSelectedCategory(val);
+              setOpenDropdown(null);
+            }}
+          />
+
+          {/* Status */}
+          <FilterDropdown
+            label="Status"
+            icon={<Filter size={14} />}
+            value={selectedStatus}
+            options={statuses}
+            isOpen={openDropdown === "status"}
+            onToggle={() => toggleDropdown("status")}
+            onSelect={(val) => {
+              setSelectedStatus(val);
+              setOpenDropdown(null);
+            }}
+          />
+
+          {/* Priority */}
+          <FilterDropdown
+            label="Priority"
+            icon={<ArrowUpDown size={14} />}
+            value={selectedPriority}
+            options={priorities}
+            isOpen={openDropdown === "priority"}
+            onToggle={() => toggleDropdown("priority")}
+            onSelect={(val) => {
+              setSelectedPriority(val);
+              setOpenDropdown(null);
+            }}
+          />
+
+          {hasActiveFilters && (
+            <button
+              type="button"
+              onClick={clearFilters}
+              className="inline-flex items-center text-xs font-bold text-rose-500 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/30 transition-all cursor-pointer px-2.5 py-1.5 rounded-lg"
+              suppressHydrationWarning
+            >
+              <X size={13} className="mr-1" />
+              Clear Filters
+            </button>
+          )}
+          </div>
+
+          {/* New Project Button aligned on the right of the filter bar */}
+          <Link
+            href="/projects/create"
+            className="inline-flex items-center px-5 py-2.5 bg-[#0f2d5a] hover:bg-[#0c2447] text-white rounded-xl shadow-md font-bold text-sm transition-all duration-200 hover:scale-[1.02] active:scale-95 cursor-pointer whitespace-nowrap self-start sm:self-auto shrink-0"
             suppressHydrationWarning
           >
             <Plus size={18} className="mr-2" />
             New Project
-          </button>
+          </Link>
         </div>
 
-        {/* Dynamic Filter Controls Bar */}
-        <div className="bg-white/80 dark:bg-[#14263e]/80 backdrop-blur-md p-4 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm space-y-4">
-          {/* Search bar & Dropdowns */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-            {/* Search Input */}
-            <div className="relative sm:col-span-2">
-              <Search
-                className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400"
-                size={16}
-              />
-              <input
-                type="text"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Filter by title, description, or tech..."
-                className="w-full pl-10 pr-9 py-2.5 bg-slate-50 dark:bg-[#1c304a] border border-slate-200 dark:border-slate-600 rounded-xl text-sm text-[#142843] dark:text-slate-100 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-[#00b4d8]"
-                suppressHydrationWarning
-              />
-              {searchQuery && (
-                <button
-                  type="button"
-                  onClick={() => setSearchQuery("")}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
-                  aria-label="Clear search"
-                  suppressHydrationWarning
-                >
-                  <X size={14} />
-                </button>
-              )}
-            </div>
-
-            {/* Status Select */}
-            <div className="relative">
-              <select
-                value={selectedStatus}
-                onChange={(e) => setSelectedStatus(e.target.value)}
-                className="w-full py-2.5 px-3 bg-slate-50 dark:bg-[#1c304a] border border-slate-200 dark:border-slate-600 rounded-xl text-sm text-[#142843] dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-[#00b4d8] font-medium"
-                suppressHydrationWarning
-              >
-                <option value="All">All Statuses</option>
-                {statuses.slice(1).map((status) => (
-                  <option key={status} value={status}>
-                    {status}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            {/* Priority Select */}
-            <div className="relative">
-              <select
-                value={selectedPriority}
-                onChange={(e) => setSelectedPriority(e.target.value)}
-                className="w-full py-2.5 px-3 bg-slate-50 dark:bg-[#1c304a] border border-slate-200 dark:border-slate-600 rounded-xl text-sm text-[#142843] dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-[#00b4d8] font-medium"
-                suppressHydrationWarning
-              >
-                <option value="All">All Priorities</option>
-                {priorities.slice(1).map((priority) => (
-                  <option key={priority} value={priority}>
-                    Priority: {priority}
-                  </option>
-                ))}
-              </select>
-            </div>
-          </div>
-
-          {/* Tech Stack Category Filter Pills */}
-          <div className="flex flex-wrap items-center gap-2 pt-2 border-t border-slate-100 dark:border-slate-700">
-            <span className="text-xs font-semibold text-slate-500 dark:text-slate-400 mr-1 flex items-center gap-1">
-              <Filter size={12} /> Tech Category:
+        {/* Results Counter & View Mode Toggle */}
+        <div className="flex justify-between items-center text-xs font-semibold text-slate-500 dark:text-slate-400">
+          <div className="flex items-center gap-3">
+            <span>
+              Showing <strong className="text-[#00b4d8]">{filteredProjects.length}</strong> projects
             </span>
-            {categories.map((cat) => {
-              const isSelected = selectedCategory === cat;
-              return (
-                <button
-                  key={cat}
-                  type="button"
-                  onClick={() => setSelectedCategory(cat)}
-                  className={`px-3 py-1 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
-                    isSelected
-                      ? "bg-[#142843] text-white shadow-sm"
-                      : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700"
-                  }`}
-                  suppressHydrationWarning
-                >
-                  {cat}
-                </button>
-              );
-            })}
-
             {hasActiveFilters && (
-              <button
-                type="button"
-                onClick={clearFilters}
-                className="ml-auto inline-flex items-center text-xs font-bold text-rose-500 hover:text-rose-600 transition-colors cursor-pointer"
-                suppressHydrationWarning
-              >
-                <X size={12} className="mr-1" />
-                Clear Filters
-              </button>
+              <span className="text-emerald-500 flex items-center gap-1 font-bold">
+                <Sparkles size={13} /> Active Filters
+              </span>
             )}
           </div>
-        </div>
 
-        {/* Results Counter */}
-        <div className="flex justify-between items-center text-xs font-semibold text-slate-500 dark:text-slate-400">
-          <span>
-            Showing <strong className="text-[#00b4d8]">{filteredProjects.length}</strong> projects
-          </span>
-          {hasActiveFilters && (
-            <span className="text-emerald-500 flex items-center gap-1">
-              <Sparkles size={12} /> Dynamic Filter Active
-            </span>
-          )}
-        </div>
-
-        {/* Dynamic Project Grid */}
-        {filteredProjects.length > 0 ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {filteredProjects.map((project) => (
-              <div
-                key={project.id}
-                role="button"
-                tabIndex={0}
-                onClick={() => router.push(`/projects/${toSlug(project.name)}`)}
-                onKeyDown={(e) => e.key === "Enter" && router.push(`/projects/${toSlug(project.name)}`)}
-                className="group relative bg-white dark:bg-[#14263e] rounded-2xl border border-slate-200 dark:border-slate-700 p-6 hover:shadow-xl hover:border-[#00b4d8]/50 transition-all duration-200 flex flex-col justify-between cursor-pointer select-none"
-              >
-                <div>
-                  {/* Top Bar: Category, Priority, & Actions */}
-                  <div className="flex items-center justify-between mb-3">
-                    <div className="flex items-center space-x-2">
-                      <span className={`w-2.5 h-2.5 rounded-full ${project.color}`} />
-                      <span className="text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300">
-                        {project.category}
-                      </span>
-                      {project.isDb && (
-                        <span className="text-[10px] font-extrabold text-[#00b4d8] bg-[#e8f8fd] dark:bg-[#00b4d8]/20 px-2 py-0.5 rounded-full">
-                          Database
-                        </span>
-                      )}
-                    </div>
-
-                    <div className="flex items-center gap-1.5">
-                      <span
-                        className={`text-[10px] font-bold uppercase px-2 py-0.5 rounded-full ${
-                          project.priority === "High"
-                            ? "bg-rose-500/10 text-rose-500 border border-rose-500/20"
-                            : project.priority === "Medium"
-                              ? "bg-amber-500/10 text-amber-500 border border-amber-500/20"
-                              : "bg-slate-500/10 text-slate-400 border border-slate-500/20"
-                        }`}
-                      >
-                        {project.priority} Prio
-                      </span>
-
-                      {/* Edit / Delete Buttons for DB projects */}
-                      {project.isDb && project.dbProject && (
-                        <div className="flex items-center gap-1 ml-1">
-                          <button
-                            type="button"
-                            onClick={(e) => { e.stopPropagation(); setEditingProject(project.dbProject!); }}
-                            className="p-1.5 rounded-lg text-slate-400 hover:text-[#00b4d8] hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
-                            title="Edit project"
-                            aria-label="Edit project"
-                            suppressHydrationWarning
-                          >
-                            <Edit3 size={15} />
-                          </button>
-                          <button
-                            type="button"
-                            onClick={(e) => { e.stopPropagation(); setDeletingProject(project.dbProject!); }}
-                            className="p-1.5 rounded-lg text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-950/30 transition-colors cursor-pointer"
-                            title="Delete project"
-                            aria-label="Delete project"
-                            suppressHydrationWarning
-                          >
-                            <Trash2 size={15} />
-                          </button>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-
-                  {/* Title */}
-                  <h3 className="text-base font-extrabold text-[#142843] dark:text-white group-hover:text-[#00b4d8] transition-colors mb-2">
-                    {project.name}
-                  </h3>
-
-                  {/* Description */}
-                  <p className="text-xs text-slate-500 dark:text-slate-400 mb-4 line-clamp-2 leading-relaxed">
-                    {project.description}
-                  </p>
-
-                  {/* Tech Stack Tags */}
-                  <div className="flex flex-wrap gap-1.5 mb-4">
-                    {project.techStack.map((tech) => (
-                      <span
-                        key={tech}
-                        className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700"
-                      >
-                        {tech}
-                      </span>
-                    ))}
-                  </div>
-                </div>
-
-                <div>
-                  {/* Progress Bar */}
-                  <div className="mb-4">
-                    <div className="flex items-center justify-between text-xs font-semibold mb-1.5">
-                      <span className="text-slate-500 dark:text-slate-400">Completion</span>
-                      <span className="text-[#142843] dark:text-slate-200 font-bold">
-                        {project.progress}%
-                      </span>
-                    </div>
-                    <div className="w-full bg-slate-100 dark:bg-slate-800 rounded-full h-1.5 overflow-hidden">
-                      <div
-                        className={`h-full rounded-full transition-all duration-500 ${project.color}`}
-                        style={{ width: `${project.progress}%` }}
-                      />
-                    </div>
-                  </div>
-
-                  {/* Footer Meta Details */}
-                  <div className="flex items-center justify-between pt-3 border-t border-slate-100 dark:border-slate-700/60 text-xs text-slate-500 dark:text-slate-400 font-medium">
-                    <div className="flex items-center gap-3">
-                      <span className="flex items-center gap-1">
-                        <Users size={13} className="text-slate-400" />
-                        {project.members} dev
-                      </span>
-                      <span className="flex items-center gap-1">
-                        <ClipboardList size={13} className="text-slate-400" />
-                        {project.tasksCount} tasks
-                      </span>
-                    </div>
-                    <span
-                      className={`px-2.5 py-0.5 text-[10px] font-bold rounded-full ${
-                        project.status === "In Progress"
-                          ? "bg-blue-50 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300"
-                          : project.status === "Review"
-                            ? "bg-purple-50 text-purple-700 dark:bg-purple-900/40 dark:text-purple-300"
-                            : project.status === "Completed"
-                              ? "bg-emerald-50 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300"
-                              : "bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300"
-                      }`}
-                    >
-                      {project.status}
-                    </span>
-                  </div>
-                </div>
-              </div>
-            ))}
+          {/* View Mode Toggle */}
+          <div className="flex items-center gap-1 p-1 bg-white dark:bg-[#14263e] border-2 border-[#142843]/80 dark:border-slate-500 rounded-xl shadow-2xs">
+            <button
+              type="button"
+              onClick={() => setViewMode("grid")}
+              className={`p-1.5 rounded-lg transition-all duration-150 cursor-pointer ${
+                viewMode === "grid"
+                  ? "bg-[#142843] text-white dark:bg-[#00b4d8] dark:text-[#08131f] shadow-xs"
+                  : "text-slate-400 hover:text-[#142843] dark:hover:text-slate-200"
+              }`}
+              title="Grid view"
+              aria-label="Grid view"
+              suppressHydrationWarning
+            >
+              <LayoutGrid size={15} />
+            </button>
+            <button
+              type="button"
+              onClick={() => setViewMode("table")}
+              className={`p-1.5 rounded-lg transition-all duration-150 cursor-pointer ${
+                viewMode === "table"
+                  ? "bg-[#142843] text-white dark:bg-[#00b4d8] dark:text-[#08131f] shadow-xs"
+                  : "text-slate-400 hover:text-[#142843] dark:hover:text-slate-200"
+              }`}
+              title="Table view"
+              aria-label="Table view"
+              suppressHydrationWarning
+            >
+              <TableIcon size={15} />
+            </button>
           </div>
+        </div>
+
+        {/* Projects: Grid or Table */}
+        {filteredProjects.length > 0 ? (
+          viewMode === "grid" ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {filteredProjects.map((project) => (
+                <ProjectCardItem
+                  key={project.id}
+                  project={project}
+                  onEdit={() => {}}
+                  onDelete={setDeletingProject}
+                />
+              ))}
+            </div>
+          ) : (
+            <ProjectTableView
+              projects={filteredProjects}
+              onEdit={() => {}}
+              onDelete={setDeletingProject}
+            />
+          )
         ) : (
           /* Empty State */
           <div className="text-center py-16 bg-white dark:bg-[#14263e] rounded-2xl border border-dashed border-slate-200 dark:border-slate-700">

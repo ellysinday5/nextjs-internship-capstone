@@ -10,9 +10,7 @@ import { Eye, EyeOff, AlertCircle } from "lucide-react";
 import { signInSchema, SignInFormValues } from "@/lib/auth-schemas";
 import { AuthIllustration } from "@/components/auth/auth-illustration";
 
-/* ─────────────────────────────────────────────────────────────
-   Reusable Field Components
-───────────────────────────────────────────────────────────── */
+
 function RequiredLabel({ htmlFor, children }: { htmlFor: string; children: React.ReactNode }) {
   return (
     <label htmlFor={htmlFor} className="block text-xs font-semibold text-[#142843] mb-1">
@@ -34,9 +32,7 @@ function FieldError({ message }: { message?: string }) {
   );
 }
 
-/* ─────────────────────────────────────────────────────────────
-   Sign-In Page
-───────────────────────────────────────────────────────────── */
+
 export default function SignInPage() {
   const { isLoaded, signIn, setActive } = useSignIn();
   const router = useRouter();
@@ -45,7 +41,6 @@ export default function SignInPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
 
-  /* Track "Last used" method via localStorage */
   const [lastUsed, setLastUsed] = useState<"google" | "email" | null>(null);
   useEffect(() => {
     const stored = localStorage.getItem("syntraflow_last_auth") as "google" | "email" | null;
@@ -61,7 +56,6 @@ export default function SignInPage() {
     mode: "onBlur",
   });
 
-  /* ── Email / Password sign-in ── */
   const onSubmit = async (data: SignInFormValues) => {
     if (!isLoaded) return;
     setServerError(null);
@@ -88,7 +82,6 @@ export default function SignInPage() {
     }
   };
 
-  /* ── Google OAuth sign-in ── */
   const handleGoogleSignIn = async () => {
     if (!isLoaded || !signIn) return;
     setGoogleLoading(true);
@@ -113,14 +106,10 @@ export default function SignInPage() {
   return (
     <div className="min-h-screen w-full bg-[url('/bg-logo.png')] bg-cover bg-center bg-no-repeat flex items-center justify-center p-4 sm:p-6 md:p-10 font-sans relative">
       <div className="w-full max-w-[940px] bg-white rounded-2xl shadow-2xl border border-slate-100 p-8 sm:p-10 md:p-12 flex flex-col md:flex-row items-center justify-between gap-10 md:gap-16 min-h-[480px]">
-        {/* Left Side: Animated Brand Intro */}
         <div className="w-full md:w-[360px] lg:w-[390px] h-[300px] sm:h-[340px] md:h-[380px] shrink-0 flex items-center justify-center">
           <AuthIllustration />
         </div>
-
-        {/* Right Side */}
         <div className="w-full md:w-[380px] flex flex-col items-center justify-center">
-          {/* Header */}
           <div className="flex flex-col items-center justify-center text-center mb-6">
             <img
               src="/syntraflow-icon.svg"
@@ -138,7 +127,6 @@ export default function SignInPage() {
             </p>
           </div>
 
-          {/* Google OAuth Button */}
           <button
             type="button"
             suppressHydrationWarning
@@ -146,7 +134,6 @@ export default function SignInPage() {
             disabled={googleLoading || !isLoaded}
             className="w-full flex items-center justify-center gap-3 border border-slate-200 rounded-full py-2.5 px-4 text-sm font-semibold text-[#142843] bg-white hover:bg-slate-50 transition-all shadow-sm mb-4 disabled:opacity-60 disabled:cursor-not-allowed relative cursor-pointer"
           >
-            {/* Google Icon */}
             <svg className="w-4 h-4 shrink-0" viewBox="0 0 24 24" aria-hidden="true">
               <path
                 fill="#4285F4"
@@ -173,14 +160,12 @@ export default function SignInPage() {
             )}
           </button>
 
-          {/* Divider */}
           <div className="flex items-center w-full gap-3 mb-4">
             <div className="flex-1 h-px bg-slate-200" />
             <span className="text-xs text-slate-400 font-medium">or</span>
             <div className="flex-1 h-px bg-slate-200" />
           </div>
 
-          {/* Server-level error */}
           {serverError && (
             <div className="w-full mb-4 flex items-start gap-2 bg-red-50 border border-red-200 rounded-xl px-4 py-3">
               <AlertCircle className="w-4 h-4 text-red-500 mt-0.5 shrink-0" />
@@ -189,7 +174,6 @@ export default function SignInPage() {
           )}
 
           <form onSubmit={handleSubmit(onSubmit)} className="w-full space-y-4" noValidate>
-            {/* Email */}
             <div>
               <div className="flex items-center justify-between mb-1">
                 <RequiredLabel htmlFor="signin-email">Email address</RequiredLabel>
@@ -206,14 +190,12 @@ export default function SignInPage() {
                 placeholder="Enter your email address"
                 suppressHydrationWarning
                 {...register("email")}
-                className={`w-full bg-slate-100 border text-[#1e293b] placeholder:text-[#94a3b8] rounded-full px-4 py-2.5 text-sm font-medium outline-none transition-all focus:ring-2 focus:ring-[#00b4d8] focus:border-transparent ${
-                  errors.email ? "border-red-400 bg-red-50 focus:ring-red-400" : "border-slate-200"
-                }`}
+                className={`w-full bg-slate-100 border text-[#1e293b] placeholder:text-[#94a3b8] rounded-full px-4 py-2.5 text-sm font-medium outline-none transition-all focus:ring-2 focus:ring-[#00b4d8] focus:border-transparent ${errors.email ? "border-red-400 bg-red-50 focus:ring-red-400" : "border-slate-200"
+                  }`}
               />
               <FieldError message={errors.email?.message} />
             </div>
 
-            {/* Password */}
             <div>
               <RequiredLabel htmlFor="signin-password">Password</RequiredLabel>
               <div className="relative">
@@ -224,11 +206,10 @@ export default function SignInPage() {
                   placeholder="Enter your password"
                   suppressHydrationWarning
                   {...register("password")}
-                  className={`w-full bg-slate-100 border text-[#1e293b] placeholder:text-[#94a3b8] rounded-full px-4 py-2.5 pr-11 text-sm font-medium outline-none transition-all focus:ring-2 focus:ring-[#00b4d8] focus:border-transparent ${
-                    errors.password
-                      ? "border-red-400 bg-red-50 focus:ring-red-400"
-                      : "border-slate-200"
-                  }`}
+                  className={`w-full bg-slate-100 border text-[#1e293b] placeholder:text-[#94a3b8] rounded-full px-4 py-2.5 pr-11 text-sm font-medium outline-none transition-all focus:ring-2 focus:ring-[#00b4d8] focus:border-transparent ${errors.password
+                    ? "border-red-400 bg-red-50 focus:ring-red-400"
+                    : "border-slate-200"
+                    }`}
                 />
                 <button
                   type="button"
@@ -243,7 +224,6 @@ export default function SignInPage() {
               <FieldError message={errors.password?.message} />
             </div>
 
-            {/* Submit button */}
             <button
               type="submit"
               suppressHydrationWarning
