@@ -1,137 +1,416 @@
-import { ArrowLeft, Settings, Users, Calendar, MoreHorizontal } from "lucide-react"
-import Link from "next/link"
-import { DashboardLayout } from "@/components/dashboard-layout"
+"use client";
 
-export default function ProjectPage({ params }: { params: { id: string } }) {
+import React, { use, useState, useRef, useEffect, useMemo } from "react";
+import {
+  CheckCircle2,
+  ChevronDown,
+  Plus,
+} from "lucide-react";
+import { TaskDetailsPane, TaskItem } from "@/components/tasks/task-details";
+import { ProjectHeader } from "@/components/projects/details/project-header";
+import { ProjectTabs } from "@/components/projects/details/project-tabs";
+import { ProjectToolbar } from "@/components/projects/details/project-toolbar";
+import { OverviewTab } from "@/components/projects/details/overview-tab";
+import { BoardTab } from "@/components/projects/details/board-tab";
+import { TimelineTab } from "@/components/projects/details/timeline-tab";
+import { DashboardTab } from "@/components/projects/details/dashboard-tab";
+import { CalendarTab } from "@/components/projects/details/calendar-tab";
+import { Section, ProjectStatusType } from "@/components/projects/details/types";
+
+function slugToTitle(slug: string): string {
+  return slug
+    .split("-")
+    .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+    .join(" ");
+}
+
+const initialSections: Section[] = [
+  {
+    id: "to-do",
+    title: "To do",
+    tasks: [
+      {
+        id: "t1",
+        title: "Task 1",
+        sectionId: "To do",
+        assignee: { name: "Ellen Grace Sinday", initials: "ES" },
+        dueDate: "Jul 20 – 22",
+        priority: "Low",
+        status: "On track",
+      },
+      {
+        id: "t2",
+        title: "Task 2",
+        sectionId: "To do",
+        assignee: { name: "Ellen Grace Sinday", initials: "ES" },
+        dueDate: "Jul 21 – 23",
+        priority: "Medium",
+        status: "At risk",
+      },
+      {
+        id: "t3",
+        title: "Task 3",
+        sectionId: "To do",
+        dueDate: "Jul 22 – 24",
+        priority: "High",
+        status: "Off track",
+      },
+    ],
+  },
+  {
+    id: "doing",
+    title: "Doing",
+    tasks: [],
+  },
+  {
+    id: "done",
+    title: "Done",
+    tasks: [],
+  },
+];
+
+export default function AsanaProjectPage({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}) {
+  const { id: slug } = use(params);
+  const initialTitle = slugToTitle(slug);
+
+  // State
+  const [projectTitle, setProjectTitle] = useState(initialTitle);
+  const [sections, setSections] = useState<Section[]>(initialSections);
+  const [availableTabs, setAvailableTabs] = useState<string[]>([
+    "Overview",
+    "List",
+    "Board",
+    "Timeline",
+    "Dashboard",
+    "Calendar",
+  ]);
+  const [activeTab, setActiveTab] = useState("Overview");
+  const [selectedTask, setSelectedTask] = useState<TaskItem | null>(null);
+
+  // Filter & Search State
+  const [searchQuery, setSearchQuery] = useState("");
+  const [selectedPriorityFilter, setSelectedPriorityFilter] = useState("All");
+  const [selectedStatusFilter, setSelectedStatusFilter] = useState("All");
+  const [sortBy, setSortBy] = useState<"default" | "name" | "priority">("default");
+
+  // Project Header Customization & Status State
+  const [projectColor, setProjectColor] = useState("#3b82f6");
+  const [selectedIconIndex, setSelectedIconIndex] = useState(0);
+  const [status, setStatus] = useState<ProjectStatusType>("On track");
+  const [description, setDescription] = useState("What's this project about?");
+
+  // Inline Add Task State
+  const [inlineAddingSectionId, setInlineAddingSectionId] = useState<string | null>(null);
+  const [newTaskTitle, setNewTaskTitle] = useState("");
+  const inlineInputRef = useRef<HTMLInputElement | null>(null);
+
+  useEffect(() => {
+    if (inlineAddingSectionId && inlineInputRef.current) {
+      inlineInputRef.current.focus();
+    }
+  }, [inlineAddingSectionId]);
+
+  const triggerAddTask = (sectionId: string = "to-do") => {
+    setInlineAddingSectionId(sectionId);
+    if (activeTab === "Overview") {
+      setActiveTab("List");
+    }
+  };
+
+  const handleSaveInlineTask = (sectionId: string) => {
+    if (!newTaskTitle.trim()) {
+      setInlineAddingSectionId(null);
+      return;
+    }
+
+    const newTask: TaskItem = {
+      id: Date.now().toString(),
+      title: newTaskTitle,
+      sectionId: sections.find((s) => s.id === sectionId)?.title || "To do",
+      status: "On track",
+      priority: "Medium",
+    };
+
+    setSections((prev) =>
+      prev.map((sec) =>
+        sec.id === sectionId ? { ...sec, tasks: [...sec.tasks, newTask] } : sec
+      )
+    );
+
+    setNewTaskTitle("");
+    setInlineAddingSectionId(null);
+  };
+
+  const handleUpdateTask = (updatedTask: TaskItem) => {
+    setSelectedTask(updatedTask);
+    setSections((prev) =>
+      prev.map((sec) => ({
+        ...sec,
+        tasks: sec.tasks.map((t) => (t.id === updatedTask.id ? updatedTask : t)),
+      }))
+    );
+  };
+
+  const handleDeleteTask = (taskId: string) => {
+    setSections((prev) =>
+      prev.map((sec) => ({
+        ...sec,
+        tasks: sec.tasks.filter((t) => t.id !== taskId),
+      }))
+    );
+  };
+
+  const handleAddTab = (tabName: string) => {
+    if (!availableTabs.includes(tabName)) {
+      setAvailableTabs((prev) => [...prev, tabName]);
+    }
+    setActiveTab(tabName);
+  };
+
+  const handleAddSection = () => {
+    const newSecTitle = prompt("Enter section name:");
+    if (newSecTitle) {
+      setSections((prev) => [
+        ...prev,
+        { id: newSecTitle.toLowerCase().replace(/\s+/g, "-"), title: newSecTitle, tasks: [] },
+      ]);
+    }
+  };
+
+  // Filtered & Sorted Sections
+  const filteredSections = useMemo(() => {
+    return sections.map((sec) => {
+      let filtered = sec.tasks.filter((task) => {
+        const matchesSearch =
+          !searchQuery.trim() ||
+          task.title.toLowerCase().includes(searchQuery.toLowerCase());
+        const matchesPriority =
+          selectedPriorityFilter === "All" || task.priority === selectedPriorityFilter;
+        const matchesStatus =
+          selectedStatusFilter === "All" || task.status === selectedStatusFilter;
+
+        return matchesSearch && matchesPriority && matchesStatus;
+      });
+
+      if (sortBy === "name") {
+        filtered = [...filtered].sort((a, b) => a.title.localeCompare(b.title));
+      } else if (sortBy === "priority") {
+        const pRank = { High: 1, Medium: 2, Low: 3 };
+        filtered = [...filtered].sort(
+          (a, b) => (pRank[a.priority || "Low"] || 9) - (pRank[b.priority || "Low"] || 9)
+        );
+      }
+
+      return { ...sec, tasks: filtered };
+    });
+  }, [sections, searchQuery, selectedPriorityFilter, selectedStatusFilter, sortBy]);
+
   return (
-    <DashboardLayout>
-      <div className="space-y-6">
-        {/* Project Header */}
-        <div className="flex items-center justify-between">
-          <div className="flex items-center space-x-4">
-            <Link
-              href="/projects"
-              className="p-2 hover:bg-platinum-500 dark:hover:bg-payne's_gray-400 rounded-lg transition-colors"
-            >
-              <ArrowLeft size={20} />
-            </Link>
-            <div>
-              <h1 className="text-3xl font-bold text-outer_space-500 dark:text-platinum-500">Project #{params.id}</h1>
-              <p className="text-payne's_gray-500 dark:text-french_gray-500 mt-1">
-                Kanban board view for project management
-              </p>
-            </div>
-          </div>
+    <div className="flex h-screen bg-white dark:bg-[#0f1d31] text-slate-800 dark:text-slate-100 overflow-hidden font-sans">
+      <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
+        {/* Header (Title, Customization, Set Status, Share, Favorites) */}
+        <ProjectHeader
+          projectTitle={projectTitle}
+          setProjectTitle={setProjectTitle}
+          projectColor={projectColor}
+          setProjectColor={setProjectColor}
+          selectedIconIndex={selectedIconIndex}
+          setSelectedIconIndex={setSelectedIconIndex}
+          status={status}
+          setStatus={setStatus}
+        />
 
-          <div className="flex items-center space-x-2">
-            <button className="p-2 hover:bg-platinum-500 dark:hover:bg-payne's_gray-400 rounded-lg transition-colors">
-              <Users size={20} />
-            </button>
-            <button className="p-2 hover:bg-platinum-500 dark:hover:bg-payne's_gray-400 rounded-lg transition-colors">
-              <Calendar size={20} />
-            </button>
-            <button className="p-2 hover:bg-platinum-500 dark:hover:bg-payne's_gray-400 rounded-lg transition-colors">
-              <Settings size={20} />
-            </button>
-            <button className="p-2 hover:bg-platinum-500 dark:hover:bg-payne's_gray-400 rounded-lg transition-colors">
-              <MoreHorizontal size={20} />
-            </button>
-          </div>
-        </div>
+        {/* Tabs Navigation Bar */}
+        <ProjectTabs
+          activeTab={activeTab}
+          setActiveTab={setActiveTab}
+          availableTabs={availableTabs}
+          onAddTab={handleAddTab}
+        />
 
-        {/* Implementation Tasks Banner */}
-        <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
-          <h3 className="text-sm font-medium text-blue-900 dark:text-blue-100 mb-2">
-            🎯 Kanban Board Implementation Tasks
-          </h3>
-          <ul className="text-sm text-blue-800 dark:text-blue-200 space-y-1">
-            <li>• Task 5.1: Design responsive Kanban board layout</li>
-            <li>• Task 5.2: Implement drag-and-drop functionality with dnd-kit</li>
-            <li>• Task 5.4: Implement optimistic UI updates for smooth interactions</li>
-            <li>• Task 5.6: Create task detail modals and editing interfaces</li>
-          </ul>
-        </div>
+        {/* Main Content View per Tab */}
+        <div className="flex-1 overflow-auto flex flex-col">
+          {activeTab === "Overview" ? (
+            <OverviewTab
+              status={status}
+              setStatus={setStatus}
+              description={description}
+              setDescription={setDescription}
+              ownerName="Ellen Grace Sinday"
+              ownerInitials="ES"
+            />
+          ) : activeTab === "Board" ? (
+            <BoardTab
+              sections={filteredSections}
+              onSelectTask={setSelectedTask}
+              onAddTask={triggerAddTask}
+              onAddSection={handleAddSection}
+            />
+          ) : activeTab === "Timeline" || activeTab === "Gantt" ? (
+            <TimelineTab
+              sections={filteredSections}
+              onSelectTask={setSelectedTask}
+              onAddTask={triggerAddTask}
+              onDeleteTask={handleDeleteTask}
+            />
+          ) : activeTab === "Dashboard" ? (
+            <DashboardTab sections={filteredSections} />
+          ) : activeTab === "Calendar" ? (
+            <CalendarTab
+              sections={filteredSections}
+              onSelectTask={setSelectedTask}
+              onAddTask={triggerAddTask}
+            />
+          ) : (
+            /* List View */
+            <div className="flex flex-col h-full">
+              {/* Toolbar (Search, Filter, Sort, Add Task) */}
+              <ProjectToolbar
+                onAddTask={triggerAddTask}
+                searchQuery={searchQuery}
+                setSearchQuery={setSearchQuery}
+                selectedPriorityFilter={selectedPriorityFilter}
+                setSelectedPriorityFilter={setSelectedPriorityFilter}
+                selectedStatusFilter={selectedStatusFilter}
+                setSelectedStatusFilter={setSelectedStatusFilter}
+                sortBy={sortBy}
+                setSortBy={setSortBy}
+                onAddSection={handleAddSection}
+              />
 
-        {/* Kanban Board Placeholder */}
-        <div className="bg-white dark:bg-outer_space-500 rounded-lg border border-french_gray-300 dark:border-payne's_gray-400 p-6">
-          <div className="flex space-x-6 overflow-x-auto pb-4">
-            {["To Do", "In Progress", "Review", "Done"].map((columnTitle, columnIndex) => (
-              <div key={columnTitle} className="flex-shrink-0 w-80">
-                <div className="bg-platinum-800 dark:bg-outer_space-400 rounded-lg border border-french_gray-300 dark:border-payne's_gray-400">
-                  <div className="p-4 border-b border-french_gray-300 dark:border-payne's_gray-400">
-                    <div className="flex items-center justify-between">
-                      <h3 className="font-semibold text-outer_space-500 dark:text-platinum-500">
-                        {columnTitle}
-                        <span className="ml-2 px-2 py-1 text-xs bg-french_gray-300 dark:bg-payne's_gray-400 rounded-full">
-                          {Math.floor(Math.random() * 5) + 1}
+              {/* List Table Content */}
+              <div className="flex-1 overflow-auto">
+                <div className="grid grid-cols-[1fr_180px_140px_120px_120px_40px] border-b border-slate-200 dark:border-slate-800 text-[11px] font-semibold text-slate-400 px-6 py-1.5 bg-slate-50/30 dark:bg-[#0f1d31]/30">
+                  <div>Name</div>
+                  <div>Assignee</div>
+                  <div>Due date</div>
+                  <div>Priority</div>
+                  <div>Status</div>
+                  <div className="text-center">+</div>
+                </div>
+
+                <div className="divide-y divide-slate-100 dark:divide-slate-800">
+                  {filteredSections.map((section) => (
+                    <div key={section.id} className="py-2">
+                      <div className="flex items-center gap-2 px-6 py-2">
+                        <ChevronDown size={14} className="text-slate-400" />
+                        <span className="font-bold text-sm text-slate-800 dark:text-slate-100">
+                          {section.title}
                         </span>
-                      </h3>
-                      <button className="p-1 hover:bg-platinum-500 dark:hover:bg-payne's_gray-400 rounded">
-                        <MoreHorizontal size={16} />
-                      </button>
-                    </div>
-                  </div>
-
-                  <div className="p-4 space-y-3 min-h-[400px]">
-                    {[1, 2, 3].map((taskIndex) => (
-                      <div
-                        key={taskIndex}
-                        className="p-4 bg-white dark:bg-outer_space-300 rounded-lg border border-french_gray-300 dark:border-payne's_gray-400 cursor-pointer hover:shadow-md transition-shadow"
-                      >
-                        <h4 className="font-medium text-outer_space-500 dark:text-platinum-500 text-sm mb-2">
-                          Sample Task {taskIndex}
-                        </h4>
-                        <p className="text-xs text-payne's_gray-500 dark:text-french_gray-400 mb-3">
-                          This is a placeholder task description
-                        </p>
-                        <div className="flex items-center justify-between">
-                          <span className="px-2 py-1 text-xs font-medium rounded-full bg-blue_munsell-100 text-blue_munsell-700 dark:bg-blue_munsell-900 dark:text-blue_munsell-300">
-                            Medium
-                          </span>
-                          <div className="w-6 h-6 bg-blue_munsell-500 rounded-full flex items-center justify-center text-white text-xs font-semibold">
-                            U
-                          </div>
-                        </div>
                       </div>
-                    ))}
 
-                    <button className="w-full p-3 border-2 border-dashed border-french_gray-300 dark:border-payne's_gray-400 rounded-lg text-payne's_gray-500 dark:text-french_gray-400 hover:border-blue_munsell-500 hover:text-blue_munsell-500 transition-colors">
-                      + Add task
-                    </button>
-                  </div>
+                      <div className="divide-y divide-slate-100 dark:divide-slate-800/40">
+                        {section.tasks.map((task) => (
+                          <div
+                            key={task.id}
+                            onClick={() => setSelectedTask(task)}
+                            className={`grid grid-cols-[1fr_180px_140px_120px_120px_40px] items-center px-6 py-1.5 hover:bg-sky-50/50 dark:hover:bg-sky-950/20 cursor-pointer text-xs transition-colors ${
+                              selectedTask?.id === task.id ? "bg-sky-50 dark:bg-sky-950/30" : ""
+                            }`}
+                          >
+                            <div className="flex items-center gap-2.5 pr-2">
+                              <CheckCircle2 size={16} className="text-slate-300 dark:text-slate-600 hover:text-emerald-500 shrink-0" />
+                              <span className="font-medium text-slate-800 dark:text-slate-200 truncate">
+                                {task.title}
+                              </span>
+                            </div>
+
+                            <div>
+                              {task.assignee ? (
+                                <div className="flex items-center gap-1.5">
+                                  <span className="w-5 h-5 rounded-full bg-amber-400 text-amber-900 font-bold text-[10px] flex items-center justify-center shrink-0">
+                                    {task.assignee.initials}
+                                  </span>
+                                  <span className="text-slate-600 dark:text-slate-400 truncate text-[11px]">
+                                    {task.assignee.name}
+                                  </span>
+                                </div>
+                              ) : (
+                                <span className="w-5 h-5 rounded-full border border-dashed border-slate-300 flex items-center justify-center text-slate-400 text-[10px]">
+                                  +
+                                </span>
+                              )}
+                            </div>
+
+                            <div>
+                              {task.dueDate && (
+                                <span className="text-rose-500 font-medium text-[11px]">
+                                  {task.dueDate}
+                                </span>
+                              )}
+                            </div>
+
+                            <div>
+                              {task.priority && (
+                                <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-amber-100 text-amber-700 dark:bg-amber-950/50 dark:text-amber-400">
+                                  {task.priority}
+                                </span>
+                              )}
+                            </div>
+
+                            <div>
+                              {task.status && (
+                                <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-sky-100 text-sky-700 dark:bg-sky-950/50 dark:text-sky-400">
+                                  {task.status}
+                                </span>
+                              )}
+                            </div>
+                            <div />
+                          </div>
+                        ))}
+
+                        {inlineAddingSectionId === section.id ? (
+                          <div className="grid grid-cols-[1fr_180px_140px_120px_120px_40px] items-center px-6 py-1.5 bg-sky-50/30 border-l-2 border-sky-500">
+                            <div className="flex items-center gap-2.5">
+                              <CheckCircle2 size={16} className="text-slate-300" />
+                              <input
+                                ref={inlineInputRef}
+                                type="text"
+                                value={newTaskTitle}
+                                onChange={(e) => setNewTaskTitle(e.target.value)}
+                                onKeyDown={(e) => {
+                                  if (e.key === "Enter") handleSaveInlineTask(section.id);
+                                  if (e.key === "Escape") setInlineAddingSectionId(null);
+                                }}
+                                onBlur={() => handleSaveInlineTask(section.id)}
+                                placeholder="Write a task name"
+                                className="w-full text-xs bg-transparent border-none outline-none text-slate-800 dark:text-slate-100 placeholder-slate-400 p-0"
+                              />
+                            </div>
+                          </div>
+                        ) : (
+                          <div className="px-6 py-2">
+                            <button
+                              onClick={() => triggerAddTask(section.id)}
+                              className="text-xs text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 font-medium"
+                            >
+                              Add task...
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  ))}
                 </div>
               </div>
-            ))}
-          </div>
-        </div>
-
-        {/* Component Implementation Guide */}
-        <div className="mt-8 p-6 bg-gray-50 dark:bg-gray-800/50 rounded-lg border-2 border-dashed border-gray-300 dark:border-gray-600">
-          <h3 className="text-lg font-semibold text-gray-700 dark:text-gray-300 mb-4">
-            🛠️ Components & Features to Implement
-          </h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-sm text-gray-600 dark:text-gray-400">
-            <div>
-              <strong className="block mb-2">Core Components:</strong>
-              <ul className="space-y-1 list-disc list-inside">
-                <li>components/kanban-board.tsx</li>
-                <li>components/task-card.tsx</li>
-                <li>components/modals/create-task-modal.tsx</li>
-                <li>stores/board-store.ts (Zustand)</li>
-              </ul>
             </div>
-            <div>
-              <strong className="block mb-2">Advanced Features:</strong>
-              <ul className="space-y-1 list-disc list-inside">
-                <li>Drag & drop with @dnd-kit/core</li>
-                <li>Real-time updates</li>
-                <li>Task assignments & due dates</li>
-                <li>Comments & activity history</li>
-              </ul>
-            </div>
-          </div>
+          )}
         </div>
       </div>
-    </DashboardLayout>
-  )
+
+      {/* Slide-over Task Details Modal Pane */}
+      {selectedTask && (
+        <TaskDetailsPane
+          task={selectedTask}
+          projectName={projectTitle}
+          onClose={() => setSelectedTask(null)}
+          onUpdateTask={handleUpdateTask}
+        />
+      )}
+    </div>
+  );
 }

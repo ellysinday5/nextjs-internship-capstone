@@ -1,48 +1,189 @@
-// TODO: Task 4.1 - Implement project CRUD operations
-// TODO: Task 4.4 - Build task creation and editing functionality
+"use client";
 
-/*
-TODO: Implementation Notes for Interns:
+import React, { useState } from "react";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { sileo } from "@/utils/alerts";
+import { createProjectSchema, CreateProjectFormValues } from "@/lib/project-schemas";
+import { createProjectAction } from "@/app/actions/project-actions";
+import { Modal } from "@/components/modals/BaseModal";
+import { ConfirmationModal } from "@/components/modals/ConfirmationModal";
 
-Modal for creating new projects with form validation.
+interface CreateProjectModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  onSuccess?: () => void;
+}
 
-Features to implement:
-- Form with project name, description, due date
-- Zod validation
-- Error handling
-- Loading states
-- Success feedback
-- Team member assignment
-- Project template selection
+export function CreateProjectModal({ isOpen, onClose, onSuccess }: CreateProjectModalProps) {
+  const [serverError, setServerError] = useState<string | null>(null);
+  const [showDiscardConfirm, setShowDiscardConfirm] = useState(false);
 
-Form fields:
-- Name (required)
-- Description (optional)
-- Due date (optional)
-- Team members (optional)
-- Project template (optional)
-- Privacy settings
+  const {
+    register,
+    handleSubmit,
+    reset,
+    watch,
+    formState: { errors, isSubmitting, isDirty },
+  } = useForm<CreateProjectFormValues>({
+    resolver: zodResolver(createProjectSchema),
+    defaultValues: {
+      name: "",
+      description: "",
+      dueDate: "",
+    },
+  });
 
-Integration:
-- Use project validation schema from lib/validations.ts
-- Call project creation API
-- Update project list optimistically
-- Handle errors gracefully
-*/
+  const handleCloseAttempt = () => {
+    if (isDirty) {
+      setShowDiscardConfirm(true);
+      return;
+    }
+    resetAndClose();
+  };
 
-export function CreateProjectModal() {
+  const resetAndClose = () => {
+    reset();
+    setServerError(null);
+    setShowDiscardConfirm(false);
+    onClose();
+  };
+
+  const onSubmit = async (data: CreateProjectFormValues) => {
+    setServerError(null);
+    const res = await createProjectAction(data);
+
+    if (res.success) {
+      sileo.success(`Project "${data.name}" created successfully!`, "Project Created");
+      resetAndClose();
+      onSuccess?.();
+    } else {
+      setServerError(res.error || "Failed to create project");
+      sileo.error(res.error || "Failed to create project", "Error");
+    }
+  };
+
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
-      <div className="bg-white dark:bg-outer_space-500 rounded-lg p-6 w-full max-w-md mx-4">
-        <h3 className="text-lg font-semibold text-outer_space-500 dark:text-platinum-500 mb-4">
-          TODO: Create Project Modal
-        </h3>
-        <div className="bg-yellow-50 dark:bg-yellow-900/20 p-4 rounded border border-yellow-200 dark:border-yellow-800">
-          <p className="text-sm text-yellow-800 dark:text-yellow-200">
-            📋 Implement project creation form with validation
-          </p>
-        </div>
-      </div>
-    </div>
-  )
+    <>
+      <Modal
+        isOpen={isOpen}
+        onClose={handleCloseAttempt}
+        title="Create New Project"
+        showCloseButton={false}
+        maxWidthClassName="max-w-2xl"
+        footer={
+          <>
+            <button
+              type="button"
+              onClick={handleCloseAttempt}
+              className="rounded-lg px-5 py-2.5 text-sm font-semibold text-slate-700 transition-colors hover:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-800"
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              form="create-project-form"
+              className="rounded-lg bg-[#0033a0] px-5 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-[#002a80] disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              Create Project
+            </button>
+          </>
+        }
+      >
+        {serverError && (
+          <div className="mb-4 rounded-lg border border-red-200 bg-red-50 px-3.5 py-2.5 text-xs font-semibold text-red-600 dark:border-red-800 dark:bg-red-900/30 dark:text-red-400">
+            {serverError}
+          </div>
+        )}
+
+        <form
+          id="create-project-form"
+          onSubmit={handleSubmit(onSubmit)}
+          className="space-y-5"
+          noValidate
+        >
+          <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
+            <div>
+              <label className="mb-1.5 block text-sm font-medium text-slate-700 dark:text-slate-200">
+                Project Name <span className="text-red-500">*</span>
+              </label>
+              <input
+                {...register("name")}
+                className={`w-full rounded-xl border-2 px-4 py-3 text-sm text-slate-900 outline-none transition-colors placeholder:text-slate-400 dark:bg-slate-900 dark:text-slate-100 ${
+                  errors.name
+                    ? "border-red-400 focus:border-red-500"
+                    : "border-slate-200 focus:border-[#0033a0] dark:border-slate-700"
+                }`}
+              />
+              {errors.name && (
+                <p className="mt-1 text-xs font-semibold text-red-500">{errors.name.message}</p>
+              )}
+            </div>
+
+            <div>
+              <label className="mb-1.5 block text-sm font-medium text-slate-700 dark:text-slate-200">
+                Target Completion Date <span className="text-red-500">*</span>
+              </label>
+              <input
+                type="date"
+                {...register("dueDate")}
+                className={`w-full rounded-xl border-2 px-4 py-3 text-sm text-slate-900 outline-none transition-colors [color-scheme:light] dark:[color-scheme:dark] dark:bg-slate-900 dark:text-slate-100 ${
+                  errors.dueDate
+                    ? "border-red-400 focus:border-red-500"
+                    : "border-slate-200 focus:border-[#0033a0] dark:border-slate-700"
+                }`}
+              />
+              {errors.dueDate && (
+                <p className="mt-1 text-xs font-semibold text-red-500">{errors.dueDate.message}</p>
+              )}
+            </div>
+          </div>
+
+          <div>
+            <label className="mb-1.5 flex items-center justify-between">
+              <span className="text-sm font-medium text-slate-700 dark:text-slate-200">
+                Description{" "}
+                <span className="text-xs font-normal text-slate-400 dark:text-slate-500">
+                  (optional)
+                </span>
+              </span>
+              <span
+                className={`text-xs font-medium ${
+                  (watch("description")?.length ?? 0) > 500
+                    ? "text-red-500"
+                    : "text-slate-400 dark:text-slate-500"
+                }`}
+              >
+                {watch("description")?.length ?? 0}/500
+              </span>
+            </label>
+            <textarea
+              rows={5}
+              {...register("description")}
+              maxLength={500}
+              placeholder="Describe the key goals, objectives, and deliverables for this project..."
+              className={`w-full resize-none rounded-xl border-2 px-4 py-3 text-sm text-slate-900 outline-none transition-colors placeholder:text-slate-400 dark:bg-slate-900 dark:text-slate-100 ${
+                errors.description
+                  ? "border-red-400 focus:border-red-500"
+                  : "border-slate-200 focus:border-[#0033a0] dark:border-slate-700"
+              }`}
+            />
+            {errors.description && (
+              <p className="mt-1 text-xs font-semibold text-red-500">
+                {errors.description.message}
+              </p>
+            )}
+          </div>
+        </form>
+      </Modal>
+
+      <ConfirmationModal
+        isOpen={showDiscardConfirm}
+        onClose={() => setShowDiscardConfirm(false)}
+        onConfirm={resetAndClose}
+        variant="discard"
+        showCloseButton={false}
+      />
+    </>
+  );
 }
