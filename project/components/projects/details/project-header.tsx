@@ -7,7 +7,6 @@ import {
   ChevronDown,
   Star,
   Share2,
-  SlidersHorizontal,
   Check,
   ListTodo,
   Kanban,
@@ -294,12 +293,6 @@ export function ProjectHeader({
               className="flex items-center gap-1 bg-sky-600 hover:bg-sky-700 text-white text-xs font-semibold px-3 py-1.5 rounded-lg transition-colors shadow-xs"
             >
               <Share2 size={13} /> Share
-            </button>
-            <button
-              onClick={() => setIsCustomizeOpen(!isCustomizeOpen)}
-              className="flex items-center gap-1 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 text-xs font-semibold px-2.5 py-1.5 rounded-lg"
-            >
-              <SlidersHorizontal size={13} /> Customize
             </button>
           </div>
         </div>

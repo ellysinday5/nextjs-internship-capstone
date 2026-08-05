@@ -14,17 +14,16 @@ export default function SettingsPage() {
   const [saveSuccess, setSaveSuccess] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // Custom categories
   const { categories, addCategory, removeCategory } = useCategories();
   const [newCategory, setNewCategory] = useState("");
 
-  // Profile Form State — initialise from context
+
   const [fullName, setFullName] = useState(profile.fullName);
   const [email, setEmail] = useState(profile.email);
   const [role, setRole] = useState(profile.role);
   const [avatarPreview, setAvatarPreview] = useState<string | undefined>(profile.avatarUrl);
 
-  // Keep local form fields in sync if context changes externally
+
   useEffect(() => {
     setFullName(profile.fullName);
     setEmail(profile.email);
@@ -54,19 +53,18 @@ export default function SettingsPage() {
     if (fileInputRef.current) fileInputRef.current.value = "";
   };
 
-  // Notification State
+
   const [emailNotifs, setEmailNotifs] = useState(true);
   const [pushNotifs, setPushNotifs] = useState(true);
   const [taskAlerts, setTaskAlerts] = useState(true);
   const [weeklyDigest, setWeeklyDigest] = useState(false);
 
-  // Security State
+
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [twoFactor, setTwoFactor] = useState(false);
 
-  // Appearance State
   const [themeMode, setThemeMode] = useState<"light" | "dark" | "system">("light");
   const [compactMode, setCompactMode] = useState(false);
 
@@ -89,7 +87,6 @@ export default function SettingsPage() {
     { id: "categories" as SettingsTab, name: "Categories", icon: Tags },
   ];
 
-  // Shared button classes
   const cancelBtn =
     "px-5 py-2.5 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600 text-[#142843] dark:text-white font-bold text-sm rounded-xl hover:bg-slate-50 dark:hover:bg-slate-700 transition-all hover:scale-[1.02] active:scale-[0.98]";
   const saveBtn =
@@ -97,7 +94,6 @@ export default function SettingsPage() {
 
   return (
     <div className="space-y-6 w-full">
-      {/* Save Success Alert Banner */}
       {saveSuccess && (
         <div className="bg-emerald-500 text-white p-4 rounded-2xl flex items-center gap-3 shadow-md animate-in fade-in slide-in-from-top-2">
           <CheckCircle2 size={22} className="shrink-0" />
@@ -108,9 +104,7 @@ export default function SettingsPage() {
         </div>
       )}
 
-      {/* Main Grid: Left Nav + Right Form Content */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-        {/* Left Navigation Card */}
         <div className="lg:col-span-4 xl:col-span-3 bg-[#e8f1ff] dark:bg-[#20182b] border-2 border-[#142843] dark:border-purple-900/60 rounded-3xl p-6 shadow-sm hover:shadow-lg transition-shadow duration-300">
           <h2 className="text-xl sm:text-2xl font-black text-[#142843] dark:text-white mb-5 tracking-tight">
             Settings
@@ -123,11 +117,10 @@ export default function SettingsPage() {
                 <button
                   key={item.id}
                   onClick={() => setActiveTab(item.id)}
-                  className={`w-full flex items-center gap-3.5 px-4 py-3 text-sm font-extrabold rounded-xl transition-all duration-200 ${
-                    isActive
-                      ? "bg-[#142843] text-white shadow-md scale-[1.02]"
-                      : "text-[#142843] dark:text-purple-200 hover:bg-white/60 dark:hover:bg-purple-900/40 hover:scale-[1.01] hover:shadow-sm"
-                  }`}
+                  className={`w-full flex items-center gap-3.5 px-4 py-3 text-sm font-extrabold rounded-xl transition-all duration-200 ${isActive
+                    ? "bg-[#142843] text-white shadow-md scale-[1.02]"
+                    : "text-[#142843] dark:text-purple-200 hover:bg-white/60 dark:hover:bg-purple-900/40 hover:scale-[1.01] hover:shadow-sm"
+                    }`}
                   suppressHydrationWarning
                 >
                   <item.icon
@@ -140,7 +133,6 @@ export default function SettingsPage() {
             })}
           </nav>
 
-          {/* Profile preview card inside sidebar */}
           {activeTab === "profile" && (
             <div className="mt-6 p-4 bg-white/60 dark:bg-slate-800/40 rounded-2xl border border-[#142843]/15 dark:border-slate-600/40">
               <div className="flex flex-col items-center gap-2 text-center">
@@ -173,16 +165,13 @@ export default function SettingsPage() {
           )}
         </div>
 
-        {/* Right Content Form Panel */}
         <div className="lg:col-span-8 xl:col-span-9 bg-white dark:bg-[#14263e] border-2 border-[#142843] dark:border-slate-600 rounded-3xl p-6 sm:p-8 shadow-sm hover:shadow-lg transition-shadow duration-300">
-          {/* ── PROFILE TAB ── */}
           {activeTab === "profile" && (
             <form onSubmit={handleSave} className="space-y-6">
               <h2 className="text-xl sm:text-2xl font-black text-[#142843] dark:text-white tracking-tight">
                 Profile Settings
               </h2>
 
-              {/* Avatar Upload */}
               <div className="flex flex-col sm:flex-row items-center sm:items-end gap-5">
                 <div className="relative group">
                   <div className="w-24 h-24 rounded-2xl overflow-hidden ring-4 ring-purple-200/60 dark:ring-purple-800/40 shadow-md">
@@ -200,7 +189,6 @@ export default function SettingsPage() {
                       </div>
                     )}
                   </div>
-                  {/* Camera overlay on hover */}
                   <button
                     type="button"
                     onClick={() => fileInputRef.current?.click()}
@@ -314,7 +302,6 @@ export default function SettingsPage() {
             </form>
           )}
 
-          {/* ── NOTIFICATION TAB ── */}
           {activeTab === "notification" && (
             <form onSubmit={handleSave} className="space-y-6">
               <h2 className="text-xl sm:text-2xl font-black text-[#142843] dark:text-white tracking-tight">
@@ -473,11 +460,10 @@ export default function SettingsPage() {
                         key={mode}
                         type="button"
                         onClick={() => setThemeMode(mode)}
-                        className={`py-3 px-4 rounded-xl border-2 font-bold text-sm capitalize transition-all hover:scale-[1.03] ${
-                          themeMode === mode
-                            ? "border-[#0052cc] bg-[#0052cc] text-white shadow-md"
-                            : "border-slate-300 dark:border-slate-600 text-[#142843] dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700/50"
-                        }`}
+                        className={`py-3 px-4 rounded-xl border-2 font-bold text-sm capitalize transition-all hover:scale-[1.03] ${themeMode === mode
+                          ? "border-[#0052cc] bg-[#0052cc] text-white shadow-md"
+                          : "border-slate-300 dark:border-slate-600 text-[#142843] dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700/50"
+                          }`}
                         suppressHydrationWarning
                       >
                         {mode} Mode

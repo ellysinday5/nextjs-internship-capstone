@@ -29,6 +29,8 @@ export function ThemeProvider({ children }: ThemeProviderProps) {
     const savedTheme = localStorage.getItem("theme") as Theme;
     if (savedTheme) {
       setTheme(savedTheme);
+    } else {
+      setTheme("light");
     }
   }, []);
 

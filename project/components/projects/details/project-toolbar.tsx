@@ -40,8 +40,6 @@ function ToolbarControls({
   setSelectedPriorityFilter,
   selectedStatusFilter,
   setSelectedStatusFilter,
-  sortBy,
-  setSortBy,
 }: Pick<
   ProjectToolbarProps,
   | "searchQuery"
@@ -54,18 +52,26 @@ function ToolbarControls({
   | "setSortBy"
 >) {
   const [isSearchOpen, setIsSearchOpen] = useState(false);
-  const [isFilterOpen, setIsFilterOpen] = useState(false);
-  const [isSortOpen, setIsSortOpen] = useState(false);
+  const [isStatusOpen, setIsStatusOpen] = useState(false);
+  const [isPriorityOpen, setIsPriorityOpen] = useState(false);
 
   const hasActiveFilters =
     selectedPriorityFilter !== "All" || selectedStatusFilter !== "All";
 
+  // Pill base classes
+  const pill =
+    "flex items-center gap-1.5 px-3 py-1.5 rounded-full border transition-colors text-xs font-semibold cursor-pointer";
+  const pillIdle =
+    "border-slate-300 dark:border-slate-600 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-300";
+  const pillActive =
+    "border-blue-500 bg-blue-50 text-blue-600 dark:bg-blue-950/40 dark:border-blue-500";
+
   return (
-    <div className="flex items-center gap-3 text-xs font-semibold text-slate-600 dark:text-slate-400">
+    <div className="flex items-center gap-2 text-xs font-semibold text-slate-600 dark:text-slate-400">
       {/* Search toggle */}
       <div className="relative flex items-center">
         {isSearchOpen ? (
-          <div className="flex items-center gap-1.5 bg-white dark:bg-slate-900 border border-blue-500 rounded-lg px-2 py-1">
+          <div className="flex items-center gap-1.5 bg-white dark:bg-slate-900 border border-blue-500 rounded-full px-3 py-1.5">
             <Search size={13} className="text-blue-500" />
             <input
               type="text"
@@ -88,125 +94,104 @@ function ToolbarControls({
         ) : (
           <button
             onClick={() => setIsSearchOpen(true)}
-            className={`p-1.5 rounded-lg border transition-colors ${
-              searchQuery
-                ? "border-blue-500 bg-blue-50 text-blue-600 dark:bg-blue-950/40"
-                : "border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800"
-            }`}
+            className={`${pill} ${searchQuery ? pillActive : pillIdle}`}
             title="Search tasks"
           >
-            <Search size={14} />
+            <Search size={13} />
+            <span>Search</span>
           </button>
         )}
       </div>
 
-      {/* Filter dropdown */}
+      {/* Status filter pill */}
       <div className="relative">
         <button
-          onClick={() => setIsFilterOpen((v) => !v)}
-          className={`flex items-center gap-1 px-2.5 py-1.5 rounded-lg border transition-colors ${
-            hasActiveFilters
-              ? "border-blue-500 bg-blue-50 text-blue-600 dark:bg-blue-950/40"
-              : "border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800"
-          }`}
+          onClick={() => {
+            setIsStatusOpen((v) => !v);
+            setIsPriorityOpen(false);
+          }}
+          className={`${pill} ${selectedStatusFilter !== "All" ? pillActive : pillIdle}`}
         >
-          <Filter size={13} /> Filter
-          {hasActiveFilters && (
-            <span className="w-1.5 h-1.5 rounded-full bg-blue-600" />
+          <span>Status</span>
+          <Filter size={12} className="opacity-70" />
+          {selectedStatusFilter !== "All" && (
+            <span className="w-1.5 h-1.5 rounded-full bg-blue-600 shrink-0" />
           )}
         </button>
 
-        {isFilterOpen && (
-          <div className="absolute right-0 top-full mt-1 z-50 w-52 bg-white dark:bg-[#14263e] border border-slate-200 dark:border-slate-700 rounded-xl shadow-xl p-3 space-y-3">
-            <div>
-              <label className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block mb-1">
-                Priority
-              </label>
-              <select
-                value={selectedPriorityFilter}
-                onChange={(e) => setSelectedPriorityFilter(e.target.value)}
-                className="w-full rounded-lg border border-slate-300 bg-slate-50 px-2 py-1 text-xs text-slate-800 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 outline-none"
-              >
-                <option value="All">All Priorities</option>
-                <option value="Low">Low</option>
-                <option value="Medium">Medium</option>
-                <option value="High">High</option>
-              </select>
-            </div>
-
-            <div>
-              <label className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block mb-1">
-                Status
-              </label>
-              <select
-                value={selectedStatusFilter}
-                onChange={(e) => setSelectedStatusFilter(e.target.value)}
-                className="w-full rounded-lg border border-slate-300 bg-slate-50 px-2 py-1 text-xs text-slate-800 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 outline-none"
-              >
-                <option value="All">All Statuses</option>
-                <option value="On track">On track</option>
-                <option value="At risk">At risk</option>
-                <option value="Off track">Off track</option>
-              </select>
-            </div>
-
-            {hasActiveFilters && (
+        {isStatusOpen && (
+          <div className="absolute left-0 top-full mt-1 z-50 w-44 bg-white dark:bg-[#14263e] border border-slate-200 dark:border-slate-700 rounded-xl shadow-xl p-2 space-y-1">
+            {["All", "On track", "At risk", "Off track"].map((opt) => (
               <button
+                key={opt}
                 onClick={() => {
-                  setSelectedPriorityFilter("All");
-                  setSelectedStatusFilter("All");
-                  setIsFilterOpen(false);
+                  setSelectedStatusFilter(opt);
+                  setIsStatusOpen(false);
                 }}
-                className="w-full text-center text-xs text-blue-600 hover:underline pt-1"
-              >
-                Clear filters
-              </button>
-            )}
-          </div>
-        )}
-      </div>
-
-      {/* Sort dropdown */}
-      <div className="relative">
-        <button
-          onClick={() => setIsSortOpen((v) => !v)}
-          className={`flex items-center gap-1 px-2.5 py-1.5 rounded-lg border transition-colors ${
-            sortBy !== "default"
-              ? "border-blue-500 bg-blue-50 text-blue-600 dark:bg-blue-950/40"
-              : "border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800"
-          }`}
-        >
-          <Filter size={13} className="hidden" />
-          <span className="flex items-center gap-1">↕ Sort</span>
-        </button>
-
-        {isSortOpen && (
-          <div className="absolute right-0 top-full mt-1 z-50 w-44 bg-white dark:bg-[#14263e] border border-slate-200 dark:border-slate-700 rounded-xl shadow-xl p-2 space-y-1">
-            {(
-              [
-                { value: "default", label: "Default" },
-                { value: "name", label: "Alphabetical (A–Z)" },
-                { value: "priority", label: "Priority" },
-              ] as const
-            ).map(({ value, label }) => (
-              <button
-                key={value}
-                onClick={() => {
-                  setSortBy(value);
-                  setIsSortOpen(false);
-                }}
-                className={`w-full text-left px-3 py-1.5 rounded-lg text-xs font-semibold ${
-                  sortBy === value
+                className={`w-full text-left px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors ${
+                  selectedStatusFilter === opt
                     ? "bg-blue-50 text-blue-600 dark:bg-blue-950/40"
                     : "hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-200"
                 }`}
               >
-                {label}
+                {opt === "All" ? "All Statuses" : opt}
               </button>
             ))}
           </div>
         )}
       </div>
+
+      {/* Priority filter pill */}
+      <div className="relative">
+        <button
+          onClick={() => {
+            setIsPriorityOpen((v) => !v);
+            setIsStatusOpen(false);
+          }}
+          className={`${pill} ${selectedPriorityFilter !== "All" ? pillActive : pillIdle}`}
+        >
+          <span>Priority</span>
+          <ArrowUpDown size={12} className="opacity-70" />
+          {selectedPriorityFilter !== "All" && (
+            <span className="w-1.5 h-1.5 rounded-full bg-blue-600 shrink-0" />
+          )}
+        </button>
+
+        {isPriorityOpen && (
+          <div className="absolute left-0 top-full mt-1 z-50 w-44 bg-white dark:bg-[#14263e] border border-slate-200 dark:border-slate-700 rounded-xl shadow-xl p-2 space-y-1">
+            {["All", "Low", "Medium", "High"].map((opt) => (
+              <button
+                key={opt}
+                onClick={() => {
+                  setSelectedPriorityFilter(opt);
+                  setIsPriorityOpen(false);
+                }}
+                className={`w-full text-left px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors ${
+                  selectedPriorityFilter === opt
+                    ? "bg-blue-50 text-blue-600 dark:bg-blue-950/40"
+                    : "hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-200"
+                }`}
+              >
+                {opt === "All" ? "All Priorities" : opt}
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* Clear all active filters */}
+      {hasActiveFilters && (
+        <button
+          onClick={() => {
+            setSelectedPriorityFilter("All");
+            setSelectedStatusFilter("All");
+          }}
+          className={`${pill} border-red-300 text-red-500 hover:bg-red-50 dark:border-red-800 dark:text-red-400 dark:hover:bg-red-950/20`}
+        >
+          <X size={12} />
+          Clear
+        </button>
+      )}
     </div>
   );
 }

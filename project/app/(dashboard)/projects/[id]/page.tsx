@@ -16,6 +16,7 @@ import { TimelineTab } from "@/components/projects/details/timeline-tab";
 import { DashboardTab } from "@/components/projects/details/dashboard-tab";
 import { CalendarTab } from "@/components/projects/details/calendar-tab";
 import { Section, ProjectStatusType } from "@/components/projects/details/types";
+import { useProjectTitle } from "@/context/project-title-context";
 
 function slugToTitle(slug: string): string {
   return slug
@@ -80,6 +81,14 @@ export default function AsanaProjectPage({
   // State
   const [projectTitle, setProjectTitle] = useState(initialTitle);
   const [sections, setSections] = useState<Section[]>(initialSections);
+
+  // Sync project title into context so the layout Header updates live
+  const { setProjectTitle: setContextTitle } = useProjectTitle();
+  useEffect(() => {
+    setContextTitle(projectTitle);
+    return () => setContextTitle(null); // clear on unmount
+  }, [projectTitle, setContextTitle]);
+
   const [availableTabs, setAvailableTabs] = useState<string[]>([
     "Overview",
     "List",

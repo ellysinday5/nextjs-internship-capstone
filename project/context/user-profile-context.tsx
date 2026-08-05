@@ -1,8 +1,9 @@
 "use client";
 
 import React, { createContext, useContext, useState, useEffect } from "react";
+import { useUser } from "@clerk/nextjs";
 
-interface UserProfile {
+export interface UserProfile {
   fullName: string;
   email: string;
   role: string;
@@ -15,27 +16,47 @@ interface UserProfileContextType {
 }
 
 const defaultProfile: UserProfile = {
-  fullName: "Ellen Grace Sinday",
-  email: "ellen.sinday@stratpoint.com",
-  role: "Full Stack Developer",
+  fullName: "",
+  email: "",
+  role: "Member",
 };
 
 const UserProfileContext = createContext<UserProfileContextType | undefined>(undefined);
 
 export function UserProfileProvider({ children }: { children: React.ReactNode }) {
+  const { user, isLoaded } = useUser();
   const [profile, setProfile] = useState<UserProfile>(defaultProfile);
 
-  // Load saved profile from localStorage if available
   useEffect(() => {
+    let savedProfile: Partial<UserProfile> = {};
     try {
       const saved = localStorage.getItem("syntraflow_user_profile");
       if (saved) {
-        setProfile(JSON.parse(saved));
+        savedProfile = JSON.parse(saved);
       }
     } catch {
       // Ignore fallback
     }
-  }, []);
+
+    if (isLoaded && user) {
+      const clerkName =
+        user.fullName ||
+        [user.firstName, user.lastName].filter(Boolean).join(" ") ||
+        user.username ||
+        "";
+      const clerkEmail = user.primaryEmailAddress?.emailAddress || "";
+      const clerkAvatar = user.imageUrl || "";
+
+      setProfile({
+        fullName: savedProfile.fullName || clerkName || "User",
+        email: savedProfile.email || clerkEmail || "",
+        role: savedProfile.role || "Member",
+        avatarUrl: savedProfile.avatarUrl || clerkAvatar,
+      });
+    } else if (Object.keys(savedProfile).length > 0) {
+      setProfile((prev) => ({ ...prev, ...savedProfile }));
+    }
+  }, [isLoaded, user]);
 
   const updateProfile = (newProfile: Partial<UserProfile>) => {
     setProfile((prev) => {
