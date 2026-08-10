@@ -8,6 +8,7 @@ importers:
 
   .:
     dependencies:
+<<<<<<< Updated upstream
       '@dnd-kit/core':
         specifier: ^6.3.1
         version: 6.3.1(react-dom@19.2.8(react@19.2.8))(react@19.2.8)
@@ -26,6 +27,11 @@ importers:
       zustand:
         specifier: ^5.0.14
         version: 5.0.14(react@19.2.8)
+=======
+      nodemailer:
+        specifier: ^9.0.5
+        version: 9.0.5
+>>>>>>> Stashed changes
     devDependencies:
       '@types/nodemailer':
         specifier: ^8.0.1
@@ -33,6 +39,7 @@ importers:
 
 packages:
 
+<<<<<<< Updated upstream
   '@dnd-kit/accessibility@3.1.1':
     resolution: {integrity: sha512-2P+YgaXF+gRsIihwwY1gCsQSYnu9Zyj2py8kY5fFvUM1qm2WA2u639R6YNVfU4GWr+ZM5mqEsfHZZLoRONbemw==}
     peerDependencies:
@@ -63,6 +70,8 @@ packages:
     peerDependencies:
       react: ^18 || ^19
 
+=======
+>>>>>>> Stashed changes
   '@types/node@26.2.0':
     resolution: {integrity: sha512-5IviulTZeRNp2vAJ514cc/HUlY5nZ9fCbq9DMyC52BrhFZACo3nI0R7qBxhQmo/d27NFe96ur/b7Wwxklda+kg==}
 
@@ -73,6 +82,7 @@ packages:
     resolution: {integrity: sha512-wvjiKvjczmsN7U/8006JOdXubgBk2XFAbioDMbT+sM7cPs0QrhJTa6KBRX7P5REGGkDcLUz/EarWidb8G8C1jQ==}
     engines: {node: '>=6.0.0'}
 
+<<<<<<< Updated upstream
   react-dom@19.2.8:
     resolution: {integrity: sha512-rVprimfGBG3DR+Tq0IQG2DT5PxKth1WIGDmj5yPmlzr4YBe7uyE+Du4oVqTDXZSHGGGXRtTJEGSSePyQCMBglQ==}
     peerDependencies:
@@ -143,6 +153,13 @@ snapshots:
       '@tanstack/query-core': 5.101.4
       react: 19.2.8
 
+=======
+  undici-types@8.3.0:
+    resolution: {integrity: sha512-j375ScV60dom+YkPFIfTLcOiPxkN/buHz5GobjLhixFuANaNs3C9l4GmrWqejgXWJ7BbJcFYpTEUkS1Ge8bpZQ==}
+
+snapshots:
+
+>>>>>>> Stashed changes
   '@types/node@26.2.0':
     dependencies:
       undici-types: 8.3.0
@@ -153,6 +170,7 @@ snapshots:
 
   nodemailer@9.0.5: {}
 
+<<<<<<< Updated upstream
   react-dom@19.2.8(react@19.2.8):
     dependencies:
       react: 19.2.8
@@ -169,3 +187,6 @@ snapshots:
   zustand@5.0.14(react@19.2.8):
     optionalDependencies:
       react: 19.2.8
+=======
+  undici-types@8.3.0: {}
+>>>>>>> Stashed changes
