@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import {
   Plus,
   ChevronDown,
@@ -32,6 +32,77 @@ interface ProjectToolbarProps {
   calendarMode?: boolean;
 }
 
+/** Bordered filter dropdown — matches the /projects page style */
+function FilterPill({
+  label,
+  value,
+  options,
+  onSelect,
+  icon,
+}: {
+  label: string;
+  value: string;
+  options: string[];
+  onSelect: (val: string) => void;
+  icon?: React.ReactNode;
+}) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    function handle(e: MouseEvent) {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+    }
+    document.addEventListener("mousedown", handle);
+    return () => document.removeEventListener("mousedown", handle);
+  }, []);
+
+  const isActive = value !== "All";
+
+  return (
+    <div ref={ref} className="relative">
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        className={`flex items-center gap-1.5 rounded-xl border-2 px-3 py-2 text-xs font-semibold transition-all ${
+          isActive
+            ? "border-[#0033a0] bg-[#0033a0]/5 text-[#0033a0] dark:border-blue-500 dark:bg-blue-950/30 dark:text-blue-400"
+            : "border-[#142843]/60 bg-white text-[#142843] hover:border-[#142843] hover:bg-slate-50 dark:border-slate-600 dark:bg-[#14263e] dark:text-slate-200 dark:hover:border-slate-500"
+        }`}
+      >
+        {icon}
+        <span>{isActive ? value : label}</span>
+        <ChevronDown size={12} className="opacity-60" />
+        {isActive && (
+          <span className="h-1.5 w-1.5 rounded-full bg-[#0033a0] dark:bg-blue-400 shrink-0" />
+        )}
+      </button>
+
+      {open && (
+        <div className="absolute left-0 top-full mt-1.5 z-50 w-44 bg-white dark:bg-[#14263e] border-2 border-[#142843]/30 dark:border-slate-700 rounded-xl shadow-xl p-1.5 space-y-0.5">
+          {options.map((opt) => (
+            <button
+              key={opt}
+              type="button"
+              onClick={() => {
+                onSelect(opt);
+                setOpen(false);
+              }}
+              className={`w-full text-left px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors ${
+                value === opt
+                  ? "bg-[#0033a0]/10 text-[#0033a0] dark:bg-blue-950/50 dark:text-blue-400"
+                  : "hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-200"
+              }`}
+            >
+              {opt === "All" ? `All ${label}s` : opt}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 /** Right-side controls shared by every tab toolbar */
 function ToolbarControls({
   searchQuery,
@@ -51,145 +122,67 @@ function ToolbarControls({
   | "sortBy"
   | "setSortBy"
 >) {
-  const [isSearchOpen, setIsSearchOpen] = useState(false);
-  const [isStatusOpen, setIsStatusOpen] = useState(false);
-  const [isPriorityOpen, setIsPriorityOpen] = useState(false);
-
   const hasActiveFilters =
     selectedPriorityFilter !== "All" || selectedStatusFilter !== "All";
 
-  // Pill base classes
-  const pill =
-    "flex items-center gap-1.5 px-3 py-1.5 rounded-full border transition-colors text-xs font-semibold cursor-pointer";
-  const pillIdle =
-    "border-slate-300 dark:border-slate-600 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-300";
-  const pillActive =
-    "border-blue-500 bg-blue-50 text-blue-600 dark:bg-blue-950/40 dark:border-blue-500";
-
   return (
-    <div className="flex items-center gap-2 text-xs font-semibold text-slate-600 dark:text-slate-400">
-      {/* Search toggle */}
-      <div className="relative flex items-center">
-        {isSearchOpen ? (
-          <div className="flex items-center gap-1.5 bg-white dark:bg-slate-900 border border-blue-500 rounded-full px-3 py-1.5">
-            <Search size={13} className="text-blue-500" />
-            <input
-              type="text"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Search tasks..."
-              className="w-36 text-xs bg-transparent border-none outline-none text-slate-800 dark:text-slate-100 p-0"
-              autoFocus
-            />
-            <button
-              onClick={() => {
-                setSearchQuery("");
-                setIsSearchOpen(false);
-              }}
-              className="text-slate-400 hover:text-slate-600"
-            >
-              <X size={13} />
-            </button>
-          </div>
-        ) : (
+    <div className="flex items-center gap-2 flex-wrap">
+      {/* Search — bordered box style matching /projects page */}
+      <div className="relative w-52">
+        <input
+          type="text"
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          placeholder="Search tasks..."
+          className="w-full pl-4 pr-9 py-2 bg-white dark:bg-[#14263e] border-2 border-[#142843]/70 dark:border-slate-600 rounded-xl text-xs font-medium text-[#142843] dark:text-slate-100 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-[#0033a0] focus:border-[#0033a0] dark:focus:border-blue-500 transition-all"
+        />
+        {searchQuery ? (
           <button
-            onClick={() => setIsSearchOpen(true)}
-            className={`${pill} ${searchQuery ? pillActive : pillIdle}`}
-            title="Search tasks"
+            type="button"
+            onClick={() => setSearchQuery("")}
+            className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
+            aria-label="Clear search"
           >
-            <Search size={13} />
-            <span>Search</span>
+            <X size={13} />
           </button>
+        ) : (
+          <Search
+            className="absolute right-3 top-1/2 -translate-y-1/2 text-[#142843] dark:text-slate-400 pointer-events-none"
+            size={13}
+          />
         )}
       </div>
 
-      {/* Status filter pill */}
-      <div className="relative">
-        <button
-          onClick={() => {
-            setIsStatusOpen((v) => !v);
-            setIsPriorityOpen(false);
-          }}
-          className={`${pill} ${selectedStatusFilter !== "All" ? pillActive : pillIdle}`}
-        >
-          <span>Status</span>
-          <Filter size={12} className="opacity-70" />
-          {selectedStatusFilter !== "All" && (
-            <span className="w-1.5 h-1.5 rounded-full bg-blue-600 shrink-0" />
-          )}
-        </button>
+      {/* Status filter */}
+      <FilterPill
+        label="Status"
+        value={selectedStatusFilter}
+        options={["All", "On track", "At risk", "Off track"]}
+        onSelect={setSelectedStatusFilter}
+        icon={<Filter size={12} className="opacity-70" />}
+      />
 
-        {isStatusOpen && (
-          <div className="absolute left-0 top-full mt-1 z-50 w-44 bg-white dark:bg-[#14263e] border border-slate-200 dark:border-slate-700 rounded-xl shadow-xl p-2 space-y-1">
-            {["All", "On track", "At risk", "Off track"].map((opt) => (
-              <button
-                key={opt}
-                onClick={() => {
-                  setSelectedStatusFilter(opt);
-                  setIsStatusOpen(false);
-                }}
-                className={`w-full text-left px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors ${
-                  selectedStatusFilter === opt
-                    ? "bg-blue-50 text-blue-600 dark:bg-blue-950/40"
-                    : "hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-200"
-                }`}
-              >
-                {opt === "All" ? "All Statuses" : opt}
-              </button>
-            ))}
-          </div>
-        )}
-      </div>
+      {/* Priority filter */}
+      <FilterPill
+        label="Priority"
+        value={selectedPriorityFilter}
+        options={["All", "Low", "Medium", "High"]}
+        onSelect={setSelectedPriorityFilter}
+        icon={<ArrowUpDown size={12} className="opacity-70" />}
+      />
 
-      {/* Priority filter pill */}
-      <div className="relative">
-        <button
-          onClick={() => {
-            setIsPriorityOpen((v) => !v);
-            setIsStatusOpen(false);
-          }}
-          className={`${pill} ${selectedPriorityFilter !== "All" ? pillActive : pillIdle}`}
-        >
-          <span>Priority</span>
-          <ArrowUpDown size={12} className="opacity-70" />
-          {selectedPriorityFilter !== "All" && (
-            <span className="w-1.5 h-1.5 rounded-full bg-blue-600 shrink-0" />
-          )}
-        </button>
-
-        {isPriorityOpen && (
-          <div className="absolute left-0 top-full mt-1 z-50 w-44 bg-white dark:bg-[#14263e] border border-slate-200 dark:border-slate-700 rounded-xl shadow-xl p-2 space-y-1">
-            {["All", "Low", "Medium", "High"].map((opt) => (
-              <button
-                key={opt}
-                onClick={() => {
-                  setSelectedPriorityFilter(opt);
-                  setIsPriorityOpen(false);
-                }}
-                className={`w-full text-left px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors ${
-                  selectedPriorityFilter === opt
-                    ? "bg-blue-50 text-blue-600 dark:bg-blue-950/40"
-                    : "hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-200"
-                }`}
-              >
-                {opt === "All" ? "All Priorities" : opt}
-              </button>
-            ))}
-          </div>
-        )}
-      </div>
-
-      {/* Clear all active filters */}
+      {/* Clear filters */}
       {hasActiveFilters && (
         <button
+          type="button"
           onClick={() => {
             setSelectedPriorityFilter("All");
             setSelectedStatusFilter("All");
           }}
-          className={`${pill} border-red-300 text-red-500 hover:bg-red-50 dark:border-red-800 dark:text-red-400 dark:hover:bg-red-950/20`}
+          className="inline-flex items-center gap-1 text-xs font-bold text-rose-500 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/30 transition-all cursor-pointer px-2.5 py-1.5 rounded-lg"
         >
-          <X size={12} />
-          Clear
+          <X size={12} className="mr-0.5" />
+          Clear Filters
         </button>
       )}
     </div>
@@ -224,36 +217,35 @@ export function ProjectToolbar({
     />
   );
 
-  // Calendar mode: render only the filter/sort/search controls, no wrapper bar
   if (calendarMode) {
     return sharedControls;
   }
 
   return (
-    <div className="px-6 py-2.5 flex items-center justify-between border-b border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-[#0f1d31]/50 flex-wrap gap-2">
+    <div className="px-6 py-3 flex items-center justify-between border-b border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-[#0f1d31]/50 flex-wrap gap-2">
       {/* Add Task split button */}
-      <div className="relative inline-flex rounded-md shadow-xs">
+      <div className="relative inline-flex rounded-xl shadow-sm overflow-visible">
         <button
-          onClick={() => onAddTask("to-do")}
-          className="inline-flex items-center gap-1 px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-l-lg text-xs font-semibold transition-colors"
+          onClick={() => onAddTask()}
+          className="inline-flex items-center gap-1.5 px-4 py-2 bg-[#0f2d5a] hover:bg-[#0c2447] text-white rounded-l-xl text-xs font-bold transition-colors"
         >
           <Plus size={14} /> Add task
         </button>
         <button
           onClick={() => setIsAddTaskDropdownOpen((v) => !v)}
-          className="px-1.5 py-1.5 bg-blue-700 hover:bg-blue-800 text-white rounded-r-lg text-xs transition-colors border-l border-blue-500"
+          className="px-2 py-2 bg-[#0c2447] hover:bg-[#091e35] text-white rounded-r-xl text-xs transition-colors border-l border-white/20"
         >
-          <ChevronDown size={14} />
+          <ChevronDown size={13} />
         </button>
 
         {isAddTaskDropdownOpen && (
-          <div className="absolute top-full left-0 mt-1 w-52 bg-white dark:bg-[#14263e] border border-slate-200 dark:border-slate-700 rounded-xl shadow-xl z-50 py-1 text-xs">
+          <div className="absolute top-full left-0 mt-1.5 w-52 bg-white dark:bg-[#14263e] border-2 border-[#142843]/30 dark:border-slate-700 rounded-xl shadow-xl z-50 py-1 text-xs overflow-hidden">
             <button
               onClick={() => {
-                onAddTask("to-do");
+                onAddTask();
                 setIsAddTaskDropdownOpen(false);
               }}
-              className="w-full flex items-center justify-between px-3 py-2 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-200"
+              className="w-full flex items-center justify-between px-3 py-2.5 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-200"
             >
               <span className="flex items-center gap-2 font-semibold">
                 <CheckCircle2 size={14} className="text-blue-500" /> Task
@@ -265,34 +257,37 @@ export function ProjectToolbar({
 
             <button
               onClick={() => {
-                onAddTask("to-do");
+                onAddTask();
                 setIsAddTaskDropdownOpen(false);
               }}
-              className="w-full flex items-center gap-2 px-3 py-2 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-200 font-semibold"
+              className="w-full flex items-center gap-2 px-3 py-2.5 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-200 font-semibold"
             >
               <CheckCircle2 size={14} className="text-emerald-500" /> Approval
             </button>
 
             <button
               onClick={() => {
-                onAddTask("to-do");
+                onAddTask();
                 setIsAddTaskDropdownOpen(false);
               }}
-              className="w-full flex items-center gap-2 px-3 py-2 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-200 font-semibold"
+              className="w-full flex items-center gap-2 px-3 py-2.5 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-200 font-semibold"
             >
               <Star size={14} className="text-amber-500" /> Milestone
             </button>
 
             {onAddSection && (
-              <button
-                onClick={() => {
-                  setIsAddTaskDropdownOpen(false);
-                  onAddSection();
-                }}
-                className="w-full flex items-center gap-2 px-3 py-2 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-200 border-t border-slate-100 dark:border-slate-800 font-semibold"
-              >
-                <Layers size={14} className="text-purple-500" /> Section
-              </button>
+              <>
+                <div className="border-t border-slate-100 dark:border-slate-800 mx-2 my-1" />
+                <button
+                  onClick={() => {
+                    setIsAddTaskDropdownOpen(false);
+                    onAddSection();
+                  }}
+                  className="w-full flex items-center gap-2 px-3 py-2.5 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-200 font-semibold"
+                >
+                  <Layers size={14} className="text-purple-500" /> Section
+                </button>
+              </>
             )}
           </div>
         )}

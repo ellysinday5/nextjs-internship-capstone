@@ -55,6 +55,7 @@ export const tasks = pgTable("tasks", {
     .notNull(),
   assigneeId: uuid("assignee_id").references(() => users.id, { onDelete: "set null" }),
   priority: text("priority"),
+  status: text("status").default("On track"), 
   dueDate: timestamp("due_date"),
   position: integer("position").notNull(),
   createdAt: timestamp("created_at").defaultNow(),
@@ -73,3 +74,5 @@ export const comments = pgTable("comments", {
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });
+
+

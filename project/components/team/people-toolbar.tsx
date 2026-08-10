@@ -49,10 +49,13 @@ export function PeopleToolbar({
   }
 
   const SORT_LABELS: Record<SortOption, string> = {
-    "name-asc": "Name (A→Z)",
-    "name-desc": "Name (Z→A)",
-    role: "Role",
-  }
+  "name-asc": "Name (A–Z)",
+  "name-desc": "Name (Z–A)",
+  role: "Role",
+};
+
+const SORT_BUTTON_LABEL =
+  sortBy === "name-asc" ? "Sort By" : SORT_LABELS[sortBy];
 
   return (
     <div className="flex flex-wrap items-center gap-2.5">
@@ -114,7 +117,7 @@ export function PeopleToolbar({
           onClick={() => toggle("sort")}
           className={`${btnBase} ${sortBy !== "name-asc" ? btnActive : btnDefault}`}
         >
-          <span>{SORT_LABELS[sortBy]}</span>
+          <span>{SORT_BUTTON_LABEL}</span>
           <ArrowUpDown size={13} className="shrink-0" />
         </button>
         {openDropdown === "sort" && (

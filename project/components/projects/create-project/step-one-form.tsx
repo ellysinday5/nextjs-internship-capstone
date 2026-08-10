@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
-import { Lock, Sparkles, X, ChevronDown, Users, Globe } from "lucide-react";
+import { Lock, X, ChevronDown, Users, Globe } from "lucide-react";
 import { CreateProjectFormValues } from "./types";
 import { createProjectSchema } from "@/lib/project-schemas";
 
@@ -124,14 +124,14 @@ export function StepOneForm({ formData, setFormData, onContinue }: StepOneFormPr
             <label className="mb-1.5 block text-xs font-semibold text-slate-600 dark:text-slate-300">
               Share with (optional)
             </label>
-            <div className="flex flex-wrap items-center gap-1.5 rounded-lg border border-slate-300 bg-white p-2 dark:border-slate-700 dark:bg-slate-900">
+            <div className="flex flex-wrap items-center gap-1.5 rounded-lg border border-slate-300 bg-white p-2 dark:border-slate-700 dark:bg-slate-900 min-h-[42px]">
               {formData.shareWith.map((tag) => (
                 <span
                   key={tag}
                   className="inline-flex items-center gap-1 rounded-md bg-slate-100 px-2.5 py-1 text-xs font-medium text-slate-700 dark:bg-slate-800 dark:text-slate-200"
                 >
                   <span className="flex items-center justify-center rounded-full bg-slate-300 text-[10px] font-bold w-4 h-4 text-slate-700 dark:bg-slate-700 dark:text-slate-300">
-                    1
+                    {tag[0]?.toUpperCase()}
                   </span>
                   {tag}
                   <button
@@ -153,24 +153,15 @@ export function StepOneForm({ formData, setFormData, onContinue }: StepOneFormPr
               />
             </div>
           </div>
-
-          {/* Optional AI Setup Action */}
-          <button
-            type="button"
-            className="w-full flex items-center justify-center gap-2 rounded-lg border border-slate-200 bg-white py-2.5 text-xs font-medium text-slate-700 hover:bg-slate-50 transition-colors dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800"
-          >
-            <Sparkles size={14} className="text-purple-500" />
-            Set up with Asana AI
-          </button>
         </form>
       </div>
 
-      {/* Footer Submit Button */}
-      <div className="pt-4">
+      {/* Footer Submit Button — always visible, no scroll needed */}
+      <div className="pt-4 mt-auto">
         <button
           type="submit"
           form="step-one-form"
-          className="w-full rounded-lg bg-blue-600 py-2.5 text-sm font-semibold text-white transition-all hover:bg-blue-700 shadow-sm active:scale-[0.99]"
+          className="w-full rounded-lg bg-[#142843] py-2.5 text-sm font-semibold text-white transition-all hover:bg-[#0f1f35] shadow-sm active:scale-[0.99]"
         >
           Continue
         </button>
