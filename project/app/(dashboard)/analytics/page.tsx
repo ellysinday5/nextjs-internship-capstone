@@ -1,76 +1,146 @@
-import { BarChart3, TrendingUp, Users, Clock } from "lucide-react"
+"use client";
+
+import { TrendingUp, BarChart3, Users, Clock } from "lucide-react";
 
 export default function AnalyticsPage() {
   return (
-    <div className="space-y-6">
+    <div className="space-y-8 w-full">
+      {/* Header */}
       <div>
-        <h1 className="text-3xl font-bold text-outer_space-500 dark:text-platinum-500">Analytics</h1>
-        <p className="text-payne's_gray-500 dark:text-french_gray-500 mt-2">
+        <h1 className="text-3xl sm:text-4xl font-extrabold text-[#142843] dark:text-white tracking-tight">
+          Analytics
+        </h1>
+        <p className="text-slate-600 dark:text-slate-300 text-sm sm:text-base mt-1">
           Track project performance and team productivity
         </p>
       </div>
 
-      {/* Implementation Tasks Banner */}
-      <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg p-4">
-        <h3 className="text-sm font-medium text-yellow-800 dark:text-yellow-200 mb-2">
-          📊 Analytics Implementation Tasks
-        </h3>
-        <ul className="text-sm text-yellow-700 dark:text-yellow-300 space-y-1">
-          <li>• Task 6.6: Optimize performance and implement loading states</li>
-          <li>• Task 8.5: Set up performance monitoring and analytics</li>
-        </ul>
-      </div>
-
-      {/* Analytics Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        {[
-          { title: "Project Velocity", value: "8.5", unit: "tasks/week", icon: TrendingUp, color: "blue" },
-          { title: "Team Efficiency", value: "92%", unit: "completion rate", icon: BarChart3, color: "green" },
-          { title: "Active Users", value: "24", unit: "this week", icon: Users, color: "purple" },
-          { title: "Avg. Task Time", value: "2.3", unit: "days", icon: Clock, color: "orange" },
-        ].map((metric, index) => (
-          <div
-            key={index}
-            className="bg-white dark:bg-outer_space-500 rounded-lg border border-french_gray-300 dark:border-payne's_gray-400 p-6"
-          >
-            <div className="flex items-center justify-between mb-4">
-              <div
-                className={`w-10 h-10 bg-${metric.color}-100 dark:bg-${metric.color}-900 rounded-lg flex items-center justify-center`}
-              >
-                <metric.icon className={`text-${metric.color}-500`} size={20} />
-              </div>
+      {/* 4 Top Metric Cards */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+        {/* Card 1 */}
+        <div className="bg-white dark:bg-[#14263e] border-2 border-[#142843] dark:border-slate-600 rounded-3xl p-5 shadow-sm hover:shadow-xl hover:scale-[1.02] transition-all duration-300 flex flex-col justify-between h-36 relative overflow-hidden group">
+          <h3 className="text-base font-extrabold text-[#142843] dark:text-white">
+            Projects Velocity
+          </h3>
+          <div className="flex items-baseline justify-between mt-2">
+            <div className="flex items-baseline gap-2">
+              <span className="text-3xl font-black text-[#142843] dark:text-white">
+                8.5
+              </span>
+              <span className="text-xs sm:text-sm font-bold text-slate-500 dark:text-slate-400">
+                tasks/week
+              </span>
             </div>
-            <div className="text-2xl font-bold text-outer_space-500 dark:text-platinum-500 mb-1">{metric.value}</div>
-            <div className="text-sm text-payne's_gray-500 dark:text-french_gray-400 mb-2">{metric.unit}</div>
-            <div className="text-xs font-medium text-outer_space-500 dark:text-platinum-500">{metric.title}</div>
-          </div>
-        ))}
-      </div>
-
-      {/* Charts Placeholder */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div className="bg-white dark:bg-outer_space-500 rounded-lg border border-french_gray-300 dark:border-payne's_gray-400 p-6">
-          <h3 className="text-lg font-semibold text-outer_space-500 dark:text-platinum-500 mb-4">Project Progress</h3>
-          <div className="h-64 bg-platinum-800 dark:bg-outer_space-400 rounded-lg flex items-center justify-center">
-            <div className="text-center text-payne's_gray-500 dark:text-french_gray-400">
-              <BarChart3 size={48} className="mx-auto mb-2" />
-              <p>Chart Component Placeholder</p>
-              <p className="text-sm">TODO: Implement with Chart.js or Recharts</p>
+            <div className="text-[#142843] dark:text-slate-200 group-hover:scale-110 transition-transform duration-300">
+              <TrendingUp size={28} className="stroke-[2.5]" />
             </div>
           </div>
         </div>
 
-        <div className="bg-white dark:bg-outer_space-500 rounded-lg border border-french_gray-300 dark:border-payne's_gray-400 p-6">
-          <h3 className="text-lg font-semibold text-outer_space-500 dark:text-platinum-500 mb-4">Team Activity</h3>
-          <div className="h-64 bg-platinum-800 dark:bg-outer_space-400 rounded-lg flex items-center justify-center">
-            <div className="text-center text-payne's_gray-500 dark:text-french_gray-400">
-              <TrendingUp size={48} className="mx-auto mb-2" />
-              <p>Activity Chart Placeholder</p>
-              <p className="text-sm">TODO: Implement activity timeline</p>
+        {/* Card 2 */}
+        <div className="bg-white dark:bg-[#14263e] border-2 border-[#142843] dark:border-slate-600 rounded-3xl p-5 shadow-sm hover:shadow-xl hover:scale-[1.02] transition-all duration-300 flex flex-col justify-between h-36 relative overflow-hidden group">
+          <h3 className="text-base font-extrabold text-[#142843] dark:text-white">
+            Team Efficiency
+          </h3>
+          <div className="flex items-baseline justify-between mt-2">
+            <div className="flex items-baseline gap-2">
+              <span className="text-3xl font-black text-[#142843] dark:text-white">
+                92%
+              </span>
+              <span className="text-xs sm:text-sm font-bold text-slate-500 dark:text-slate-400">
+                completion rate
+              </span>
             </div>
+            <div className="text-[#142843] dark:text-slate-200 group-hover:scale-110 transition-transform duration-300">
+              <BarChart3 size={28} className="stroke-[2.5]" />
+            </div>
+          </div>
+        </div>
+
+        {/* Card 3 */}
+        <div className="bg-white dark:bg-[#14263e] border-2 border-[#142843] dark:border-slate-600 rounded-3xl p-5 shadow-sm hover:shadow-xl hover:scale-[1.02] transition-all duration-300 flex flex-col justify-between h-36 relative overflow-hidden group">
+          <h3 className="text-base font-extrabold text-[#142843] dark:text-white">
+            Active Users
+          </h3>
+          <div className="flex items-baseline justify-between mt-2">
+            <div className="flex items-baseline gap-2">
+              <span className="text-3xl font-black text-[#142843] dark:text-white">
+                24
+              </span>
+              <span className="text-xs sm:text-sm font-bold text-slate-500 dark:text-slate-400">
+                this week
+              </span>
+            </div>
+            <div className="text-[#142843] dark:text-slate-200 group-hover:scale-110 transition-transform duration-300">
+              <Users size={28} className="stroke-[2.5]" />
+            </div>
+          </div>
+        </div>
+
+        {/* Card 4 */}
+        <div className="bg-white dark:bg-[#14263e] border-2 border-[#142843] dark:border-slate-600 rounded-3xl p-5 shadow-sm hover:shadow-xl hover:scale-[1.02] transition-all duration-300 flex flex-col justify-between h-36 relative overflow-hidden group">
+          <h3 className="text-base font-extrabold text-[#142843] dark:text-white">
+            Avg. Task Time
+          </h3>
+          <div className="flex items-baseline justify-between mt-2">
+            <div className="flex items-baseline gap-2">
+              <span className="text-3xl font-black text-[#142843] dark:text-white">
+                2.3
+              </span>
+              <span className="text-xs sm:text-sm font-bold text-slate-500 dark:text-slate-400">
+                days
+              </span>
+            </div>
+            <div className="text-[#142843] dark:text-slate-200 group-hover:scale-110 transition-transform duration-300">
+              <Clock size={28} className="stroke-[2.5]" />
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Chart Panels Grid */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Project Progress */}
+        <div className="bg-white dark:bg-[#1a2b42] border-2 border-[#142843] dark:border-slate-600 rounded-3xl p-6 shadow-sm hover:shadow-lg hover:scale-[1.01] transition-all duration-300 flex flex-col justify-between min-h-[340px]">
+          <h2 className="text-xl font-extrabold text-[#142843] dark:text-white mb-4">
+            Project Progress
+          </h2>
+          <div className="flex-1 flex flex-col items-center justify-center text-center p-6 bg-slate-50 dark:bg-slate-800/40 rounded-2xl border border-slate-200/80 dark:border-slate-700/60">
+            <div className="mb-3 text-[#142843] dark:text-slate-200">
+              <BarChart3 size={54} className="mx-auto stroke-[2]" />
+            </div>
+            <p className="text-sm font-bold text-slate-700 dark:text-slate-300">
+              Chart Component Placeholder
+            </p>
+            <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 font-medium">
+              TODO: Implement with Chart.js or Recharts
+            </p>
+          </div>
+        </div>
+
+        {/* Team Activity */}
+        <div className="bg-white dark:bg-[#1a2b42] border-2 border-[#142843] dark:border-slate-600 rounded-3xl p-6 shadow-sm hover:shadow-lg hover:scale-[1.01] transition-all duration-300 flex flex-col justify-between min-h-[340px]">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-xl font-extrabold text-[#142843] dark:text-white">
+              Team Activity
+            </h2>
+            <button className="px-3 py-1 bg-slate-100 dark:bg-slate-800 hover:bg-[#142843] hover:text-white text-xs font-black text-[#142843] dark:text-slate-200 rounded-full transition-all duration-200">
+              View All
+            </button>
+          </div>
+          <div className="flex-1 flex flex-col items-center justify-center text-center p-6 bg-slate-50 dark:bg-slate-800/40 rounded-2xl border border-slate-200/80 dark:border-slate-700/60">
+            <div className="mb-3 text-[#142843] dark:text-slate-200">
+              <TrendingUp size={54} className="mx-auto stroke-[2.5]" />
+            </div>
+            <p className="text-sm font-bold text-slate-700 dark:text-slate-300">
+              Activity Chart Placeholder
+            </p>
+            <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 font-medium">
+              TODO: Implement activity timeline
+            </p>
           </div>
         </div>
       </div>
     </div>
-  )
+  );
 }

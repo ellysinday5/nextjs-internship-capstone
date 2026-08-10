@@ -92,3 +92,128 @@ body {
     @apply bg-background text-foreground;
   }
 }
+
+/* ══════════════════════════════════════════════════════════
+   AUTH PAGES — sign-in / sign-up
+   Theme: navy blue (#1a2e52) + white + sky-blue accents
+══════════════════════════════════════════════════════════ */
+
+.auth-page {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #0f1e38;
+  padding: 1.5rem;
+  font-family: "Inter", system-ui, -apple-system, sans-serif;
+}
+
+.auth-card {
+  display: flex;
+  width: 100%;
+  max-width: 820px;
+  min-height: 420px;
+  border-radius: 16px;
+  overflow: hidden;
+  box-shadow: 0 25px 60px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(74, 144, 217, 0.15);
+  background: #1a2e52;
+}
+
+.auth-left {
+  flex: 0 0 42%;
+  background: #1a2e52;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem;
+  position: relative;
+  overflow: hidden;
+}
+
+.auth-right {
+  flex: 1;
+  background: #1a2e52;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2.5rem 2rem;
+  border-left: 1px solid rgba(74, 144, 217, 0.2);
+}
+
+.auth-illustration-wrapper {
+  position: relative;
+  width: 220px;
+  height: 220px;
+  background: #f0f4ff;
+  border-radius: 20px;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.auth-illustration-grid {
+  position: absolute;
+  inset: 0;
+  background-image: linear-gradient(rgba(74, 144, 217, 0.12) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(74, 144, 217, 0.12) 1px, transparent 1px);
+  background-size: 22px 22px;
+  pointer-events: none;
+}
+
+@keyframes auth-spin-slow {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.auth-gear-container {
+  position: absolute;
+  width: 140px;
+  height: 140px;
+  left: 12px;
+  top: 12px;
+  animation: auth-spin-slow 20s linear infinite;
+}
+
+.auth-calendar-container {
+  position: absolute;
+  width: 115px;
+  height: 128px;
+  right: 10px;
+  bottom: 10px;
+  will-change: transform, opacity;
+  z-index: 2;
+}
+
+.auth-signin-svg {
+  width: 190px;
+  height: 190px;
+  position: relative;
+  z-index: 1;
+}
+
+.auth-clerk-wrap {
+  width: 100%;
+  max-width: 380px;
+}
+
+@media (max-width: 600px) {
+  .auth-card {
+    flex-direction: column;
+    max-width: 400px;
+  }
+  .auth-left {
+    flex: none;
+    height: 200px;
+    border-left: none;
+    border-bottom: 1px solid rgba(74, 144, 217, 0.2);
+  }
+  .auth-illustration-wrapper {
+    width: 160px;
+    height: 160px;
+  }
+}

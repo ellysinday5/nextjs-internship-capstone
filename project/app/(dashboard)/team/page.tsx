@@ -1,75 +1,188 @@
-import { UserPlus, Mail, MoreHorizontal } from "lucide-react"
+"use client"
+
+import { useState, useMemo } from "react"
+import { TeamTabsBar, type TeamTab } from "@/components/team/team-tabs-bar"
+import { PeopleToolbar } from "@/components/team/people-toolbar"
+import { PeopleTable } from "@/components/team/people-table"
+import { PeopleGrid } from "@/components/team/people-grid"
+import { MemberProfilePanel } from "@/components/team/member-profile-panel"
+import { CreateTeamModal } from "@/components/team/create-team-modal"
+import { InviteMemberModal, type InviteMemberData } from "@/components/team/invite-member-modal"
+import { AllTeamsTab } from "@/components/team/tabs/all-teams-tab"
+import { AnalyticsTab } from "@/components/team/tabs/analytics-tab"
+import { MyTeamsTab } from "@/components/team/tabs/my-teams-tab"
+import { TeamLanding } from "@/components/team/team-landing-page"
+import { MOCK_PEOPLE, type Team, type TeamMember } from "@/lib/team-data"
+import type { CreateTeamFormValues } from "@/lib/team-schemas"
 
 export default function TeamPage() {
+  const [teams, setTeams] = useState<Team[]>([])
+  const [people, setPeople] = useState<TeamMember[]>(MOCK_PEOPLE)
+  const [showLanding, setShowLanding] = useState(true)
+  const [activeTab, setActiveTab] = useState<TeamTab>("all-people")
+  const [viewMode, setViewMode] = useState<"grid" | "list">("list")
+  const [statusFilter, setStatusFilter] = useState<"All" | "Online" | "Away" | "Offline">("All")
+  const [sortBy, setSortBy] = useState<"name-asc" | "name-desc" | "role">("name-asc")
+  const [accountType, setAccountType] = useState<"All" | "Admin" | "Member">("All")
+  const [search, setSearch] = useState("")
+  const [selectedMember, setSelectedMember] = useState<TeamMember | null>(null)
+  const [createModalOpen, setCreateModalOpen] = useState(false)
+  const [inviteModalOpen, setInviteModalOpen] = useState(false)
+
+  const membersToShow = useMemo(() => {
+    let result = people
+
+    if (search.trim()) {
+      const q = search.toLowerCase()
+      result = result.filter(
+        (m) => m.name.toLowerCase().includes(q) || m.email.toLowerCase().includes(q)
+      )
+    }
+
+    if (statusFilter !== "All") {
+      result = result.filter((m) => m.status === statusFilter)
+    }
+
+    if (accountType !== "All") {
+      result = result.filter((m) => m.accountType === accountType)
+    }
+
+    result = [...result].sort((a, b) => {
+      if (sortBy === "name-asc") return a.name.localeCompare(b.name)
+      if (sortBy === "name-desc") return b.name.localeCompare(a.name)
+      return a.role.localeCompare(b.role)
+    })
+
+    return result
+  }, [people, search, statusFilter, accountType, sortBy])
+
+  const handleCreateTeam = (data: CreateTeamFormValues) => {
+    const newTeam: Team = {
+      id: crypto.randomUUID(),
+      name: data.name,
+      description: data.description || undefined,
+      members: people,
+    }
+    setTeams((prev) => [...prev, newTeam])
+    setCreateModalOpen(false)
+    setShowLanding(false)
+    setActiveTab("all-teams")
+  }
+
+  const handleBrowsePeople = () => {
+    setShowLanding(false)
+    setActiveTab("all-people")
+  }
+
+  const handleOpenCreateTeam = () => {
+    setCreateModalOpen(true)
+  }
+
+  const handleInviteMember = (data: InviteMemberData) => {
+    const name = data.email
+      .split("@")[0]
+      .replace(/[._]/g, " ")
+      .replace(/\b\w/g, (char) => char.toUpperCase())
+
+    const newMember: TeamMember = {
+      id: crypto.randomUUID(),
+      name,
+      email: data.email,
+      role: data.role === "Admin" ? "Workspace Admin" : "Team Member",
+      status: "Offline",
+      accountType: data.role,
+      projectCount: 0,
+    }
+
+    setPeople((prev) => [...prev, newMember])
+    setActiveTab("all-people")
+  }
+
   return (
-    <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <div>
-          <h1 className="text-3xl font-bold text-outer_space-500 dark:text-platinum-500">Team</h1>
-          <p className="text-payne's_gray-500 dark:text-french_gray-500 mt-2">Manage team members and permissions</p>
-        </div>
-        <button className="inline-flex items-center px-4 py-2 bg-blue_munsell-500 text-white rounded-lg hover:bg-blue_munsell-600 transition-colors">
-          <UserPlus size={20} className="mr-2" />
-          Invite Member
-        </button>
-      </div>
-
-      {/* Implementation Tasks Banner */}
-      <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg p-4">
-        <h3 className="text-sm font-medium text-yellow-800 dark:text-yellow-200 mb-2">
-          📋 Team Management Implementation Tasks
-        </h3>
-        <ul className="text-sm text-yellow-700 dark:text-yellow-300 space-y-1">
-          <li>• Task 6.1: Implement task assignment and user collaboration features</li>
-          <li>• Task 6.4: Implement project member management and permissions</li>
-        </ul>
-      </div>
-
-      {/* Team Members Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {[
-          { name: "John Doe", role: "Project Manager", email: "john@example.com", avatar: "JD" },
-          { name: "Jane Smith", role: "Developer", email: "jane@example.com", avatar: "JS" },
-          { name: "Mike Johnson", role: "Designer", email: "mike@example.com", avatar: "MJ" },
-          { name: "Sarah Wilson", role: "Developer", email: "sarah@example.com", avatar: "SW" },
-          { name: "Tom Brown", role: "QA Engineer", email: "tom@example.com", avatar: "TB" },
-          { name: "Lisa Davis", role: "Designer", email: "lisa@example.com", avatar: "LD" },
-        ].map((member, index) => (
-          <div
-            key={index}
-            className="bg-white dark:bg-outer_space-500 rounded-lg border border-french_gray-300 dark:border-payne's_gray-400 p-6"
-          >
-            <div className="flex items-start justify-between mb-4">
-              <div className="flex items-center space-x-3">
-                <div className="w-12 h-12 bg-blue_munsell-500 rounded-full flex items-center justify-center text-white font-semibold">
-                  {member.avatar}
-                </div>
-                <div>
-                  <h3 className="font-semibold text-outer_space-500 dark:text-platinum-500">{member.name}</h3>
-                  <p className="text-sm text-payne's_gray-500 dark:text-french_gray-400">{member.role}</p>
-                </div>
-              </div>
-              <button className="p-1 hover:bg-platinum-500 dark:hover:bg-payne's_gray-400 rounded">
-                <MoreHorizontal size={16} />
-              </button>
-            </div>
-
-            <div className="flex items-center text-sm text-payne's_gray-500 dark:text-french_gray-400 mb-4">
-              <Mail size={16} className="mr-2" />
-              {member.email}
-            </div>
-
-            <div className="flex items-center justify-between">
-              <span className="px-2 py-1 text-xs font-medium rounded-full bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300">
-                Active
-              </span>
-              <div className="text-sm text-payne's_gray-500 dark:text-french_gray-400">
-                {Math.floor(Math.random() * 10) + 1} projects
-              </div>
-            </div>
+    <>
+      {/* Landing — shown by default on first visit, hidden once user navigates into a tab */}
+      {showLanding ? (
+        <TeamLanding
+          onBrowsePeople={handleBrowsePeople}
+          onCreateTeam={handleOpenCreateTeam}
+        />
+      ) : (
+        <>
+          <div className="-mx-4 -mt-4 sm:-mx-6 sm:-mt-6 lg:-mx-8 lg:-mt-8">
+            <TeamTabsBar
+              activeTab={activeTab}
+              onTabChange={setActiveTab}
+              onInviteClick={() => setInviteModalOpen(true)}
+            />
           </div>
-        ))}
-      </div>
-    </div>
+
+          {activeTab === "all-people" && (
+            <div className="space-y-4 pt-4">
+              <PeopleToolbar
+                search={search}
+                onSearchChange={setSearch}
+                viewMode={viewMode}
+                onViewModeChange={setViewMode}
+                statusFilter={statusFilter}
+                onStatusFilterChange={setStatusFilter}
+                sortBy={sortBy}
+                onSortChange={setSortBy}
+                accountType={accountType}
+                onAccountTypeChange={setAccountType}
+              />
+
+              {viewMode === "list" ? (
+                <PeopleTable members={membersToShow} onSelectMember={setSelectedMember} />
+              ) : (
+                <PeopleGrid
+                  members={membersToShow}
+                  selectedId={selectedMember?.id}
+                  onSelectMember={setSelectedMember}
+                />
+              )}
+            </div>
+          )}
+
+          {activeTab === "all-teams" && (
+            <div className="pt-4">
+              {teams.length === 0 ? (
+                <TeamLanding
+                  onBrowsePeople={handleBrowsePeople}
+                  onCreateTeam={handleOpenCreateTeam}
+                />
+              ) : (
+                <AllTeamsTab teams={teams} onCreateTeam={handleOpenCreateTeam} />
+              )}
+            </div>
+          )}
+
+          {activeTab === "analytics" && (
+            <div className="pt-4">
+              <AnalyticsTab members={people} teams={teams} />
+            </div>
+          )}
+
+          {activeTab === "my-teams" && (
+            <div className="pt-4">
+              <MyTeamsTab teams={teams} />
+            </div>
+          )}
+
+          <MemberProfilePanel member={selectedMember} onClose={() => setSelectedMember(null)} />
+        </>
+      )}
+
+      <CreateTeamModal
+        isOpen={createModalOpen}
+        onClose={() => setCreateModalOpen(false)}
+        onCreate={handleCreateTeam}
+      />
+
+      <InviteMemberModal
+        isOpen={inviteModalOpen}
+        onClose={() => setInviteModalOpen(false)}
+        onInvite={handleInviteMember}
+      />
+    </>
   )
 }
