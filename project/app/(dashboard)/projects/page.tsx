@@ -23,7 +23,6 @@ import { getProjectsAction, ProjectWithStats } from "@/app/actions/project-actio
 
 import {
   ProjectItem,
-  initialProjects,
   categories,
   statuses,
   priorities,
@@ -33,7 +32,7 @@ import {
 } from "@/lib/project-data";
 
 import { FilterDropdown } from "@/components/projects/filter-dropdown";
-import { ProjectCardItem } from "@/components/projects/project-card-item";
+import { ProjectCard } from "@/components/projects/project-card";
 import { ProjectTableView } from "@/components/projects/project-table-view";
 
 type ViewMode = "grid" | "table";
@@ -98,14 +97,14 @@ export default function ProjectsPage() {
     fetchProjects();
   }, [fetchProjects]);
 
-  /* Combine DB projects and initial fallback projects (with local overrides applied) */
+  /* DB projects only — mock/local fallback projects removed */
   const allProjectItems = useMemo<ProjectItem[]>(() => {
-    const formattedDbItems: ProjectItem[] = dbProjects.map((p, idx) => {
+    const ownerOptions = ["Ellen Grace Sinday", "Aj Lopez", "John Doe"];
+    const teamOptions = ["Core Platform", "Frontend Squad", "AI & Mobile", "DevOps Team"];
+
+    return dbProjects.map((p, idx) => {
       const completionPercent =
         p.taskCount > 0 ? Math.round((p.completedTaskCount / p.taskCount) * 100) : 0;
-
-      const ownerOptions = ["Ellen Grace Sinday", "Aj Lopez", "John Doe"];
-      const teamOptions = ["Core Platform", "Frontend Squad", "AI & Mobile", "DevOps Team"];
 
       return {
         id: p.id,
@@ -126,15 +125,7 @@ export default function ProjectsPage() {
         dbProject: p,
       };
     });
-
-    // Apply any local overrides (saved edits) to the initial static projects
-    const patchedInitial = initialProjects.map((proj) => ({
-      ...proj,
-      ...(localProjectOverrides[proj.id] || {}),
-    }));
-
-    return [...formattedDbItems, ...patchedInitial];
-  }, [dbProjects, localProjectOverrides]);
+  }, [dbProjects]);
 
   /* Filtered projects */
   const filteredProjects = useMemo(() => {
@@ -217,15 +208,6 @@ export default function ProjectsPage() {
       />
 
       <div className="relative z-10 space-y-6">
-        {/* Header Title */}
-        <div className="min-w-0">
-          <h1 className="text-2xl sm:text-3xl font-extrabold text-[#142843] dark:text-white truncate">
-            Projects
-          </h1>
-          <p className="text-slate-500 dark:text-slate-400 text-xs sm:text-sm mt-1">
-            Search, filter, create, and manage your team projects and workflows
-          </p>
-        </div>
 
         {/* Filter Bar & New Project Button */}
         <div ref={filterBarRef} className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
@@ -417,11 +399,10 @@ export default function ProjectsPage() {
           viewMode === "grid" ? (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {filteredProjects.map((project) => (
-                <ProjectCardItem
+                <ProjectCard
                   key={project.id}
                   project={project}
-                  onEdit={() => {}}
-                  onDelete={setDeletingProject}
+                  onProjectDeleted={fetchProjects}
                 />
               ))}
             </div>

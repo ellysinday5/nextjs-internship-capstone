@@ -5,6 +5,7 @@ import { eq, and, sql } from "drizzle-orm";
 import { db } from "@/lib/db";
 import { projects, projectMembers, lists, tasks } from "@/lib/db/schema";
 import { syncUser } from "@/lib/auth";
+import { toSlug } from "@/lib/project-data";
 import {
   createProjectSchema,
   updateProjectSchema,
@@ -17,6 +18,7 @@ export interface ProjectWithStats {
   name: string;
   description: string | null;
   ownerId: string;
+  ownerName: string; // NEW
   dueDate: Date | null;
   categories: string[];
   techStack: string[];
@@ -31,9 +33,6 @@ export interface ProjectWithStats {
   members: { id: string; name: string; role: string }[];
 }
 
-/* ─────────────────────────────────────────────────────────────
-   Get Projects Action
-───────────────────────────────────────────────────────────── */
 export async function getProjectsAction(): Promise<ProjectWithStats[]> {
   try {
     const user = await syncUser();
@@ -67,7 +66,7 @@ export async function getProjectsAction(): Promise<ProjectWithStats[]> {
 
             totalTasks += listTasks.length;
             completedTasks += listTasks.filter(
-              (t) => t.priority === "Done" || t.priority === "Completed",
+              (t) => t.status === "Completed" || t.status === "Done",
             ).length;
           }
         }
@@ -79,6 +78,7 @@ export async function getProjectsAction(): Promise<ProjectWithStats[]> {
 
         return {
           ...p,
+          ownerName: user.name, // since these are always the current user's own projects
           listCount: projectLists.length,
           taskCount: totalTasks,
           completedTaskCount: completedTasks,
@@ -92,6 +92,62 @@ export async function getProjectsAction(): Promise<ProjectWithStats[]> {
   } catch (error) {
     console.error("[getProjectsAction] Error fetching projects:", error);
     return [];
+  }
+}
+
+export async function getProjectBySlugAction(slug: string): Promise<ProjectWithStats | null> {
+  try {
+    const user = await syncUser();
+    if (!user) return null;
+
+    const userProjects = await db
+      .select()
+      .from(projects)
+      .where(eq(projects.ownerId, user.id));
+
+    const match = userProjects.find((p) => toSlug(p.name) === slug);
+    if (!match) return null;
+
+    const projectLists = await db
+      .select({ id: lists.id })
+      .from(lists)
+      .where(eq(lists.projectId, match.id));
+
+    let totalTasks = 0;
+    let completedTasks = 0;
+
+    if (projectLists.length > 0) {
+      const listIds = projectLists.map((l) => l.id);
+      for (const lId of listIds) {
+        const listTasks = await db
+          .select({ id: tasks.id, priority: tasks.priority })
+          .from(tasks)
+          .where(eq(tasks.listId, lId));
+
+        totalTasks += listTasks.length;
+        completedTasks += listTasks.filter(
+          (t) => t.status === "Completed" || t.status === "Done",
+        ).length;
+      }
+    }
+
+    const members = await db
+      .select()
+      .from(projectMembers)
+      .where(eq(projectMembers.projectId, match.id));
+
+    return {
+          ...match,
+          ownerName: user.name, 
+          listCount: projectLists.length,
+          taskCount: totalTasks,
+          completedTaskCount: completedTasks,
+          memberCount: members.length,
+          members,
+    };
+  } catch (error) {
+    console.error("[getProjectBySlugAction] Error resolving slug:", error);
+    return null;
   }
 }
 
@@ -138,6 +194,14 @@ export async function createProjectAction(data: CreateProjectFormValues) {
           })),
         );
       }
+
+      // Seed the four default Kanban columns
+      await tx.insert(lists).values([
+        { name: "To Do",       projectId: project.id, position: 0 },
+        { name: "In Progress", projectId: project.id, position: 1 },
+        { name: "Review",      projectId: project.id, position: 2 },
+        { name: "Done",        projectId: project.id, position: 3 },
+      ]);
 
       return project;
     });

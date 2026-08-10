@@ -24,7 +24,6 @@ export function UserMenu() {
   const [confirmOpen, setConfirmOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
-  // Close dropdown on outside click
   useEffect(() => {
     const handler = (e: MouseEvent) => {
       if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
@@ -44,8 +43,10 @@ export function UserMenu() {
     signOut({ redirectUrl: "/sign-in" });
   };
 
-  const displayName = profile.fullName || user?.fullName || user?.username || "Ellen Grace Sinday";
-  const displayEmail = profile.email || user?.primaryEmailAddress?.emailAddress || "ellen.sinday@stratpoint.com";
+  const displayName = user?.fullName || profile.fullName || user?.username || "User";
+  const displayEmail = user?.primaryEmailAddress?.emailAddress || profile.email || "";
+  const avatarSrc = profile.avatarUrl || user?.imageUrl;
+
   const initials = displayName
     .split(" ")
     .map((n) => n[0])
@@ -55,7 +56,6 @@ export function UserMenu() {
 
   return (
     <>
-      {/* Avatar + Dropdown trigger */}
       <div className="relative" ref={dropdownRef}>
         <button
           onClick={() => setDropdownOpen((v) => !v)}
@@ -63,21 +63,13 @@ export function UserMenu() {
           aria-label="User menu"
           suppressHydrationWarning
         >
-          {profile.avatarUrl ? (
+          {avatarSrc ? (
             <Image
-              src={profile.avatarUrl}
+              src={avatarSrc}
               alt="User avatar"
               width={38}
               height={38}
               unoptimized
-              className="w-9.5 h-9.5 rounded-full object-cover ring-2 ring-purple-400/40 shadow-sm"
-            />
-          ) : user?.imageUrl ? (
-            <Image
-              src={user.imageUrl}
-              alt="User avatar"
-              width={38}
-              height={38}
               className="w-9.5 h-9.5 rounded-full object-cover ring-2 ring-purple-400/40 shadow-sm"
             />
           ) : (
@@ -87,28 +79,17 @@ export function UserMenu() {
           )}
         </button>
 
-        {/* Dropdown */}
         {dropdownOpen && (
           <div className="absolute right-0 top-full mt-2.5 w-64 bg-white dark:bg-[#14263e] rounded-2xl shadow-2xl border border-[#142843]/10 dark:border-white/10 overflow-hidden z-50 animate-slide-in-from-top">
-            {/* User profile section */}
             <div className="px-4 py-4 border-b border-slate-100 dark:border-white/10 bg-slate-50/50 dark:bg-slate-800/30">
               <div className="flex items-center gap-3">
-                {/* Profile picture */}
-                {profile.avatarUrl ? (
+                {avatarSrc ? (
                   <Image
-                    src={profile.avatarUrl}
+                    src={avatarSrc}
                     alt="User avatar"
                     width={44}
                     height={44}
                     unoptimized
-                    className="w-11 h-11 rounded-full object-cover ring-2 ring-purple-400/30 flex-shrink-0"
-                  />
-                ) : user?.imageUrl ? (
-                  <Image
-                    src={user.imageUrl}
-                    alt="User avatar"
-                    width={44}
-                    height={44}
                     className="w-11 h-11 rounded-full object-cover ring-2 ring-purple-400/30 flex-shrink-0"
                   />
                 ) : (
@@ -116,7 +97,6 @@ export function UserMenu() {
                     {initials}
                   </div>
                 )}
-                {/* Name and email */}
                 <div className="min-w-0 flex-1">
                   <p className="text-sm font-black text-[#142843] dark:text-white truncate">
                     {displayName}
@@ -128,7 +108,6 @@ export function UserMenu() {
               </div>
             </div>
 
-            {/* Logout action */}
             <div className="p-2">
               <button
                 className="w-full flex items-center gap-3 px-3 py-2.5 text-sm font-medium text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
@@ -141,8 +120,6 @@ export function UserMenu() {
           </div>
         )}
       </div>
-
-      {/* Sign-out confirmation dialog */}
       <AlertDialog open={confirmOpen} onOpenChange={setConfirmOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>

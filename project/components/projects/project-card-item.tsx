@@ -1,171 +1,163 @@
 "use client";
 
-import React from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Edit3, Trash2, Users, ClipboardList, User, Shield } from "lucide-react";
-import { ProjectItem, toSlug } from "@/lib/project-data";
-import { ProjectWithStats } from "@/app/actions/project-actions";
+import { MoreVertical, Users, Calendar, Pencil, Trash2 } from "lucide-react";
+import { toSlug } from "@/lib/project-data";
+import type { ProjectCardData } from "@/lib/project-card-types";
 
 interface ProjectCardItemProps {
-  project: ProjectItem;
-  onEdit: (project: ProjectWithStats) => void;
-  onDelete: (project: ProjectWithStats) => void;
-  /** For local (non-DB) cards — opens the rich edit card modal */
-  onEditLocal?: (project: ProjectItem) => void;
+  project: ProjectCardData;
+  onEdit?: (id: string) => void;
+  onDelete?: (id: string) => void;
+  isLoading?: boolean;
 }
 
-export function ProjectCardItem({ project, onEdit, onDelete, onEditLocal }: ProjectCardItemProps) {
+const STATUS_STYLES: Record<ProjectCardData["status"], string> = {
+  active: "bg-blue_munsell/10 text-blue_munsell",
+  completed: "bg-emerald-500/10 text-emerald-600",
+  "on-hold": "bg-amber-500/10 text-amber-600",
+};
+
+const STATUS_LABELS: Record<ProjectCardData["status"], string> = {
+  active: "Active",
+  completed: "Completed",
+  "on-hold": "On Hold",
+};
+
+export function ProjectCardItem({ project, onEdit, onDelete, isLoading }: ProjectCardItemProps) {
   const router = useRouter();
+  const [menuOpen, setMenuOpen] = useState(false);
+
+  if (isLoading) {
+    return <ProjectCardSkeleton />;
+  }
+
+  function navigateToBoard() {
+    router.push(`/projects/${toSlug(project.name)}`);
+  }
 
   return (
     <div
       role="button"
       tabIndex={0}
-      onClick={() => router.push(`/projects/${toSlug(project.name)}`)}
-      onKeyDown={(e) => e.key === "Enter" && router.push(`/projects/${toSlug(project.name)}`)}
-      className="group relative bg-white dark:bg-[#14263e] rounded-2xl border border-slate-200 dark:border-slate-700 p-6 hover:shadow-xl hover:border-[#00b4d8]/50 transition-all duration-200 flex flex-col justify-between cursor-pointer select-none"
+      onClick={navigateToBoard}
+      onKeyDown={(e) => e.key === "Enter" && navigateToBoard()}
+      className="group relative flex cursor-pointer select-none flex-col justify-between rounded-2xl border border-french_gray bg-white p-6 transition-all duration-200 hover:border-blue_munsell/50 hover:shadow-xl dark:bg-outer_space dark:border-payne's_gray"
     >
+      {/* Header: title + actions menu */}
       <div>
-        {/* Top Bar: Category, Priority & Actions */}
-        <div className="flex items-center justify-between mb-3">
-          <div className="flex items-center space-x-2">
-            <span className={`w-2.5 h-2.5 rounded-full ${project.color}`} />
-            <span className="text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300">
-              {project.category}
-            </span>
-            {project.isDb && (
-              <span className="text-[10px] font-extrabold text-[#00b4d8] bg-[#e8f8fd] dark:bg-[#00b4d8]/20 px-2 py-0.5 rounded-full">
-                Database
-              </span>
-            )}
-          </div>
+        <div className="mb-2 flex items-start justify-between">
+          <h3 className="text-base font-extrabold text-outer_space transition-colors group-hover:text-blue_munsell dark:text-white">
+            {project.name}
+          </h3>
 
-          <div className="flex items-center gap-1.5">
-            <span
-              className={`text-[10px] font-bold uppercase px-2 py-0.5 rounded-full ${
-                project.priority === "High"
-                  ? "bg-rose-500/10 text-rose-500 border border-rose-500/20"
-                  : project.priority === "Medium"
-                  ? "bg-amber-500/10 text-amber-500 border border-amber-500/20"
-                  : "bg-slate-500/10 text-slate-400 border border-slate-500/20"
-              }`}
-            >
-              {project.priority} Prio
-            </span>
-
-            {/* Edit button — routes to the dedicated Edit Project page */}
+          <div className="relative">
             <button
               type="button"
               onClick={(e) => {
                 e.stopPropagation();
-                router.push(`/projects/${project.id}/edit`);
+                setMenuOpen((v) => !v);
               }}
-              className="opacity-0 group-hover:opacity-100 p-1.5 rounded-lg text-slate-400 hover:text-[#00b4d8] hover:bg-slate-100 dark:hover:bg-slate-800 transition-all cursor-pointer"
-              title="Edit project"
-              aria-label="Edit project"
-              suppressHydrationWarning
+              className="rounded-lg p-1.5 text-payne's_gray opacity-0 transition-all hover:bg-platinum group-hover:opacity-100"
+              aria-label="Project actions"
             >
-              <Edit3 size={15} />
+              <MoreVertical size={16} />
             </button>
 
-            {/* Delete button — only for DB projects */}
-            {project.isDb && project.dbProject && (
-              <button
-                type="button"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onDelete(project.dbProject!);
-                }}
-                className="opacity-0 group-hover:opacity-100 p-1.5 rounded-lg text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-950/30 transition-all cursor-pointer"
-                title="Delete project"
-                aria-label="Delete project"
-                suppressHydrationWarning
+            {menuOpen && (
+              <div
+                onClick={(e) => e.stopPropagation()}
+                className="absolute right-0 top-full z-10 mt-1 w-36 rounded-lg border border-french_gray bg-white py-1 shadow-lg dark:bg-outer_space"
               >
-                <Trash2 size={15} />
-              </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setMenuOpen(false);
+                    onEdit?.(project.id);
+                  }}
+                  className="flex w-full items-center gap-2 px-3 py-2 text-sm text-outer_space hover:bg-platinum dark:text-white"
+                >
+                  <Pencil size={14} /> Edit
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setMenuOpen(false);
+                    onDelete?.(project.id);
+                  }}
+                  className="flex w-full items-center gap-2 px-3 py-2 text-sm text-red-500 hover:bg-red-50 dark:hover:bg-red-950/30"
+                >
+                  <Trash2 size={14} /> Delete
+                </button>
+              </div>
             )}
           </div>
         </div>
 
-        {/* Title */}
-        <h3 className="text-base font-extrabold text-[#142843] dark:text-white group-hover:text-[#00b4d8] transition-colors mb-1.5">
-          {project.name}
-        </h3>
-
-        {/* Owner & Team */}
-        <div className="flex items-center gap-2 mb-3 text-[11px] font-semibold text-slate-500 dark:text-slate-400">
-          <span className="flex items-center gap-1 text-[#00b4d8]">
-            <User size={12} /> {project.owner || "Unassigned"}
-          </span>
-          <span>•</span>
-          <span className="flex items-center gap-1 bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded-md">
-            <Shield size={11} className="text-slate-400" /> {project.teamName || "General"}
-          </span>
-        </div>
-
         {/* Description */}
-        <p className="text-xs text-slate-500 dark:text-slate-400 mb-4 line-clamp-2 leading-relaxed">
-          {project.description}
-        </p>
-
-        {/* Tech Stack Tags */}
-        <div className="flex flex-wrap gap-1.5 mb-4">
-          {project.techStack.map((tech) => (
-            <span
-              key={tech}
-              className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700"
-            >
-              {tech}
-            </span>
-          ))}
-        </div>
+        {project.description && (
+          <p className="mb-4 line-clamp-2 text-xs leading-relaxed text-payne's_gray">
+            {project.description}
+          </p>
+        )}
       </div>
 
       <div>
-        {/* Progress Bar */}
+        {/* Progress */}
         <div className="mb-4">
-          <div className="flex items-center justify-between text-xs font-semibold mb-1.5">
-            <span className="text-slate-500 dark:text-slate-400">Completion</span>
-            <span className="text-[#142843] dark:text-slate-200 font-bold">
+          <div className="mb-1.5 flex items-center justify-between text-xs font-semibold">
+            <span className="text-payne's_gray">Completion</span>
+            <span className="font-bold text-outer_space dark:text-french_gray">
               {project.progress}%
             </span>
           </div>
-          <div className="w-full bg-slate-100 dark:bg-slate-800 rounded-full h-1.5 overflow-hidden">
+          <div className="h-1.5 w-full overflow-hidden rounded-full bg-platinum">
             <div
-              className={`h-full rounded-full transition-all duration-500 ${project.color}`}
+              className="h-full rounded-full bg-blue_munsell transition-all duration-500"
               style={{ width: `${project.progress}%` }}
             />
           </div>
         </div>
 
-        {/* Footer Meta */}
-        <div className="flex items-center justify-between pt-3 border-t border-slate-100 dark:border-slate-700/60 text-xs text-slate-500 dark:text-slate-400 font-medium">
+        {/* Footer meta */}
+        <div className="flex items-center justify-between border-t border-french_gray pt-3 text-xs font-medium text-payne's_gray">
           <div className="flex items-center gap-3">
             <span className="flex items-center gap-1">
-              <Users size={13} className="text-slate-400" />
-              {project.members} dev
+              <Users size={13} />
+              {project.memberCount}
             </span>
-            <span className="flex items-center gap-1">
-              <ClipboardList size={13} className="text-slate-400" />
-              {project.tasksCount} tasks
-            </span>
+            {project.dueDate && (
+              <span className="flex items-center gap-1">
+                <Calendar size={13} />
+                {formatDueDate(project.dueDate)}
+              </span>
+            )}
           </div>
           <span
-            className={`px-2.5 py-0.5 text-[10px] font-bold rounded-full ${
-              project.status === "In Progress"
-                ? "bg-blue-50 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300"
-                : project.status === "Review"
-                ? "bg-purple-50 text-purple-700 dark:bg-purple-900/40 dark:text-purple-300"
-                : project.status === "Completed"
-                ? "bg-emerald-50 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300"
-                : project.status === "On Hold"
-                ? "bg-amber-50 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300"
-                : "bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300"
-            }`}
+            className={`rounded-full px-2.5 py-0.5 text-[10px] font-bold ${STATUS_STYLES[project.status]}`}
           >
-            {project.status}
+            {STATUS_LABELS[project.status]}
           </span>
         </div>
+      </div>
+    </div>
+  );
+}
+
+function formatDueDate(date: Date): string {
+  return new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric" }).format(date);
+}
+
+function ProjectCardSkeleton() {
+  return (
+    <div className="animate-pulse rounded-2xl border border-french_gray bg-white p-6 dark:bg-outer_space">
+      <div className="mb-3 h-4 w-2/3 rounded bg-platinum" />
+      <div className="mb-6 h-3 w-full rounded bg-platinum" />
+      <div className="mb-4 h-1.5 w-full rounded-full bg-platinum" />
+      <div className="flex justify-between">
+        <div className="h-3 w-16 rounded bg-platinum" />
+        <div className="h-3 w-12 rounded bg-platinum" />
       </div>
     </div>
   );

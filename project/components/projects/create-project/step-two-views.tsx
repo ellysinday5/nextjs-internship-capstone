@@ -78,7 +78,7 @@ export function StepTwoViews({
         {/* Section 1: Asana recommended */}
         <div className="space-y-2.5">
           <h2 className="text-xs font-medium text-slate-500 dark:text-slate-400">
-            Asana recommended
+            SyntraFlow recommended
           </h2>
           <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2">
             {RECOMMENDED_VIEWS.map((view) => {

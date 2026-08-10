@@ -21,7 +21,7 @@ export default function CreateProjectPage() {
   const [formData, setFormData] = useState<CreateProjectFormValues>({
     name: "",
     access: "private",
-    shareWith: ["Ellen's first team"],
+    shareWith: [],
     selectedViews: ["overview", "list", "board", "timeline", "dashboard"],
     activePreviewTab: "overview",
   });
@@ -87,9 +87,9 @@ export default function CreateProjectPage() {
   };
 
   return (
-    <div className="relative min-h-[calc(100vh-6rem)] w-full rounded-2xl bg-white p-4 sm:p-6 lg:p-8 shadow-xs border border-slate-200/80 dark:border-slate-800 dark:bg-slate-950 flex flex-col justify-between">
-      {/* Top Navigation Control Bar (Arrow Left & Close X) */}
-      <div className="flex items-center justify-between pb-4">
+    <div className="relative h-[calc(100vh-2rem)] w-full rounded-2xl bg-white shadow-xs border border-slate-200/80 dark:border-slate-800 dark:bg-slate-950 flex flex-col overflow-hidden">
+      {/* Top Navigation Control Bar */}
+      <div className="flex items-center justify-between px-6 py-3 border-b border-slate-100 dark:border-slate-800 shrink-0">
         <button
           type="button"
           onClick={step === 2 ? handleBackToStepOne : handleCloseAttempt}
@@ -110,15 +110,15 @@ export default function CreateProjectPage() {
       </div>
 
       {serverError && (
-        <div className="mb-4 rounded-xl border border-red-200 bg-red-50 p-3 text-xs font-semibold text-red-600 dark:border-red-800 dark:bg-red-900/30 dark:text-red-400">
+        <div className="mx-6 mt-3 rounded-xl border border-red-200 bg-red-50 p-3 text-xs font-semibold text-red-600 dark:border-red-800 dark:bg-red-900/30 dark:text-red-400 shrink-0">
           {serverError}
         </div>
       )}
 
-      {/* Main 2-Column Split Layout */}
-      <div className="grid grid-cols-1 gap-8 lg:grid-cols-12 flex-1 items-stretch">
+      {/* Main 2-Column Split Layout — fills remaining height */}
+      <div className="grid grid-cols-1 gap-0 lg:grid-cols-12 flex-1 min-h-0">
         {/* Left Column: Interactive Form Steps */}
-        <div className="lg:col-span-5 flex flex-col justify-between">
+        <div className="lg:col-span-5 flex flex-col min-h-0 border-r border-slate-100 dark:border-slate-800 px-6 py-6">
           {step === 1 ? (
             <StepOneForm
               formData={formData}
@@ -137,7 +137,7 @@ export default function CreateProjectPage() {
         </div>
 
         {/* Right Column: Dynamic Live Preview */}
-        <div className="lg:col-span-7 h-full min-h-[380px]">
+        <div className="lg:col-span-7 min-h-0 p-6">
           <ProjectPreview
             formData={formData}
             onSelectTab={handleSelectPreviewTab}

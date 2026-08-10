@@ -7,7 +7,6 @@ import {
   ChevronDown,
   Star,
   Share2,
-  SlidersHorizontal,
   Check,
   ListTodo,
   Kanban,
@@ -23,7 +22,8 @@ import {
   Circle,
   Copy,
   Pencil,
-  X,
+  MessageSquare,
+  User,
 } from "lucide-react";
 import { sileo } from "@/utils/alerts";
 import { Modal } from "@/components/modals/BaseModal";
@@ -44,6 +44,13 @@ const iconList = [
   { id: "settings", Icon: Settings },
 ];
 
+export interface HeaderMember {
+  id: string;
+  name: string;
+  role: string;
+  email?: string;
+}
+
 interface ProjectHeaderProps {
   projectTitle: string;
   setProjectTitle: (title: string) => void;
@@ -53,6 +60,99 @@ interface ProjectHeaderProps {
   setSelectedIconIndex: (idx: number) => void;
   status: ProjectStatusType;
   setStatus: (status: ProjectStatusType) => void;
+  members?: HeaderMember[];
+  onAddMember?: () => void;
+}
+
+const AVATAR_STYLES = [
+  "bg-amber-400 text-amber-950",
+  "bg-blue-400 text-blue-950",
+  "bg-emerald-400 text-emerald-950",
+  "bg-purple-400 text-purple-950",
+  "bg-rose-400 text-rose-950",
+  "bg-cyan-400 text-cyan-950",
+];
+
+function getInitials(name: string): string {
+  return name
+    .split(" ")
+    .map((w) => w[0])
+    .slice(0, 2)
+    .join("")
+    .toUpperCase();
+}
+
+function MemberAvatarPopoverItem({
+  member,
+  colorClass,
+  onMessage,
+  onViewProfile,
+}: {
+  member: HeaderMember;
+  colorClass: string;
+  onMessage: (name: string) => void;
+  onViewProfile: (name: string) => void;
+}) {
+  const [isHovered, setIsHovered] = useState(false);
+  const initials = getInitials(member.name);
+  const email =
+    member.email ||
+    `${member.name.toLowerCase().replace(/[^a-z0-9]/g, ".")}@company.com`;
+
+  return (
+    <div
+      className="relative group"
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
+    >
+      <span
+        className={`w-8 h-8 rounded-full ${colorClass} font-bold text-xs flex items-center justify-center border-2 border-white dark:border-[#0f1d31] cursor-pointer shadow-xs transition-transform group-hover:scale-110 shrink-0 relative z-10`}
+      >
+        {initials}
+      </span>
+
+      {/* Hover Profile Popover */}
+      {isHovered && (
+        <div className="absolute top-full right-0 mt-2 w-60 bg-white dark:bg-[#14263e] border border-slate-200 dark:border-slate-700 rounded-xl shadow-2xl p-3.5 z-50 animate-in fade-in zoom-in-95 duration-150">
+          <div className="flex items-center gap-2.5 mb-2.5">
+            <div
+              className={`w-9 h-9 rounded-full ${colorClass} font-bold text-xs flex items-center justify-center shrink-0`}
+            >
+              {initials}
+            </div>
+            <div className="min-w-0 flex-1">
+              <p className="text-xs font-bold text-slate-900 dark:text-white truncate">
+                {member.name}
+              </p>
+              <p className="text-[11px] text-slate-500 dark:text-slate-400 truncate">
+                {email}
+              </p>
+              <span className="inline-block mt-0.5 px-2 py-0.5 text-[10px] font-bold rounded-md bg-blue-50 text-blue-600 dark:bg-blue-950/40 dark:text-blue-400">
+                {member.role}
+              </span>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-1.5 pt-2 border-t border-slate-100 dark:border-slate-800">
+            <button
+              type="button"
+              onClick={() => onMessage(member.name)}
+              className="flex items-center justify-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-blue-50 hover:bg-blue-100 text-blue-600 dark:bg-blue-950/50 dark:hover:bg-blue-900/60 dark:text-blue-400 text-[11px] font-bold transition-colors"
+            >
+              <MessageSquare size={12} /> Message
+            </button>
+            <button
+              type="button"
+              onClick={() => onViewProfile(member.name)}
+              className="flex items-center justify-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 dark:bg-slate-800 dark:hover:bg-slate-700 dark:text-slate-200 text-[11px] font-bold transition-colors"
+            >
+              <User size={12} /> Profile
+            </button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
 }
 
 export function ProjectHeader({
@@ -64,6 +164,8 @@ export function ProjectHeader({
   setSelectedIconIndex,
   status,
   setStatus,
+  members = [],
+  onAddMember,
 }: ProjectHeaderProps) {
   const router = useRouter();
   const [isCustomizeOpen, setIsCustomizeOpen] = useState(false);
@@ -76,6 +178,19 @@ export function ProjectHeader({
 
   const ActiveProjectIcon = iconList[selectedIconIndex]?.Icon || ListTodo;
   const currentStatusMeta = STATUS_OPTIONS.find((s) => s.value === status);
+
+  // Combine owner and added members into a full member list
+  const ownerMember: HeaderMember = {
+    id: "owner",
+    name: "Ellen Grace Sinday",
+    role: "Project Owner",
+    email: "ellen.sinday@company.com",
+  };
+
+  const allMembers: HeaderMember[] = [ownerMember, ...members];
+  const maxVisible = 4;
+  const visibleMembers = allMembers.slice(0, maxVisible);
+  const overflowCount = allMembers.length - maxVisible;
 
   const handleTitleSubmit = () => {
     if (titleInput.trim()) {
@@ -110,6 +225,14 @@ export function ProjectHeader({
     }
   };
 
+  const handleMessageMember = (memberName: string) => {
+    sileo.info(`Direct messaging conversation started with ${memberName}.`, "Direct Message");
+  };
+
+  const handleViewMemberProfile = (memberName: string) => {
+    sileo.info(`Opening member profile for ${memberName}.`, "Member Profile");
+  };
+
   return (
     <>
       <header className="px-6 pt-4 pb-2 border-b border-slate-200 dark:border-slate-800 bg-white dark:bg-[#0f1d31]">
@@ -117,9 +240,9 @@ export function ProjectHeader({
           {/* Left Controls */}
           <div className="flex items-center gap-2 relative flex-wrap">
             <button
-              onClick={() => router.back()}
+              onClick={() => router.push('/projects')}
               className="p-1.5 rounded-lg text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-800 dark:hover:text-white transition-colors mr-1"
-              title="Go back"
+              title="Back to Projects"
             >
               <ChevronLeft size={20} />
             </button>
@@ -223,7 +346,7 @@ export function ProjectHeader({
               )}
             </div>
 
-            {/* Color & Icon Customization Menu (Auto-saves on click!) */}
+            {/* Color & Icon Customization Menu */}
             {isCustomizeOpen && (
               <div className="absolute top-12 left-0 z-50 w-72 bg-white dark:bg-[#14263e] border border-slate-200 dark:border-slate-700 rounded-xl shadow-xl p-4 space-y-4">
                 <div>
@@ -236,7 +359,7 @@ export function ProjectHeader({
                         key={idx}
                         onClick={() => {
                           setProjectColor(color);
-                          setIsCustomizeOpen(false); // Automatically saves and closes!
+                          setIsCustomizeOpen(false);
                           sileo.success("Project color updated!", "Theme Changed");
                         }}
                         className="w-6 h-6 rounded-md flex items-center justify-center transition-transform hover:scale-110"
@@ -258,7 +381,7 @@ export function ProjectHeader({
                         key={id}
                         onClick={() => {
                           setSelectedIconIndex(index);
-                          setIsCustomizeOpen(false); // Automatically saves and closes!
+                          setIsCustomizeOpen(false);
                           sileo.success("Project icon updated!", "Theme Changed");
                         }}
                         className={`p-2 rounded-lg flex items-center justify-center border ${
@@ -276,30 +399,48 @@ export function ProjectHeader({
             )}
           </div>
 
-          {/* Right Header Buttons */}
+          {/* Right Header: Member Avatar Stack with Hover Popover + Add Member (+) button */}
           <div className="flex items-center gap-2">
-            <div className="flex -space-x-1">
-              <span className="w-7 h-7 rounded-full bg-amber-400 text-amber-900 font-bold text-xs flex items-center justify-center border-2 border-white dark:border-[#0f1d31]">
-                ES
-              </span>
-              <span
-                onClick={() => setIsShareModalOpen(true)}
-                className="w-7 h-7 rounded-full bg-slate-200 dark:bg-slate-700 text-slate-500 font-bold text-xs flex items-center justify-center border-2 border-white dark:border-[#0f1d31] cursor-pointer hover:bg-slate-300"
+            <div className="flex items-center -space-x-1.5">
+              {visibleMembers.map((m, idx) => (
+                <MemberAvatarPopoverItem
+                  key={m.id}
+                  member={m}
+                  colorClass={AVATAR_STYLES[idx % AVATAR_STYLES.length]}
+                  onMessage={handleMessageMember}
+                  onViewProfile={handleViewMemberProfile}
+                />
+              ))}
+
+              {/* Overflow Count (+N badge) */}
+              {overflowCount > 0 && (
+                <button
+                  type="button"
+                  onClick={onAddMember}
+                  className="w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 font-bold text-xs flex items-center justify-center border-2 border-white dark:border-[#0f1d31] cursor-pointer hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors z-10"
+                  title={`${overflowCount} more members in this project. Click to view or add.`}
+                >
+                  +{overflowCount}
+                </button>
+              )}
+
+              {/* (+) Add Member Button */}
+              <button
+                type="button"
+                onClick={onAddMember}
+                className="w-8 h-8 rounded-full bg-slate-200/80 dark:bg-slate-700/80 hover:bg-slate-300 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-200 font-bold text-base flex items-center justify-center border-2 border-white dark:border-[#0f1d31] cursor-pointer transition-colors z-10 ml-0.5"
+                title="Add member"
               >
                 +
-              </span>
+              </button>
             </div>
+
+            {/* Share Button */}
             <button
               onClick={() => setIsShareModalOpen(true)}
-              className="flex items-center gap-1 bg-sky-600 hover:bg-sky-700 text-white text-xs font-semibold px-3 py-1.5 rounded-lg transition-colors shadow-xs"
+              className="flex items-center gap-1 bg-[#0f2d5a] hover:bg-[#0c2447] text-white text-xs font-bold px-3.5 py-1.5 rounded-xl transition-colors shadow-xs"
             >
               <Share2 size={13} /> Share
-            </button>
-            <button
-              onClick={() => setIsCustomizeOpen(!isCustomizeOpen)}
-              className="flex items-center gap-1 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 text-xs font-semibold px-2.5 py-1.5 rounded-lg"
-            >
-              <SlidersHorizontal size={13} /> Customize
             </button>
           </div>
         </div>
