@@ -8,7 +8,7 @@ import {
   moveTaskAction,
   deleteTaskAction,
   type TaskRecord,
-} from "@/app/actions/task-actions";
+} from "@/actions/task-actions";
 import type { CreateTaskFormValues, UpdateTaskFormValues } from "@/lib/task-schemas";
 
 export function useTasks(projectId: string) {
@@ -40,6 +40,7 @@ export function useTasks(projectId: string) {
         assigneeId: newTaskData.assigneeId ?? null,
         assignee: null,
         priority: newTaskData.priority ?? null,
+        status: null,
         dueDate: newTaskData.dueDate ? new Date(newTaskData.dueDate) : null,
         position: (previousTasks?.filter((t) => t.listId === newTaskData.listId).length ?? 0),
         commentsCount: 0,

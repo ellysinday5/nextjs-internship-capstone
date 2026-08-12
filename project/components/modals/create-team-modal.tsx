@@ -3,7 +3,7 @@
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { Modal } from "@/components/modals/BaseModal"
-import { createTeamSchema, CreateTeamFormValues } from "@/lib/team-schemas"
+import { createTeamSchema, CreateTeamFormValues } from "@/lib/db/team-schemas"
 
 interface CreateTeamModalProps {
   isOpen: boolean

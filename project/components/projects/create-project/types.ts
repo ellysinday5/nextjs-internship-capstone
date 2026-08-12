@@ -28,12 +28,6 @@ export interface CreateProjectFormValues {
 
 export const RECOMMENDED_VIEWS: ViewOption[] = [
   {
-    id: "overview",
-    name: "Overview",
-    description: "Align on project info and resources",
-    isRecommended: true,
-  },
-  {
     id: "list",
     name: "List",
     description: "Organize tasks in a powerful table",

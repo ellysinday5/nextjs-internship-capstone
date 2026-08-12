@@ -7,7 +7,7 @@ import {
   updateListAction,
   reorderListsAction,
   deleteListAction,
-} from "@/app/actions/list-actions";
+} from "@/actions/list-actions";
 import type { CreateListFormValues, UpdateListFormValues, ReorderListsFormValues } from "@/lib/list-schemas";
 
 export function useLists(projectId: string) {

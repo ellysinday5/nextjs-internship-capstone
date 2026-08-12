@@ -2,7 +2,7 @@
 
 import { create } from "zustand";
 import { subscribeWithSelector } from "zustand/middleware";
-import { getListsAction, createListAction, deleteListAction, type ListWithTasks } from "@/app/actions/list-actions";
+import { getListsAction, createListAction, deleteListAction, type ListWithTasks } from "@/actions/list-actions";
 import {
   getProjectTasksAction,
   createTaskAction,
@@ -10,7 +10,7 @@ import {
   moveTaskAction,
   deleteTaskAction,
   type TaskRecord,
-} from "@/app/actions/task-actions";
+} from "@/actions/task-actions";
 import type { CreateTaskFormValues, UpdateTaskFormValues } from "@/lib/task-schemas";
 
 interface BoardState {

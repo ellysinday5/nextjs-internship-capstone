@@ -7,12 +7,18 @@ function Bone({ className, style }: { className: string; style?: React.CSSProper
 /* ── Shared header + tabs shell ─────────────────────────────────────────── */
 function SkeletonShell({
   activeTabIndex = 0,
+  noShell = false,
   children,
 }: {
   activeTabIndex?: number;
+  noShell?: boolean;
   children: React.ReactNode;
 }) {
-  const TAB_WIDTHS = [72, 36, 52, 80, 88, 72]; // Overview List Board Timeline Dashboard Calendar
+  if (noShell) {
+    return <div className="flex flex-col flex-1 overflow-hidden animate-pulse">{children}</div>;
+  }
+
+  const TAB_WIDTHS = [32, 44, 40, 36, 64, 76, 60]; // List, Board, Table, Form, Timeline, Dashboard, Calendar
 
   return (
     <div className="flex h-screen flex-col overflow-hidden bg-white dark:bg-[#0f1d31] animate-pulse">
@@ -60,9 +66,9 @@ function SkeletonShell({
 /* ══════════════════════════════════════════════════════════════════════════
    Overview skeleton  (index 0)
 ══════════════════════════════════════════════════════════════════════════ */
-export function OverviewTabSkeleton() {
+export function OverviewTabSkeleton({ noShell = false }: { noShell?: boolean } = {}) {
   return (
-    <SkeletonShell activeTabIndex={0}>
+    <SkeletonShell activeTabIndex={0} noShell={noShell}>
       <div className="grid grid-cols-1 lg:grid-cols-12 flex-1 overflow-hidden">
 
         {/* Left column */}
@@ -157,9 +163,9 @@ export function OverviewTabSkeleton() {
 /* ══════════════════════════════════════════════════════════════════════════
    List skeleton  (index 1)
 ══════════════════════════════════════════════════════════════════════════ */
-export function ListTabSkeleton() {
+export function ListTabSkeleton({ noShell = false }: { noShell?: boolean } = {}) {
   return (
-    <SkeletonShell activeTabIndex={1}>
+    <SkeletonShell activeTabIndex={1} noShell={noShell}>
       <div className="flex flex-col flex-1 overflow-hidden">
         {/* Toolbar */}
         <div className="flex items-center gap-2.5 border-b border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-[#0f1d31]/50 px-6 py-2.5">
@@ -217,61 +223,96 @@ export function ListTabSkeleton() {
 /* ══════════════════════════════════════════════════════════════════════════
    Board skeleton  (index 2)
 ══════════════════════════════════════════════════════════════════════════ */
-export function BoardTabSkeleton() {
-  return (
-    <SkeletonShell activeTabIndex={2}>
-      <div className="flex flex-1 items-start gap-3 overflow-x-auto overflow-y-auto p-5">
-        {[
-          { cards: [100, 80, 90, 75] },
-          { cards: [90] },
-          { cards: [] },
-          { cards: [] },
-        ].map((col, ci) => (
+export function BoardTabSkeleton({ noShell = false }: { noShell?: boolean } = {}) {
+  // Column definitions: [columnName-width, card widths[]]
+  const COLUMNS = [
+    { cards: [100, 80, 90, 75] },
+    { cards: [90] },
+    { cards: [] },
+    { cards: [] },
+  ];
+
+  const inner = (
+    <div className="flex flex-1 flex-col overflow-hidden bg-white dark:bg-[#0f1d31]">
+      {/* ── Toolbar row matching ProjectToolbar ── */}
+      <div className="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-[#0f1d31]/50 px-6 py-3 flex-wrap gap-2">
+        {/* Add task split-button */}
+        <div className="flex gap-0">
+          <Bone className="h-8 w-24 rounded-l-xl" />
+          <Bone className="h-8 w-7 rounded-r-xl" style={{ marginLeft: 1 }} />
+        </div>
+        {/* Right-side search + filters */}
+        <div className="flex items-center gap-2">
+          <Bone className="h-8 w-52 rounded-xl" />
+          <Bone className="h-8 w-24 rounded-xl" />
+          <Bone className="h-8 w-24 rounded-xl" />
+        </div>
+      </div>
+
+      {/* ── Board scroll container ── */}
+      <div className="flex flex-1 items-start gap-3 overflow-x-auto overflow-y-auto p-5 pb-8">
+        {COLUMNS.map((col, ci) => (
           <div
             key={ci}
             className="flex w-[272px] flex-shrink-0 flex-col rounded-xl border border-slate-200/80 dark:border-slate-700/50 bg-[#f5f6f7] dark:bg-[#14263e]/70"
           >
             {/* Column header */}
-            <div className="flex items-center gap-2 px-3 pt-3 pb-2">
-              <Bone className="h-3.5 w-16" />
-              <Bone className="h-3.5 w-5" />
+            <div className="flex items-center justify-between px-3 pt-3 pb-2">
+              <div className="flex items-center gap-1.5">
+                <Bone className="h-3.5 w-16" />
+                <Bone className="h-3.5 w-4" />
+              </div>
+              <Bone className="h-5 w-5 rounded-md" />
             </div>
-            {/* Cards */}
-            <div className="flex flex-col gap-2 px-2.5 pb-1">
+            {/* Task cards */}
+            <div className="flex flex-col gap-2 px-2.5 pb-1 min-h-[48px]">
               {col.cards.map((w, ti) => (
-                <div key={ti} className="rounded-xl border border-slate-200 dark:border-slate-700/60 bg-white dark:bg-[#0f1d31] p-3.5 space-y-2.5">
+                <div
+                  key={ti}
+                  className="rounded-xl border border-slate-200 dark:border-slate-700/60 bg-white dark:bg-[#0f1d31] p-3.5 space-y-2.5"
+                >
                   <div className="flex items-start gap-2.5">
                     <Bone className="h-4 w-4 rounded-full shrink-0 mt-0.5" />
                     <Bone className="h-3.5 flex-1" style={{ width: `${w}%` }} />
                   </div>
-                  <div className="ml-[23px] flex items-center justify-between">
+                  <div className="flex items-center justify-between">
                     <Bone className="h-5 w-5 rounded-full" />
                     <Bone className="h-3 w-10" />
                   </div>
                 </div>
               ))}
             </div>
-            {/* Add task */}
+            {/* Add task row */}
             <div className="px-2.5 pb-2.5 pt-1">
               <Bone className="h-7 w-20 rounded-lg" />
             </div>
           </div>
         ))}
-        {/* + Add section */}
+
+        {/* + Add section dashed button */}
         <div className="w-[272px] flex-shrink-0">
-          <Bone className="h-9 w-32 rounded-xl" />
+          <Bone className="h-9 w-full rounded-xl" style={{ borderStyle: "dashed", opacity: 0.5 }} />
         </div>
       </div>
+    </div>
+  );
+
+  if (noShell) return inner;
+
+  return (
+    <SkeletonShell activeTabIndex={2} noShell={false}>
+      {inner}
     </SkeletonShell>
   );
 }
 
+
 /* ══════════════════════════════════════════════════════════════════════════
    Timeline skeleton  (index 3)
 ══════════════════════════════════════════════════════════════════════════ */
-export function TimelineTabSkeleton() {
+export function TimelineTabSkeleton({ noShell = false }: { noShell?: boolean } = {}) {
   return (
-    <SkeletonShell activeTabIndex={3}>
+    <SkeletonShell activeTabIndex={3} noShell={noShell}>
       <div className="flex flex-col flex-1 overflow-hidden">
         {/* Toolbar */}
         <div className="flex items-center gap-2.5 border-b border-slate-200 dark:border-slate-800 bg-slate-50/50 px-6 py-2.5">
@@ -302,9 +343,9 @@ export function TimelineTabSkeleton() {
 /* ══════════════════════════════════════════════════════════════════════════
    Dashboard skeleton  (index 4)
 ══════════════════════════════════════════════════════════════════════════ */
-export function DashboardTabSkeleton() {
+export function DashboardTabSkeleton({ noShell = false }: { noShell?: boolean } = {}) {
   return (
-    <SkeletonShell activeTabIndex={4}>
+    <SkeletonShell activeTabIndex={4} noShell={noShell}>
       <div className="flex-1 overflow-y-auto p-6 bg-slate-50/50 dark:bg-[#0f1d31]/50 space-y-6">
         {/* Add widget btn */}
         <Bone className="h-8 w-28 rounded-lg" />
@@ -342,9 +383,9 @@ export function DashboardTabSkeleton() {
 /* ══════════════════════════════════════════════════════════════════════════
    Calendar skeleton  (index 5)
 ══════════════════════════════════════════════════════════════════════════ */
-export function CalendarTabSkeleton() {
+export function CalendarTabSkeleton({ noShell = false }: { noShell?: boolean } = {}) {
   return (
-    <SkeletonShell activeTabIndex={5}>
+    <SkeletonShell activeTabIndex={5} noShell={noShell}>
       <div className="flex flex-col flex-1 overflow-hidden">
         {/* Toolbar */}
         <div className="flex items-center gap-3 border-b border-slate-200 dark:border-slate-800 bg-slate-50/50 px-6 py-2.5">
@@ -385,5 +426,17 @@ export function CalendarTabSkeleton() {
    Default export — used for initial page load (Overview tab is default)
 ══════════════════════════════════════════════════════════════════════════ */
 export function ProjectDetailSkeleton() {
-  return <OverviewTabSkeleton />;
+  return (
+    <SkeletonShell activeTabIndex={0} noShell={false}>
+      <div className="flex-1 p-6 space-y-4">
+        <Bone className="h-6 w-1/4" />
+        <Bone className="h-32 w-full" />
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <Bone className="h-24 w-full" />
+          <Bone className="h-24 w-full" />
+          <Bone className="h-24 w-full" />
+        </div>
+      </div>
+    </SkeletonShell>
+  );
 }

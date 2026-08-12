@@ -2,7 +2,8 @@
 
 import React, { useState, useEffect, use } from "react";
 import { useRouter } from "next/navigation";
-import { ChevronDown, Pencil, Gauge, ArrowLeft } from "lucide-react";
+import { ChevronDown, Pencil, Gauge } from "lucide-react";
+import { BackButton } from "@/components/ui/back-button";
 
 import { MembersPanel } from "@/components/projects/edit-card/members-panel";
 import { TechStackEditor } from "@/components/projects/edit-card/tech-stack-editor";
@@ -165,17 +166,11 @@ export default function EditProjectPage({ params }: { params: Promise<{ id: stri
   const inputCls = "w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 px-4 py-3 text-sm font-semibold text-slate-800 dark:text-white outline-none focus:border-[#0052cc] focus:ring-1 focus:ring-[#0052cc]/30 transition-colors";
 
   return (
+    <div className="overflow-y-auto h-full p-4 sm:p-6 lg:p-8">
     <div className="w-full rounded-2xl bg-white dark:bg-[#14263e] border border-slate-200 dark:border-slate-800 shadow-sm flex flex-col">
       {/* Page Header */}
       <div className="flex items-center gap-3 px-6 sm:px-8 py-5 border-b border-slate-100 dark:border-slate-800 shrink-0">
-        <button
-          type="button"
-          onClick={handleAttemptCancel}
-          className="p-2 rounded-lg text-slate-500 hover:text-slate-800 hover:bg-slate-100 dark:hover:bg-slate-800 dark:text-slate-400 dark:hover:text-slate-200 transition-colors"
-          title="Back to projects"
-        >
-          <ArrowLeft size={20} />
-        </button>
+        <BackButton onClick={handleAttemptCancel} title="Back to projects" />
         <h1 className="text-2xl sm:text-3xl font-black text-[#142843] dark:text-white tracking-tight">
           Edit Project
         </h1>
@@ -379,6 +374,7 @@ export default function EditProjectPage({ params }: { params: Promise<{ id: stri
         variant="save"
         showCloseButton={false}
       />
+    </div>
     </div>
   );
 }

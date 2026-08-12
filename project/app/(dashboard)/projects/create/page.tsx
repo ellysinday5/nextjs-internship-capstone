@@ -2,9 +2,10 @@
 
 import React, { useState } from "react";
 import { useRouter } from "next/navigation";
-import { ArrowLeft, X } from "lucide-react";
+import { X } from "lucide-react";
+import { BackButton } from "@/components/ui/back-button";
 import { sileo } from "@/utils/alerts";
-import { createProjectAction } from "@/app/actions/project-actions";
+import { createProjectAction } from "@/actions/project-actions";
 import { ConfirmationModal } from "@/components/modals/ConfirmationModal";
 import { StepOneForm } from "@/components/projects/create-project/step-one-form";
 import { StepTwoViews } from "@/components/projects/create-project/step-two-views";
@@ -22,8 +23,8 @@ export default function CreateProjectPage() {
     name: "",
     access: "private",
     shareWith: [],
-    selectedViews: ["overview", "list", "board", "timeline", "dashboard"],
-    activePreviewTab: "overview",
+    selectedViews: ["list", "board", "timeline", "dashboard"],
+    activePreviewTab: "list",
   });
 
   const isDirty = formData.name.trim().length > 0;
@@ -87,17 +88,14 @@ export default function CreateProjectPage() {
   };
 
   return (
-    <div className="relative h-[calc(100vh-2rem)] w-full rounded-2xl bg-white shadow-xs border border-slate-200/80 dark:border-slate-800 dark:bg-slate-950 flex flex-col overflow-hidden">
+    <div className="overflow-y-auto h-full">
+    <div className="relative h-full w-full rounded-2xl bg-white shadow-xs border border-slate-200/80 dark:border-slate-800 dark:bg-slate-950 flex flex-col overflow-hidden">
       {/* Top Navigation Control Bar */}
       <div className="flex items-center justify-between px-6 py-3 border-b border-slate-100 dark:border-slate-800 shrink-0">
-        <button
-          type="button"
-          onClick={step === 2 ? handleBackToStepOne : handleCloseAttempt}
-          className="rounded-lg p-2 text-slate-500 hover:bg-slate-100 hover:text-slate-700 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-slate-200 transition-colors"
-          title={step === 2 ? "Back to step 1" : "Cancel & back to projects"}
-        >
-          <ArrowLeft size={20} />
-        </button>
+          <BackButton
+            onClick={step === 2 ? handleBackToStepOne : handleCloseAttempt}
+            title={step === 2 ? "Back to step 1" : "Cancel & back to projects"}
+          />
 
         <button
           type="button"
@@ -154,6 +152,7 @@ export default function CreateProjectPage() {
         variant="discard"
         showCloseButton={false}
       />
+    </div>
     </div>
   );
 }

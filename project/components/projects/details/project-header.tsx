@@ -3,22 +3,11 @@
 import React, { useState } from "react";
 import { useRouter } from "next/navigation";
 import {
-  ChevronLeft,
   ChevronDown,
   Star,
   Share2,
   Check,
   ListTodo,
-  Kanban,
-  Columns,
-  Calendar,
-  Rocket,
-  Users,
-  TrendingUp,
-  Bug,
-  Lightbulb,
-  Globe,
-  Settings,
   Circle,
   Copy,
   Pencil,
@@ -28,21 +17,10 @@ import {
 import { sileo } from "@/utils/alerts";
 import { Modal } from "@/components/modals/BaseModal";
 import { ProjectStatusType, STATUS_OPTIONS, COLOR_SWATCHES } from "./types";
+import { PROJECT_ICON_LIST } from "@/lib/project-meta";
+import { BackButton } from "@/components/ui/back-button";
 
-const iconList = [
-  { id: "list", Icon: ListTodo },
-  { id: "kanban", Icon: Kanban },
-  { id: "columns", Icon: Columns },
-  { id: "calendar", Icon: Calendar },
-  { id: "rocket", Icon: Rocket },
-  { id: "users", Icon: Users },
-  { id: "trending", Icon: TrendingUp },
-  { id: "star", Icon: Star },
-  { id: "bug", Icon: Bug },
-  { id: "lightbulb", Icon: Lightbulb },
-  { id: "globe", Icon: Globe },
-  { id: "settings", Icon: Settings },
-];
+const iconList = PROJECT_ICON_LIST;
 
 export interface HeaderMember {
   id: string;
@@ -58,6 +36,8 @@ interface ProjectHeaderProps {
   setProjectColor: (color: string) => void;
   selectedIconIndex: number;
   setSelectedIconIndex: (idx: number) => void;
+  isFavorite: boolean;
+  setIsFavorite: (val: boolean) => void;
   status: ProjectStatusType;
   setStatus: (status: ProjectStatusType) => void;
   members?: HeaderMember[];
@@ -162,6 +142,8 @@ export function ProjectHeader({
   setProjectColor,
   selectedIconIndex,
   setSelectedIconIndex,
+  isFavorite,
+  setIsFavorite,
   status,
   setStatus,
   members = [],
@@ -170,7 +152,6 @@ export function ProjectHeader({
   const router = useRouter();
   const [isCustomizeOpen, setIsCustomizeOpen] = useState(false);
   const [isStatusDropdownOpen, setIsStatusDropdownOpen] = useState(false);
-  const [isFavorite, setIsFavorite] = useState(false);
   const [isEditingTitle, setIsEditingTitle] = useState(false);
   const [titleInput, setTitleInput] = useState(projectTitle);
   const [isShareModalOpen, setIsShareModalOpen] = useState(false);
@@ -203,8 +184,9 @@ export function ProjectHeader({
   };
 
   const handleToggleFavorite = () => {
-    setIsFavorite(!isFavorite);
-    if (!isFavorite) {
+    const next = !isFavorite;
+    setIsFavorite(next);
+    if (next) {
       sileo.success(`Added "${projectTitle}" to favorites!`, "Favorites");
     } else {
       sileo.info(`Removed "${projectTitle}" from favorites`, "Favorites");
@@ -239,13 +221,7 @@ export function ProjectHeader({
         <div className="flex flex-wrap items-center justify-between gap-3 mb-3">
           {/* Left Controls */}
           <div className="flex items-center gap-2 relative flex-wrap">
-            <button
-              onClick={() => router.push('/projects')}
-              className="p-1.5 rounded-lg text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-800 dark:hover:text-white transition-colors mr-1"
-              title="Back to Projects"
-            >
-              <ChevronLeft size={20} />
-            </button>
+            <BackButton href="/projects" title="Back to Projects" className="mr-1" />
 
             {/* Customization Burger Icon Button */}
             <button

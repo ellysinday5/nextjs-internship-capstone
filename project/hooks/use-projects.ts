@@ -7,7 +7,7 @@ import {
   updateProjectAction,
   deleteProjectAction,
   type ProjectWithStats,
-} from "@/app/actions/project-actions";
+} from "@/actions/project-actions";
 import type { CreateProjectFormValues, UpdateProjectFormValues } from "@/lib/project-schemas";
 
 export function useProjects() {

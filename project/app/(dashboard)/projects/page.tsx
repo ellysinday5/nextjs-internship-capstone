@@ -19,7 +19,7 @@ import {
 
 import Link from "next/link";
 import { DeleteProjectModal } from "@/components/modals/delete-project-modal";
-import { getProjectsAction, ProjectWithStats } from "@/app/actions/project-actions";
+import { getProjectsAction, ProjectWithStats } from "@/actions/project-actions";
 
 import {
   ProjectItem,
@@ -34,6 +34,7 @@ import {
 import { FilterDropdown } from "@/components/projects/filter-dropdown";
 import { ProjectCard } from "@/components/projects/project-card";
 import { ProjectTableView } from "@/components/projects/project-table-view";
+import { ProjectCardSkeleton } from "@/components/projects/project-card-item";
 
 type ViewMode = "grid" | "table";
 type DropdownKey = "status" | "priority" | "category" | "owner" | "team" | "members" | null;
@@ -198,7 +199,8 @@ export default function ProjectsPage() {
   };
 
   return (
-    <div className="relative min-h-screen space-y-6 overflow-hidden">
+    <div className="overflow-y-auto h-full p-4 sm:p-6 lg:p-8">
+    <div className="relative min-h-0 space-y-6 overflow-visible">
       {/* Modals */}
       <DeleteProjectModal
         isOpen={Boolean(deletingProject)}
@@ -206,6 +208,18 @@ export default function ProjectsPage() {
         onClose={() => setDeletingProject(null)}
         onSuccess={fetchProjects}
       />
+
+      {/* ── Page Header ── */}
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+        <div>
+          <h1 className="text-3xl sm:text-4xl font-extrabold text-[#142843] dark:text-white tracking-tight">
+            Projects
+          </h1>
+          <p className="text-slate-600 dark:text-slate-300 text-sm sm:text-base mt-1 font-medium">
+            Manage your projects, track progress, and collaborate with your team.
+          </p>
+        </div>
+      </div>
 
       <div className="relative z-10 space-y-6">
 
@@ -395,7 +409,94 @@ export default function ProjectsPage() {
         </div>
 
         {/* Projects: Grid or Table */}
-        {filteredProjects.length > 0 ? (
+        {loading ? (
+          viewMode === "grid" ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {[1, 2, 3, 4, 5, 6].map((n) => (
+                <ProjectCardSkeleton key={n} />
+              ))}
+            </div>
+          ) : (
+            <div className="overflow-hidden rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm bg-white dark:bg-[#14263e]">
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm text-left">
+                  {/* Mirror the real table header exactly */}
+                  <thead className="bg-[#142843] text-white">
+                    <tr>
+                      {["Project", "Category", "Status", "Priority", "Owner", "Team", "Progress", "Devs", "Tasks", "Updated", "Actions"].map((col) => (
+                        <th key={col} className="px-5 py-3.5 text-xs font-bold uppercase tracking-wider text-slate-100 whitespace-nowrap">
+                          {col}
+                        </th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100 dark:divide-slate-800 animate-pulse">
+                    {[1, 2, 3, 4, 5].map((n) => (
+                      <tr key={n}>
+                        {/* Project: dot + name block */}
+                        <td className="px-5 py-3.5">
+                          <div className="flex items-center gap-2.5">
+                            <div className="w-2.5 h-2.5 rounded-full bg-slate-200 dark:bg-slate-700 shrink-0" />
+                            <div className="space-y-1">
+                              <div className="h-3.5 w-28 rounded bg-slate-200 dark:bg-slate-700" />
+                              <div className="h-2.5 w-14 rounded bg-slate-200 dark:bg-slate-700" />
+                            </div>
+                          </div>
+                        </td>
+                        {/* Category pill */}
+                        <td className="px-5 py-3.5">
+                          <div className="h-5 w-16 rounded-full bg-slate-200 dark:bg-slate-700" />
+                        </td>
+                        {/* Status pill */}
+                        <td className="px-5 py-3.5">
+                          <div className="h-5 w-20 rounded-full bg-slate-200 dark:bg-slate-700" />
+                        </td>
+                        {/* Priority pill */}
+                        <td className="px-5 py-3.5">
+                          <div className="h-5 w-14 rounded-full bg-slate-200 dark:bg-slate-700" />
+                        </td>
+                        {/* Owner: icon + text */}
+                        <td className="px-5 py-3.5">
+                          <div className="flex items-center gap-1.5">
+                            <div className="w-3.5 h-3.5 rounded-full bg-slate-200 dark:bg-slate-700" />
+                            <div className="h-3 w-24 rounded bg-slate-200 dark:bg-slate-700" />
+                          </div>
+                        </td>
+                        {/* Team pill */}
+                        <td className="px-5 py-3.5">
+                          <div className="h-5 w-20 rounded-md bg-slate-200 dark:bg-slate-700" />
+                        </td>
+                        {/* Progress bar + % */}
+                        <td className="px-5 py-3.5 min-w-[120px]">
+                          <div className="flex items-center gap-2">
+                            <div className="w-16 h-1.5 rounded-full bg-slate-200 dark:bg-slate-700" />
+                            <div className="h-3 w-7 rounded bg-slate-200 dark:bg-slate-700" />
+                          </div>
+                        </td>
+                        {/* Devs */}
+                        <td className="px-5 py-3.5">
+                          <div className="h-3 w-6 rounded bg-slate-200 dark:bg-slate-700" />
+                        </td>
+                        {/* Tasks */}
+                        <td className="px-5 py-3.5">
+                          <div className="h-3 w-6 rounded bg-slate-200 dark:bg-slate-700" />
+                        </td>
+                        {/* Updated */}
+                        <td className="px-5 py-3.5">
+                          <div className="h-3 w-16 rounded bg-slate-200 dark:bg-slate-700" />
+                        </td>
+                        {/* Actions */}
+                        <td className="px-5 py-3.5 text-right">
+                          <div className="h-6 w-6 rounded-lg bg-slate-200 dark:bg-slate-700 ml-auto" />
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )
+        ) : filteredProjects.length > 0 ? (
           viewMode === "grid" ? (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {filteredProjects.map((project) => (
@@ -434,6 +535,7 @@ export default function ProjectsPage() {
           </div>
         )}
       </div>
+    </div>
     </div>
   );
 }

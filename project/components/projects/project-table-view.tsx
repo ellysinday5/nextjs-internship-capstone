@@ -4,7 +4,7 @@ import React, { useState, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { MoreHorizontal, Eye, Edit3, Trash2, Users, ClipboardList, User, ChevronLeft, ChevronRight } from "lucide-react";
 import { ProjectItem, toSlug } from "@/lib/project-data";
-import { ProjectWithStats } from "@/app/actions/project-actions";
+import { ProjectWithStats } from "@/actions/project-actions";
 
 interface ProjectTableViewProps {
   projects: ProjectItem[];
@@ -92,6 +92,7 @@ function ActionMenu({
                 name: project.name,
                 description: project.description || null,
                 ownerId: "demo",
+                ownerName: "Unknown",
                 dueDate: null,
                 categories: [project.category],
                 techStack: project.techStack || [],

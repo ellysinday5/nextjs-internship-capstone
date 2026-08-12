@@ -5,8 +5,8 @@ import { useDroppable } from "@dnd-kit/core";
 import { Plus, MoreHorizontal, Trash2 } from "lucide-react";
 import { SortableTaskCard } from "./task-card";
 import { useBoardStore } from "@/stores/board-store";
-import type { ListWithTasks } from "@/app/actions/list-actions";
-import type { TaskRecord } from "@/app/actions/task-actions";
+import type { ListWithTasks } from "@/actions/list-actions";
+import type { TaskRecord } from "@/actions/task-actions";
 
 interface KanbanColumnProps {
   list: ListWithTasks;

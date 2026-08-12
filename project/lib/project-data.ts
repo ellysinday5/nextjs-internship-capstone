@@ -1,4 +1,4 @@
-import { ProjectWithStats } from "@/app/actions/project-actions";
+import { ProjectWithStats } from "@/actions/project-actions";
 
 export interface ProjectItem {
   id: string;
