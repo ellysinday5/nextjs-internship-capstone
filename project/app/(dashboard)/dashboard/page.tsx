@@ -136,14 +136,13 @@ export default function DashboardPage() {
   const greetingName = user?.firstName || user?.fullName || user?.username || emailPrefix || "User";
 
   return (
-    <>
+    <div className="overflow-y-auto h-full p-4 sm:p-6 lg:p-8">
       {/* ── Modals ── */}
       <CreateProjectModal isOpen={modal === "project"} onClose={() => setModal(null)} />
       <AddMemberModal isOpen={modal === "member"} onClose={() => setModal(null)} />
       <CreateTaskModal isOpen={modal === "task"} onClose={() => setModal(null)} />
 
       <div className="space-y-6 w-full">
-        {/* ── Top Header & Toolbar ── */}
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white dark:bg-[#14263e] p-5 rounded-2xl border-2 border-[#142843]/20 dark:border-slate-700 shadow-sm">
           <div>
             <h1 className="text-xl sm:text-2xl font-extrabold text-[#142843] dark:text-white">
@@ -366,6 +365,6 @@ export default function DashboardPage() {
           </div>
         </div>
       </div>
-    </>
+    </div>
   );
 }

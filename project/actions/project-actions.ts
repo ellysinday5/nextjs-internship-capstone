@@ -60,7 +60,7 @@ export async function getProjectsAction(): Promise<ProjectWithStats[]> {
           const listIds = projectLists.map((l) => l.id);
           for (const lId of listIds) {
             const listTasks = await db
-              .select({ id: tasks.id, priority: tasks.priority })
+              .select({ id: tasks.id, priority: tasks.priority, status: tasks.status })
               .from(tasks)
               .where(eq(tasks.listId, lId));
 
@@ -120,7 +120,7 @@ export async function getProjectBySlugAction(slug: string): Promise<ProjectWithS
       const listIds = projectLists.map((l) => l.id);
       for (const lId of listIds) {
         const listTasks = await db
-          .select({ id: tasks.id, priority: tasks.priority })
+          .select({ id: tasks.id, priority: tasks.priority, status: tasks.status })
           .from(tasks)
           .where(eq(tasks.listId, lId));
 

@@ -1,5 +1,5 @@
-import type { ListWithTasks } from "@/app/actions/list-actions";
-import type { TaskRecord } from "@/app/actions/task-actions";
+import type { ListWithTasks } from "@/actions/list-actions";
+import type { TaskRecord } from "@/actions/task-actions";
 import type { Section } from "@/components/projects/details/types";
 import type { TaskItem } from "@/components/tasks/task-details";
 

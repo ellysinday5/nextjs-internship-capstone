@@ -5,7 +5,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { sileo } from "@/utils/alerts";
 import { updateProjectSchema, UpdateProjectFormValues } from "@/lib/project-schemas";
-import { updateProjectAction, ProjectWithStats } from "@/app/actions/project-actions";
+import { updateProjectAction, ProjectWithStats } from "@/actions/project-actions";
 import { Modal } from "@/components/modals/BaseModal";
 import { ConfirmationModal } from "@/components/modals/ConfirmationModal";
 

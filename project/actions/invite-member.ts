@@ -1,0 +1,131 @@
+"use server";
+
+import { eq, and } from "drizzle-orm";
+import { db } from "@/lib/db";
+import { invites, projects, projectMembers, users } from "@/lib/db/schema";
+import { syncUser } from "@/lib/auth";
+import { sendInviteEmail } from "@/lib/mailer";
+import { revalidatePath } from "next/cache";
+import crypto from "crypto";
+
+const INVITE_EXPIRY_DAYS = 7;
+
+
+export async function inviteTeamMember(projectId: string, email: string) {
+  try {
+    const user = await syncUser();
+    if (!user) return { success: false, error: "Unauthorized. Please sign in." };
+
+    const [project] = await db
+      .select()
+      .from(projects)
+      .where(eq(projects.id, projectId));
+
+    if (!project) {
+      return { success: false, error: "Project not found." };
+    }
+
+    const [existingInvite] = await db
+      .select()
+      .from(invites)
+      .where(
+        and(
+          eq(invites.projectId, projectId),
+          eq(invites.email, email),
+          eq(invites.status, "pending")
+        )
+      );
+
+    if (existingInvite) {
+      return { success: false, error: "An invite is already pending for this email." };
+    }
+
+    const token = crypto.randomUUID();
+    const expiresAt = new Date();
+    expiresAt.setDate(expiresAt.getDate() + INVITE_EXPIRY_DAYS);
+
+    await db.insert(invites).values({
+      email,
+      projectId,
+      invitedBy: user.id,
+      token,
+      status: "pending",
+      role: "member",
+      expiresAt,
+    });
+
+    const inviteLink = `${process.env.NEXT_PUBLIC_APP_URL}/invite/${token}`;
+
+    try {
+      await sendInviteEmail(email, inviteLink, project.name);
+    } catch (err) {
+      console.error("[inviteTeamMember] Email send failed:", err);
+      return { success: false, error: "Invite created but email failed to send." };
+    }
+
+    revalidatePath(`/projects`);
+
+    return { success: true };
+  } catch (error) {
+    console.error("[inviteTeamMember] Error:", error);
+    return { success: false, error: "Failed to send invite. Please try again." };
+  }
+}
+
+
+export async function acceptInvite(token: string) {
+  try {
+    const user = await syncUser();
+    if (!user) return { success: false, error: "Unauthorized. Please sign in." };
+
+    const [invite] = await db
+      .select()
+      .from(invites)
+      .where(eq(invites.token, token));
+
+    if (!invite) {
+      return { success: false, error: "Invite not found." };
+    }
+    if (invite.status !== "pending") {
+      return { success: false, error: `Invite already ${invite.status}.` };
+    }
+    if (invite.expiresAt < new Date()) {
+      await db.update(invites).set({ status: "expired" }).where(eq(invites.id, invite.id));
+      return { success: false, error: "Invite has expired." };
+    }
+    if (user.email.toLowerCase() !== invite.email.toLowerCase()) {
+      return { success: false, error: "This invite was sent to a different email address." };
+    }
+
+    const [existingMember] = await db
+      .select()
+      .from(projectMembers)
+      .where(
+        and(
+          eq(projectMembers.projectId, invite.projectId),
+          eq(projectMembers.userId, user.id)
+        )
+      );
+
+    if (!existingMember) {
+      await db.insert(projectMembers).values({
+        projectId: invite.projectId,
+        userId: user.id,
+        name: user.name,
+        role: invite.role,
+      });
+    }
+
+    await db
+      .update(invites)
+      .set({ status: "accepted", acceptedAt: new Date() })
+      .where(eq(invites.id, invite.id));
+
+    revalidatePath(`/projects`);
+
+    return { success: true, projectId: invite.projectId };
+  } catch (error) {
+    console.error("[acceptInvite] Error:", error);
+    return { success: false, error: "Failed to accept invite. Please try again." };
+  }
+}

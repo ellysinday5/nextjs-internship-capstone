@@ -1,12 +1,13 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { ProjectCardItem } from "./project-card-item";
 import { ConfirmationModal } from "@/components/modals/ConfirmationModal";
 import type { ProjectItem } from "@/lib/project-data";
 import type { ProjectCardData, ProjectCardStatus } from "@/lib/project-card-types";
-import { deleteProjectAction } from "@/app/actions/project-actions";
+import { deleteProjectAction } from "@/actions/project-actions";
+import { loadProjectMeta } from "@/lib/project-meta";
 
 interface ProjectCardProps {
   project: ProjectItem;
@@ -20,6 +21,20 @@ export function ProjectCard({ project, onEditLocal, onProjectDeleted }: ProjectC
   const [isDeleting, setIsDeleting] = useState(false);
   const [deleteError, setDeleteError] = useState<string | null>(null);
 
+  // Load per-project customizations from localStorage (color, icon, favorite)
+  const [accentColor, setAccentColor] = useState<string | undefined>(undefined);
+  const [iconIndex, setIconIndex] = useState<number | undefined>(undefined);
+  const [isFavorite, setIsFavorite] = useState<boolean | undefined>(undefined);
+
+  useEffect(() => {
+    const meta = loadProjectMeta(project.id);
+    if (meta) {
+      setAccentColor(meta.color);
+      setIconIndex(meta.iconIndex);
+      setIsFavorite(meta.isFavorite);
+    }
+  }, [project.id]);
+
   const cardData: ProjectCardData = {
     id: project.id,
     name: project.name,
@@ -28,6 +43,9 @@ export function ProjectCard({ project, onEditLocal, onProjectDeleted }: ProjectC
     memberCount: project.members,
     dueDate: project.dbProject?.dueDate ?? undefined,
     status: mapStatus(project.status),
+    accentColor,
+    iconIndex,
+    isFavorite,
   };
 
   function handleEdit(id: string) {
@@ -38,14 +56,13 @@ export function ProjectCard({ project, onEditLocal, onProjectDeleted }: ProjectC
     }
   }
 
-  function handleDelete(id: string) {
+  function handleDelete(_id: string) {
     setDeleteError(null);
     setShowDeleteConfirm(true);
   }
 
   async function confirmDelete() {
     if (!project.dbProject) {
-      // local/mock card — no server action, let parent handle local removal
       setShowDeleteConfirm(false);
       onProjectDeleted?.(project.id);
       return;
@@ -88,5 +105,5 @@ export function ProjectCard({ project, onEditLocal, onProjectDeleted }: ProjectC
 function mapStatus(status: string): ProjectCardStatus {
   if (status === "Completed") return "completed";
   if (status === "On Hold") return "on-hold";
-  return "active"; // covers "In Progress", "Review", "Planning"
+  return "active";
 }

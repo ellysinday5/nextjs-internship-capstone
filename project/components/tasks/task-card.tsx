@@ -15,7 +15,7 @@ import {
   Trash2,
   Flag,
 } from "lucide-react";
-import type { TaskRecord } from "@/app/actions/task-actions";
+import type { TaskRecord } from "@/actions/task-actions";
 
 type CardPriority = "low" | "medium" | "high";
 

@@ -13,7 +13,7 @@ import {
   Crown,
 } from "lucide-react";
 import { ProjectStatusType, STATUS_OPTIONS } from "./types";
-import { removeProjectMemberAction } from "@/app/actions/member-actions";
+import { removeProjectMemberAction } from "@/actions/member-actions";
 import { sileo } from "@/utils/alerts";
 
 interface Member {

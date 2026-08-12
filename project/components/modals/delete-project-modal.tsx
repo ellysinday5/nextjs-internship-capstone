@@ -2,7 +2,7 @@
 
 import React, { useState } from "react";
 import { sileo } from "@/utils/alerts";
-import { deleteProjectAction, ProjectWithStats } from "@/app/actions/project-actions";
+import { deleteProjectAction, ProjectWithStats } from "@/actions/project-actions";
 import { Modal } from "@/components/modals/BaseModal";
 
 interface DeleteProjectModalProps {

@@ -17,7 +17,7 @@ import { useBoardStore } from "@/stores/board-store";
 import { KanbanColumn } from "./kanban-column";
 import { TaskCard } from "./task-card";
 import { ProjectDetailSkeleton, BoardTabSkeleton } from "@/components/projects/details/skeleton-loading";
-import type { TaskRecord } from "@/app/actions/task-actions";
+import type { TaskRecord } from "@/actions/task-actions";
 
 interface KanbanBoardProps {
   projectId: string;
@@ -93,7 +93,7 @@ export function KanbanBoard({ projectId, onSelectTask }: KanbanBoardProps) {
 
   /* ── Loading / error states ── */
   if (isLoading) {
-    return <BoardTabSkeleton />;
+    return <BoardTabSkeleton noShell={true} />;
   }
 
   if (error) {

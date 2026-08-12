@@ -5,7 +5,7 @@ import { UserPlus, Shield, Users, Mail } from "lucide-react";
 import { sileo } from "@/utils/alerts";
 import { Modal } from "@/components/modals/BaseModal";
 import { ConfirmationModal } from "@/components/modals/ConfirmationModal";
-import { addProjectMemberAction } from "@/app/actions/member-actions";
+import { addProjectMemberAction } from "@/actions/member-actions";
 
 interface AddMemberModalProps {
   isOpen: boolean;
