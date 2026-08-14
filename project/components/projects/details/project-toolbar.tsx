@@ -25,7 +25,7 @@ interface ProjectToolbarProps {
   setSelectedPriorityFilter: (p: string) => void;
   selectedStatusFilter: string;
   setSelectedStatusFilter: (s: string) => void;
-  sortBy: "default" | "name" | "priority" | "assignee" | "dueDate" | "startDate" | "dateCreated" | "dateUpdated" | "dateClosed" | "timeTracked" | "timeEstimate" | "totalTimeInStatus" | "duration";
+  sortBy: "default" | "name" | "priority" | "assignee" | "dueDate";
   setSortBy: (sort: any) => void;
   onAddSection?: () => void;
   calendarMode?: boolean;
@@ -77,14 +77,6 @@ const SORT_OPTIONS = [
   { value: "assignee", label: "Assignee" },
   { value: "priority", label: "Priority" },
   { value: "dueDate", label: "Due date" },
-  { value: "startDate", label: "Start date" },
-  { value: "dateCreated", label: "Date created" },
-  { value: "dateUpdated", label: "Date updated" },
-  { value: "dateClosed", label: "Date closed" },
-  { value: "timeTracked", label: "Time tracked" },
-  { value: "timeEstimate", label: "Time estimate" },
-  { value: "totalTimeInStatus", label: "Total time in Status" },
-  { value: "duration", label: "Duration" },
 ];
 
 export function ProjectToolbar({
@@ -117,6 +109,9 @@ export function ProjectToolbar({
   const [showSavedFiltersMenu, setShowSavedFiltersMenu] = useState(false);
   const [filterFieldSearch, setFilterFieldSearch] = useState("");
   const [activeDropdownRuleId, setActiveDropdownRuleId] = useState<string | null>(null);
+  const [activeOperatorRuleId, setActiveOperatorRuleId] = useState<string | null>(null);
+  const [activeValueRuleId, setActiveValueRuleId] = useState<string | null>(null);
+  const [filterValueSearch, setFilterValueSearch] = useState("");
 
   // Closed & Save View Options
   const [showClosedDropdown, setShowClosedDropdown] = useState(false);
@@ -141,9 +136,20 @@ export function ProjectToolbar({
 
   // Assignee search modal state
   const [showAssigneeModal, setShowAssigneeModal] = useState(false);
+  const assigneeDropdownRef = useRef<HTMLDivElement>(null);
   const [assigneeSearch, setAssigneeSearch] = useState("");
   const [selectedAssignee, setSelectedAssignee] = useState<string>("All");
   const [enableAssigneeComments, setEnableAssigneeComments] = useState(false);
+
+  useEffect(() => {
+    function clickOutside(e: MouseEvent) {
+      if (assigneeDropdownRef.current && !assigneeDropdownRef.current.contains(e.target as Node)) {
+        setShowAssigneeModal(false);
+      }
+    }
+    document.addEventListener("mousedown", clickOutside);
+    return () => document.removeEventListener("mousedown", clickOutside);
+  }, []);
 
   // Sort dropdown options state
   const [showSortDropdown, setShowSortDropdown] = useState(false);
@@ -210,53 +216,12 @@ export function ProjectToolbar({
       <div className="flex items-center justify-between flex-wrap gap-2">
         {/* Left side Add Task button */}
         {!calendarMode && (
-          <div className="relative inline-flex rounded-xl shadow-sm overflow-visible">
-            <button
-              onClick={() => onAddTask()}
-              className="inline-flex items-center gap-1.5 px-4 py-2 bg-[#0f2d5a] hover:bg-[#0c2447] text-white rounded-l-xl text-xs font-bold transition-colors"
-            >
-              <Plus size={14} /> Add task
-            </button>
-            <button
-              onClick={() => setIsAddTaskDropdownOpen((v) => !v)}
-              className="px-2 py-2 bg-[#0c2447] hover:bg-[#091e35] text-white rounded-r-xl text-xs transition-colors border-l border-white/20"
-            >
-              <ChevronDown size={13} />
-            </button>
-
-            {isAddTaskDropdownOpen && (
-              <div className="absolute top-full left-0 mt-1.5 w-52 bg-white dark:bg-[#14263e] border-2 border-[#142843]/30 dark:border-slate-700 rounded-xl shadow-xl z-50 py-1 text-xs overflow-hidden">
-                <button
-                  onClick={() => {
-                    onAddTask();
-                    setIsAddTaskDropdownOpen(false);
-                  }}
-                  className="w-full flex items-center justify-between px-3 py-2.5 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-200"
-                >
-                  <span className="flex items-center gap-2 font-semibold font-sans">
-                    <CheckCircle2 size={14} className="text-blue-500" /> Task
-                  </span>
-                  <span className="text-[10px] text-slate-400 bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 rounded">
-                    Default
-                  </span>
-                </button>
-                {onAddSection && (
-                  <>
-                    <div className="border-t border-slate-100 dark:border-slate-800 mx-2 my-1" />
-                    <button
-                      onClick={() => {
-                        setIsAddTaskDropdownOpen(false);
-                        onAddSection();
-                      }}
-                      className="w-full flex items-center gap-2 px-3 py-2.5 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-200 font-semibold"
-                    >
-                      <Plus size={14} className="text-purple-500" /> Section
-                    </button>
-                  </>
-                )}
-              </div>
-            )}
-          </div>
+          <button
+            onClick={() => onAddTask()}
+            className="inline-flex items-center gap-1.5 px-4 py-2 bg-[#0f2d5a] hover:bg-[#0c2447] text-white rounded-xl text-xs font-bold transition-colors shadow-sm"
+          >
+            <Plus size={14} /> Add task
+          </button>
         )}
 
         {/* Right side options */}
@@ -305,13 +270,76 @@ export function ProjectToolbar({
           </button>
 
           {/* Assignee Search modal trigger */}
-          <button
-            onClick={() => setShowAssigneeModal(true)}
-            className="inline-flex items-center gap-1.5 px-3 py-2 border-2 border-slate-200 dark:border-slate-700 rounded-xl text-xs font-bold bg-white dark:bg-[#1c304a] text-[#142843] dark:text-white hover:bg-slate-50 dark:hover:bg-slate-800"
-          >
-            <Users2 size={12} className="opacity-70" />
-            <span>Assignee: {selectedAssignee}</span>
-          </button>
+          <div className="relative" ref={assigneeDropdownRef}>
+            <button
+              onClick={() => setShowAssigneeModal(!showAssigneeModal)}
+              className="inline-flex items-center gap-1.5 px-3 py-2 border-2 border-slate-200 dark:border-slate-700 rounded-xl text-xs font-bold bg-white dark:bg-[#1c304a] text-[#142843] dark:text-white hover:bg-slate-50 dark:hover:bg-slate-800"
+            >
+              <Users2 size={12} className="opacity-70" />
+              <span>Assignee: {selectedAssignee}</span>
+            </button>
+            {showAssigneeModal && (
+              <div className="absolute right-0 mt-1.5 w-64 bg-white dark:bg-[#1c304a] border border-slate-200 dark:border-slate-700 rounded-xl shadow-xl z-50 flex flex-col max-h-[350px] overflow-hidden">
+                {/* Search Input */}
+                <div className="p-2 border-b border-slate-100 dark:border-slate-800 shrink-0">
+                  <div className="relative">
+                    <input
+                      type="text"
+                      value={assigneeSearch}
+                      onChange={(e) => setAssigneeSearch(e.target.value)}
+                      placeholder="Search members..."
+                      className="w-full pl-7 pr-3 py-1.5 border border-slate-200 dark:border-slate-700 rounded-lg bg-slate-50 dark:bg-[#0f1d31] text-[11px] font-semibold text-[#142843] dark:text-white focus:outline-none"
+                    />
+                    <Search size={12} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400" />
+                  </div>
+                </div>
+
+                {/* List */}
+                <div className="flex-1 overflow-y-auto p-1.5 space-y-0.5">
+                  <button
+                    onClick={() => { setSelectedAssignee("All"); setShowAssigneeModal(false); }}
+                    className={`w-full text-left px-2.5 py-1.5 text-xs font-bold rounded-lg transition-colors ${
+                      selectedAssignee === "All"
+                        ? "bg-blue-50 text-[#0f2d5a] dark:bg-blue-950/30"
+                        : "hover:bg-slate-50 dark:hover:bg-slate-800/40 text-slate-700 dark:text-slate-200"
+                    }`}
+                  >
+                    All Assignees
+                  </button>
+                  {filteredAssignees.map((name) => (
+                    <button
+                      key={name}
+                      onClick={() => { setSelectedAssignee(name); setShowAssigneeModal(false); }}
+                      className={`w-full text-left px-2.5 py-1.5 text-xs font-bold rounded-lg transition-colors ${
+                        selectedAssignee === name
+                          ? "bg-blue-50 text-[#0f2d5a] dark:bg-blue-950/30"
+                          : "hover:bg-slate-50 dark:hover:bg-slate-800/40 text-slate-700 dark:text-slate-200"
+                      }`}
+                    >
+                      👤 {name}
+                    </button>
+                  ))}
+                </div>
+
+                {/* Assignee comments turn-on toggle footer */}
+                <div className="p-3 border-t border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/40 flex items-center justify-between shrink-0">
+                  <span className="text-[10px] font-bold text-slate-500 dark:text-slate-400 flex items-center gap-1.5">
+                    <MessageSquare size={12} className="text-slate-400" />
+                    Comments
+                  </span>
+                  <label className="relative inline-flex items-center cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={enableAssigneeComments}
+                      onChange={(e) => setEnableAssigneeComments(e.target.checked)}
+                      className="sr-only peer"
+                    />
+                    <div className="w-6 h-3.5 bg-slate-200 peer-focus:outline-none rounded-full peer dark:bg-slate-700 peer-checked:after:translate-x-[12px] peer-checked:after:border-white after:content-[''] after:absolute after:top-[1.5px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-2.5 after:w-2.5 after:transition-all dark:border-slate-600 peer-checked:bg-[#0f2d5a]"></div>
+                  </label>
+                </div>
+              </div>
+            )}
+          </div>
 
 
 
@@ -452,48 +480,7 @@ export function ProjectToolbar({
             </div>
           ))}
 
-          {/* ClickUp-style Sort Search Dropdown */}
-          <div className="relative" ref={sortDropdownRef}>
-            <button
-              onClick={() => setShowSortDropdown(!showSortDropdown)}
-              className="inline-flex items-center gap-1.5 px-3 py-2 border-2 border-slate-200 dark:border-slate-700 rounded-xl text-xs font-bold bg-white dark:bg-[#1c304a] text-[#142843] dark:text-white hover:bg-slate-50 dark:hover:bg-slate-800"
-            >
-              <SlidersHorizontal size={12} className="opacity-70" />
-              <span>Sort: {SORT_OPTIONS.find((o) => o.value === sortBy)?.label || "Status"}</span>
-              <ChevronDown size={11} />
-            </button>
 
-            {showSortDropdown && (
-              <div className="absolute right-0 mt-1.5 w-52 bg-white dark:bg-[#1c304a] border border-slate-200 dark:border-slate-700 rounded-xl shadow-lg z-50 flex flex-col max-h-[300px] overflow-hidden text-xs">
-                {/* Search field */}
-                <div className="p-2 border-b border-slate-100 dark:border-slate-800 shrink-0">
-                  <input
-                    type="text"
-                    value={sortSearch}
-                    onChange={(e) => setSortSearch(e.target.value)}
-                    placeholder="Search..."
-                    className="w-full px-2.5 py-1.5 border border-slate-200 dark:border-slate-700 rounded-lg bg-slate-50 dark:bg-[#0f1d31] text-[11px] font-semibold text-[#142843] dark:text-white focus:outline-none"
-                  />
-                </div>
-                {/* Scrollable List */}
-                <div className="flex-1 overflow-y-auto p-1.5 space-y-0.5">
-                  {filteredSortOptions.map((opt) => (
-                    <button
-                      key={opt.value}
-                      onClick={() => { setSortBy(opt.value); setShowSortDropdown(false); setSortSearch(""); }}
-                      className={`w-full text-left px-2.5 py-1.5 rounded-lg font-semibold transition-colors ${
-                        sortBy === opt.value
-                          ? "bg-blue-50 text-[#0f2d5a] dark:bg-blue-950/30"
-                          : "hover:bg-slate-50 dark:hover:bg-slate-800/40 text-slate-700 dark:text-slate-200"
-                      }`}
-                    >
-                      {opt.label}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            )}
-          </div>
         </div>
       </div>
 
@@ -600,46 +587,101 @@ export function ProjectToolbar({
                   </div>
 
                   {/* Operator Selector */}
-                  <select
-                    value={rule.operator}
-                    onChange={() => {}}
-                    className="px-2.5 py-1.5 border border-slate-200 dark:border-slate-700 rounded-lg text-xs font-bold bg-white dark:bg-[#1c304a] text-[#142843] dark:text-white focus:outline-none"
-                  >
-                    <option value="Is">Is</option>
-                  </select>
+                  <div className="relative">
+                    <button
+                      onClick={() => setActiveOperatorRuleId(activeOperatorRuleId === rule.id ? null : rule.id)}
+                      className="px-2.5 py-1.5 border border-slate-200 dark:border-slate-700 rounded-lg text-xs font-bold bg-white dark:bg-[#1c304a] text-[#142843] dark:text-white inline-flex items-center gap-1.5"
+                    >
+                      <span>{rule.operator}</span>
+                      <ChevronDown size={10} />
+                    </button>
+
+                    {activeOperatorRuleId === rule.id && (
+                      <div className="absolute left-0 mt-1 w-32 bg-white dark:bg-[#1c304a] border border-slate-200 dark:border-slate-700 rounded-xl shadow-lg z-50 flex flex-col py-1 text-xs">
+                        {["Is", "Is not", "Is set", "Is not set"].map((op) => (
+                          <button
+                            key={op}
+                            onClick={() => {
+                              updateFilterRule(rule.id, { operator: op as any });
+                              setActiveOperatorRuleId(null);
+                            }}
+                            className="w-full text-left px-3 py-1.5 hover:bg-slate-50 dark:hover:bg-slate-800/50 text-slate-700 dark:text-slate-200 font-semibold flex items-center justify-between"
+                          >
+                            {op}
+                            {rule.operator === op && <CheckCircle2 size={12} className="text-violet-500" />}
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
 
                   {/* Value Selector */}
-                  {rule.field === "Status" ? (
-                    <select
-                      value={rule.value}
-                      onChange={(e) => updateFilterRule(rule.id, { value: e.target.value })}
-                      className="px-2.5 py-1.5 border border-slate-200 dark:border-slate-700 rounded-lg text-xs font-bold bg-white dark:bg-[#1c304a] text-[#142843] dark:text-white focus:outline-none"
-                    >
-                      <option value="On track">On track</option>
-                      <option value="At risk">At risk</option>
-                      <option value="Off track">Off track</option>
-                      <option value="On hold">On hold</option>
-                      <option value="Complete">Complete</option>
-                    </select>
-                  ) : rule.field === "Priority" ? (
-                    <select
-                      value={rule.value}
-                      onChange={(e) => updateFilterRule(rule.id, { value: e.target.value })}
-                      className="px-2.5 py-1.5 border border-slate-200 dark:border-slate-700 rounded-lg text-xs font-bold bg-white dark:bg-[#1c304a] text-[#142843] dark:text-white focus:outline-none"
-                    >
-                      <option value="High">High</option>
-                      <option value="Medium">Medium</option>
-                      <option value="Low">Low</option>
-                    </select>
-                  ) : (
-                    <input
-                      type="text"
-                      value={rule.value}
-                      placeholder="Enter filter option..."
-                      onChange={(e) => updateFilterRule(rule.id, { value: e.target.value })}
-                      className="px-2.5 py-1.5 border border-slate-200 dark:border-slate-700 rounded-lg text-xs font-semibold bg-white dark:bg-[#1c304a] text-[#142843] dark:text-white focus:outline-none"
-                    />
-                  )}
+                  <div className="relative flex-1 min-w-[160px]">
+                    {rule.field === "Status" || rule.field === "Priority" ? (
+                      <button
+                        onClick={() => setActiveValueRuleId(activeValueRuleId === rule.id ? null : rule.id)}
+                        className="w-full px-2.5 py-1.5 border border-slate-200 dark:border-slate-700 rounded-lg text-xs font-bold bg-white dark:bg-[#1c304a] text-[#142843] dark:text-white inline-flex items-center gap-1.5 justify-between"
+                      >
+                        <span>{rule.value || "Select option"}</span>
+                        <ChevronDown size={10} />
+                      </button>
+                    ) : (
+                      <input
+                        type="text"
+                        value={rule.value}
+                        placeholder="Enter filter option..."
+                        onChange={(e) => updateFilterRule(rule.id, { value: e.target.value })}
+                        className="w-full px-2.5 py-1.5 border border-slate-200 dark:border-slate-700 rounded-lg text-xs font-semibold bg-white dark:bg-[#1c304a] text-[#142843] dark:text-white focus:outline-none"
+                      />
+                    )}
+
+                    {activeValueRuleId === rule.id && (rule.field === "Status" || rule.field === "Priority") && (
+                      <div className="absolute left-0 mt-1 w-48 bg-white dark:bg-[#1c304a] border border-slate-200 dark:border-slate-700 rounded-xl shadow-lg z-50 flex flex-col max-h-[220px] overflow-hidden text-xs">
+                        <div className="p-1.5 border-b border-slate-100 dark:border-slate-800">
+                          <input
+                            type="text"
+                            value={filterValueSearch}
+                            onChange={(e) => setFilterValueSearch(e.target.value)}
+                            placeholder="Search..."
+                            className="w-full px-2 py-1 border border-slate-200 dark:border-slate-700 rounded bg-slate-50 dark:bg-[#0f1d31] text-[10px] font-semibold focus:outline-none focus:ring-1 focus:ring-violet-500"
+                          />
+                        </div>
+                        <div className="flex items-center justify-between px-3 py-1.5 text-[10px] font-bold text-slate-400">
+                          <span>{rule.field === "Status" ? "Statuses" : "Priorities"}</span>
+                          <button className="text-violet-500 hover:text-violet-600 font-semibold">Select All</button>
+                        </div>
+                        <div className="flex-1 overflow-y-auto p-1 space-y-0.5">
+                          {(rule.field === "Status"
+                            ? ["On track", "At risk", "Off track", "On hold", "Complete"]
+                            : ["High", "Medium", "Low"]
+                          )
+                            .filter((f) => f.toLowerCase().includes(filterValueSearch.toLowerCase()))
+                            .map((f) => (
+                              <label
+                                key={f}
+                                className="w-full flex items-center gap-2.5 px-2 py-1.5 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-800/50 text-slate-700 dark:text-slate-200 font-semibold cursor-pointer"
+                              >
+                                <div className="flex items-center justify-center w-3 h-3 rounded-sm border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-transparent data-[state=checked]:bg-violet-500 data-[state=checked]:border-violet-500 data-[state=checked]:text-white"
+                                  data-state={rule.value === f ? "checked" : "unchecked"}
+                                >
+                                  {rule.value === f && <CheckCircle2 size={10} />}
+                                </div>
+                                <input
+                                  type="checkbox"
+                                  checked={rule.value === f}
+                                  onChange={() => {
+                                    updateFilterRule(rule.id, { value: f });
+                                    setActiveValueRuleId(null);
+                                  }}
+                                  className="sr-only"
+                                />
+                                {f}
+                              </label>
+                            ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
 
                   {/* Remove Rule */}
                   <button
@@ -670,81 +712,7 @@ export function ProjectToolbar({
         </div>
       )}
 
-      {/* ── Assignee Filter Search Modal ── */}
-      {showAssigneeModal && (
-        <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-xs flex items-center justify-center z-50">
-          <div className="bg-white dark:bg-[#1c304a] w-full max-w-sm rounded-2xl shadow-xl overflow-hidden border border-slate-200 dark:border-slate-700 flex flex-col max-h-[420px]">
-            {/* Modal Header */}
-            <div className="px-5 py-4 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between">
-              <h3 className="text-sm font-bold text-[#142843] dark:text-white">Filter by Assignee</h3>
-              <button
-                onClick={() => setShowAssigneeModal(false)}
-                className="text-slate-400 hover:text-slate-600 dark:hover:text-white transition-colors"
-              >
-                <X size={15} />
-              </button>
-            </div>
 
-            {/* Search Input */}
-            <div className="p-3 border-b border-slate-100 dark:border-slate-800">
-              <div className="relative">
-                <input
-                  type="text"
-                  value={assigneeSearch}
-                  onChange={(e) => setAssigneeSearch(e.target.value)}
-                  placeholder="Search members..."
-                  className="w-full pl-8 pr-4 py-2 border border-slate-200 dark:border-slate-700 rounded-xl bg-slate-50 dark:bg-[#0f1d31] text-xs font-semibold text-[#142843] dark:text-white focus:outline-none focus:ring-2 focus:ring-[#0f2d5a]"
-                />
-                <Search size={13} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400" />
-              </div>
-            </div>
-
-            {/* List */}
-            <div className="flex-1 overflow-y-auto p-2 space-y-1">
-              <button
-                onClick={() => { setSelectedAssignee("All"); setShowAssigneeModal(false); }}
-                className={`w-full text-left px-3 py-2 text-xs font-bold rounded-lg transition-colors ${
-                  selectedAssignee === "All"
-                    ? "bg-blue-50 text-[#0f2d5a] dark:bg-blue-950/30"
-                    : "hover:bg-slate-50 dark:hover:bg-slate-800/40 text-slate-700 dark:text-slate-200"
-                }`}
-              >
-                All Assignees
-              </button>
-              {filteredAssignees.map((name) => (
-                <button
-                  key={name}
-                  onClick={() => { setSelectedAssignee(name); setShowAssigneeModal(false); }}
-                  className={`w-full text-left px-3 py-2 text-xs font-bold rounded-lg transition-colors ${
-                    selectedAssignee === name
-                      ? "bg-blue-50 text-[#0f2d5a] dark:bg-blue-950/30"
-                      : "hover:bg-slate-50 dark:hover:bg-slate-800/40 text-slate-700 dark:text-slate-200"
-                  }`}
-                >
-                  👤 {name}
-                </button>
-              ))}
-            </div>
-
-            {/* Assignee comments turn-on toggle footer */}
-            <div className="p-4 border-t border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/40 flex items-center justify-between">
-              <span className="text-[11px] font-bold text-slate-500 dark:text-slate-400 flex items-center gap-1.5">
-                <MessageSquare size={13} className="text-slate-400" />
-                Assignee Comments
-              </span>
-              <label className="relative inline-flex items-center cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={enableAssigneeComments}
-                  onChange={(e) => setEnableAssigneeComments(e.target.checked)}
-                  className="sr-only peer"
-                />
-                <div className="w-7 h-4 bg-slate-200 peer-focus:outline-none rounded-full peer dark:bg-slate-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-3 after:w-3 after:transition-all dark:border-slate-600 peer-checked:bg-[#0f2d5a]"></div>
-              </label>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }

@@ -14,6 +14,7 @@ interface ConfirmationModalProps {
   confirmLabel?: string;
   isLoading?: boolean;
   showCloseButton?: boolean;
+  children?: React.ReactNode;
 }
 
 interface VariantContent {
@@ -60,6 +61,7 @@ export function ConfirmationModal({
   confirmLabel,
   isLoading = false,
   showCloseButton = true,
+  children,
 }: ConfirmationModalProps) {
   const content = VARIANT_CONTENT[variant];
 
@@ -93,7 +95,11 @@ export function ConfirmationModal({
         </>
       }
     >
-      <p>{description ?? content.description}</p>
+      <div className="space-y-4">
+        {description && <p>{description}</p>}
+        {!description && !children && <p>{content.description}</p>}
+        {children}
+      </div>
     </Modal>
   );
 }

@@ -2,7 +2,14 @@
 
 import { create } from "zustand";
 import { subscribeWithSelector } from "zustand/middleware";
-import { getListsAction, createListAction, deleteListAction, type ListWithTasks } from "@/actions/list-actions";
+import {
+  getListsAction,
+  createListAction,
+  updateListAction,
+  reorderListsAction,
+  deleteListAction,
+  type ListWithTasks,
+} from "@/actions/list-actions";
 import {
   getProjectTasksAction,
   createTaskAction,
@@ -12,6 +19,7 @@ import {
   type TaskRecord,
 } from "@/actions/task-actions";
 import type { CreateTaskFormValues, UpdateTaskFormValues } from "@/lib/task-schemas";
+import { deriveStatusForList } from "@/lib/task-status";
 
 interface BoardState {
   currentProjectId: string | null;
@@ -28,6 +36,8 @@ interface BoardState {
   updateTask: (taskId: string, updates: Omit<UpdateTaskFormValues, "id">) => Promise<void>;
   moveTask: (taskId: string, newListId: string, newPosition: number) => Promise<void>;
   deleteTask: (taskId: string) => Promise<void>;
+  renameList: (listId: string, name: string) => Promise<void>;
+  reorderLists: (orderedIds: string[]) => Promise<void>;
   createList: (name: string) => Promise<void>;
   deleteList: (listId: string) => Promise<void>;
 
@@ -47,6 +57,9 @@ export const useBoardStore = create<BoardState>()(
     error: null,
 
     loadProject: async (projectId) => {
+      if (get().currentProjectId === projectId && (get().lists.length > 0 || get().tasks.length > 0)) {
+        return;
+      }
       set({ isLoading: true, error: null, currentProjectId: projectId });
       try {
         const [lists, tasks] = await Promise.all([
@@ -127,20 +140,49 @@ export const useBoardStore = create<BoardState>()(
 
     moveTask: async (taskId, newListId, newPosition) => {
       const previousTasks = get().tasks;
+      const { lists } = get();
 
+      // Derive the health status implied by the destination column.
+      const targetList = lists.find((l) => l.id === newListId);
+      const derivedStatus = targetList ? deriveStatusForList(targetList, lists) : undefined;
+
+      // Optimistic update: listId, position, AND derived status all at once.
       set((state) => ({
         tasks: state.tasks.map((t) =>
-          t.id === taskId ? { ...t, listId: newListId, position: newPosition } : t,
+          t.id === taskId
+            ? {
+                ...t,
+                listId: newListId,
+                position: newPosition,
+                ...(derivedStatus ? { status: derivedStatus } : {}),
+              }
+            : t,
         ),
         isSaving: true,
       }));
 
-      const result = await moveTaskAction({ taskId, toListId: newListId, toPosition: newPosition });
+      // Persist the move itself first.
+      const moveResult = await moveTaskAction({ taskId, toListId: newListId, toPosition: newPosition });
 
-      if (!result.success) {
-        set({ tasks: previousTasks, isSaving: false, error: result.error ?? "Failed to move task." });
+      if (!moveResult.success) {
+        set({ tasks: previousTasks, isSaving: false, error: moveResult.error ?? "Failed to move task." });
         return;
       }
+
+      // Persist the derived status as a separate write (moveTaskAction doesn't touch status).
+      if (derivedStatus) {
+        const statusResult = await updateTaskAction({ id: taskId, status: derivedStatus });
+        if (!statusResult.success) {
+          // The move itself already succeeded in the DB — don't roll that back,
+          // just surface that the status sync failed.
+          set({
+            isSaving: false,
+            error: statusResult.error ?? "Task moved, but failed to update status.",
+          });
+          return;
+        }
+      }
+
       set({ isSaving: false });
     },
 
@@ -155,6 +197,36 @@ export const useBoardStore = create<BoardState>()(
         return;
       }
       set({ isSaving: false });
+    },
+
+    renameList: async (listId, name) => {
+      const previousLists = get().lists;
+      set((state) => ({
+        lists: state.lists.map((l) => (l.id === listId ? { ...l, name } : l)),
+      }));
+
+      const result = await updateListAction({ id: listId, name });
+      if (!result.success) {
+        set({ lists: previousLists, error: result.error ?? "Failed to rename section." });
+      }
+    },
+
+    reorderLists: async (orderedIds) => {
+      const previousLists = get().lists;
+      const projectId = get().currentProjectId;
+      if (!projectId) return;
+
+      const idToPos = new Map(orderedIds.map((id, index) => [id, index]));
+      const newLists = [...previousLists].sort(
+        (a, b) => (idToPos.get(a.id) ?? a.position) - (idToPos.get(b.id) ?? b.position),
+      );
+
+      set({ lists: newLists });
+
+      const result = await reorderListsAction({ projectId, orderedIds });
+      if (!result.success) {
+        set({ lists: previousLists, error: result.error ?? "Failed to reorder sections." });
+      }
     },
 
     createList: async (name) => {

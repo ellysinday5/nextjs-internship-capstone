@@ -15,6 +15,8 @@ interface InviteMemberModalProps {
   isOpen: boolean
   onClose: () => void
   onInvite: (data: InviteMemberData) => void
+  projectName?: string
+  projectDescription?: string | null
 }
 
 const ROLE_OPTIONS: { value: InviteMemberData["role"]; label: string; description: string }[] = [
@@ -30,7 +32,7 @@ const ROLE_OPTIONS: { value: InviteMemberData["role"]; label: string; descriptio
   },
 ]
 
-export function InviteMemberModal({ isOpen, onClose, onInvite }: InviteMemberModalProps) {
+export function InviteMemberModal({ isOpen, onClose, onInvite, projectName, projectDescription }: InviteMemberModalProps) {
   const [email, setEmail] = useState("")
   const [role, setRole] = useState<InviteMemberData["role"]>("Member")
   const [emailError, setEmailError] = useState<string | null>(null)
@@ -104,6 +106,16 @@ export function InviteMemberModal({ isOpen, onClose, onInvite }: InviteMemberMod
         }
       >
         <form id="invite-member-form" onSubmit={handleSubmit} className="space-y-5" noValidate>
+          {/* Project info banner */}
+          {projectName && (
+            <div className="rounded-xl border border-[#142843]/20 bg-[#142843]/5 dark:border-blue-800/30 dark:bg-blue-950/20 p-3.5">
+              <p className="text-[10px] font-extrabold uppercase tracking-widest text-[#142843]/60 dark:text-blue-400/60 mb-1">Inviting to project</p>
+              <p className="text-sm font-bold text-[#142843] dark:text-blue-300">{projectName}</p>
+              {projectDescription && (
+                <p className="mt-1 text-xs leading-relaxed text-slate-500 dark:text-slate-400 line-clamp-3">{projectDescription}</p>
+              )}
+            </div>
+          )}
           <div>
             <label className="mb-1.5 flex items-center gap-1.5 text-sm font-medium text-slate-700 dark:text-slate-200">
               <Mail size={14} className="text-[#142843] dark:text-blue-400" />

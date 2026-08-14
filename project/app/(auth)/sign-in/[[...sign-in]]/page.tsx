@@ -105,6 +105,7 @@ export default function SignInPage() {
 
   return (
     <div className="min-h-screen w-full bg-[url('/bg-logo.png')] bg-cover bg-center bg-no-repeat flex items-center justify-center p-4 sm:p-6 md:p-10 font-sans relative">
+      <div id="clerk-captcha" />
       <div className="w-full max-w-[940px] bg-white rounded-2xl shadow-2xl border border-slate-100 p-8 sm:p-10 md:p-12 flex flex-col md:flex-row items-center justify-between gap-10 md:gap-16 min-h-[480px]">
         <div className="w-full md:w-[360px] lg:w-[390px] h-[300px] sm:h-[340px] md:h-[380px] shrink-0 flex items-center justify-center">
           <AuthIllustration />

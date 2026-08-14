@@ -11,7 +11,7 @@ import crypto from "crypto";
 const INVITE_EXPIRY_DAYS = 7;
 
 
-export async function inviteTeamMember(projectId: string, email: string) {
+export async function inviteTeamMember(projectId: string, email: string, role: string = "member") {
   try {
     const user = await syncUser();
     if (!user) return { success: false, error: "Unauthorized. Please sign in." };
@@ -50,7 +50,7 @@ export async function inviteTeamMember(projectId: string, email: string) {
       invitedBy: user.id,
       token,
       status: "pending",
-      role: "member",
+      role,
       expiresAt,
     });
 
@@ -64,6 +64,8 @@ export async function inviteTeamMember(projectId: string, email: string) {
     }
 
     revalidatePath(`/projects`);
+    revalidatePath(`/team`);
+    revalidatePath(`/dashboard`);
 
     return { success: true };
   } catch (error) {
@@ -122,6 +124,8 @@ export async function acceptInvite(token: string) {
       .where(eq(invites.id, invite.id));
 
     revalidatePath(`/projects`);
+    revalidatePath(`/team`);
+    revalidatePath(`/dashboard`);
 
     return { success: true, projectId: invite.projectId };
   } catch (error) {
