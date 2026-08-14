@@ -8,8 +8,6 @@ import {
   CheckCircle2,
   ClipboardList,
   User,
-  FolderOpen,
-  Target,
   ChevronRight,
   Filter,
   X,
@@ -30,7 +28,7 @@ export interface SearchResultItem {
   id: string;
   name: string;
   subtitle?: string;
-  category: "Tasks" | "Projects" | "People" | "Portfolios" | "Goals";
+  category: "Tasks" | "Projects" | "People";
   url: string;
   badge?: string;
   avatar?: string;
@@ -227,8 +225,6 @@ export function HeaderSearchModal({ isOpen, onClose }: HeaderSearchModalProps) {
     { label: "Tasks", icon: CheckCircle2 },
     { label: "Projects", icon: ClipboardList },
     { label: "People", icon: User },
-    { label: "Portfolios", icon: FolderOpen },
-    { label: "Goals", icon: Target },
   ];
 
   // Convert real workspace DB data into searchable items

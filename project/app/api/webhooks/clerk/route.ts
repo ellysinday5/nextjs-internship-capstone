@@ -3,8 +3,8 @@ import { headers } from "next/headers";
 import { WebhookEvent } from "@clerk/nextjs/server";
 import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
-import { users } from "@/lib/db/schema";
-import { eq } from "drizzle-orm";
+import { users, projectMembers } from "@/lib/db/schema";
+import { eq, and } from "drizzle-orm";
 
 export async function POST(req: Request) {
   const WEBHOOK_SECRET = process.env.CLERK_WEBHOOK_SECRET || process.env.WEBHOOK_SECRET;
@@ -14,7 +14,6 @@ export async function POST(req: Request) {
     return new Response("Error: Missing webhook secret", { status: 500 });
   }
 
-  // Retrieve svix headers for signature verification
   const headerPayload = await headers();
   const svix_id = headerPayload.get("svix-id");
   const svix_timestamp = headerPayload.get("svix-timestamp");
@@ -24,7 +23,6 @@ export async function POST(req: Request) {
     return new Response("Error: Missing svix headers", { status: 400 });
   }
 
-  // Get raw body as text for verification
   const body = await req.text();
 
   const wh = new Webhook(WEBHOOK_SECRET);
@@ -44,8 +42,15 @@ export async function POST(req: Request) {
   const eventType = evt.type;
 
   if (eventType === "user.created" || eventType === "user.updated") {
-    const { id, email_addresses, primary_email_address_id, first_name, last_name, username } =
-      evt.data;
+    const {
+      id,
+      email_addresses,
+      primary_email_address_id,
+      first_name,
+      last_name,
+      username,
+      public_metadata,
+    } = evt.data;
 
     const primaryEmail =
       email_addresses?.find((e: any) => e.id === primary_email_address_id)?.email_address ||
@@ -60,6 +65,8 @@ export async function POST(req: Request) {
 
     const existing = await db.select().from(users).where(eq(users.clerkId, id));
 
+    let internalUserId: string;
+
     if (existing.length > 0) {
       await db
         .update(users)
@@ -69,14 +76,57 @@ export async function POST(req: Request) {
           updatedAt: new Date(),
         })
         .where(eq(users.clerkId, id));
+      internalUserId = existing[0].id;
       console.log(`[Webhook] Updated user ${id} in database`);
     } else {
-      await db.insert(users).values({
-        clerkId: id,
-        email: primaryEmail,
-        name,
-      });
+      const [inserted] = await db
+        .insert(users)
+        .values({
+          clerkId: id,
+          email: primaryEmail,
+          name,
+        })
+        .returning({ id: users.id });
+      internalUserId = inserted.id;
       console.log(`[Webhook] Inserted user ${id} into database`);
+    }
+
+    console.log("=== FULL EVENT PAYLOAD ===");
+    console.log(JSON.stringify(evt, null, 2));
+
+    if (eventType === "user.created") {
+      const { projectId, role } = (public_metadata ?? {}) as {
+        projectId?: string;
+        role?: string;
+      };
+
+      if (projectId) {
+        try {
+          const [existingMember] = await db
+            .select()
+            .from(projectMembers)
+            .where(
+              and(
+                eq(projectMembers.projectId, projectId),
+                eq(projectMembers.userId, internalUserId)
+              )
+            );
+
+          if (!existingMember) {
+            await db.insert(projectMembers).values({
+              projectId,
+              userId: internalUserId,
+              name,
+              role: role ?? "member",
+            });
+            console.log(
+              `[Webhook] Added user ${internalUserId} to project ${projectId} via invite`
+            );
+          }
+        } catch (err) {
+          console.error("[Webhook] Failed to insert projectMember from invite:", err);
+        }
+      }
     }
   } else if (eventType === "user.deleted") {
     const { id } = evt.data;

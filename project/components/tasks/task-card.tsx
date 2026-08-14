@@ -9,7 +9,6 @@ import {
   Calendar,
   GripVertical,
   User,
-  CirclePlus,
   Pencil,
   MoreHorizontal,
   Trash2,
@@ -79,16 +78,6 @@ export function TaskCard({ task, isDragging, onSelect, onDelete, onMarkComplete,
           className="flex h-6 w-6 items-center justify-center rounded-md text-slate-400 hover:bg-emerald-50 hover:text-emerald-600 dark:hover:bg-emerald-950/30 transition-colors"
         >
           <CheckCircle2 size={14} />
-        </button>
-
-        {/* Add subtask */}
-        <button
-          type="button"
-          title="Add subtask"
-          onClick={() => onAddSubtask?.(task)}
-          className="flex h-6 w-6 items-center justify-center rounded-md text-slate-400 hover:bg-blue-50 hover:text-blue-600 dark:hover:bg-blue-950/30 transition-colors"
-        >
-          <CirclePlus size={14} />
         </button>
 
         {/* Edit (open detail pane) */}
@@ -193,24 +182,18 @@ export function TaskCard({ task, isDragging, onSelect, onDelete, onMarkComplete,
 export function SortableTaskCard(props: TaskCardProps) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: props.task.id,
+    data: { type: "task", listId: props.task.listId },
   });
 
   return (
     <div
       ref={setNodeRef}
+      data-task-id={props.task.id}
       style={{ transform: CSS.Transform.toString(transform), transition }}
+      {...attributes}
+      {...listeners}
       className="relative group"
     >
-      {/* Drag grip */}
-      <div
-        {...attributes}
-        {...listeners}
-        className="absolute -left-2 top-1/2 -translate-y-1/2 z-10 cursor-grab rounded-md p-0.5 text-slate-300 opacity-0 transition-all hover:text-slate-500 group-hover:opacity-100 active:cursor-grabbing dark:text-slate-600 dark:hover:text-slate-400"
-        aria-label="Drag to reorder"
-        onClick={(e) => e.stopPropagation()}
-      >
-        <GripVertical size={14} />
-      </div>
       <TaskCard {...props} isDragging={isDragging} />
     </div>
   );

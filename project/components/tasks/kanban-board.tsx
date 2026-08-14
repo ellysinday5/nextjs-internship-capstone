@@ -11,13 +11,20 @@ import {
   type DragStartEvent,
   type DragEndEvent,
 } from "@dnd-kit/core";
-import { SortableContext, verticalListSortingStrategy } from "@dnd-kit/sortable";
+import {
+  SortableContext,
+  verticalListSortingStrategy,
+  horizontalListSortingStrategy,
+  arrayMove,
+} from "@dnd-kit/sortable";
 import { Plus, Loader2 } from "lucide-react";
 import { useBoardStore } from "@/stores/board-store";
 import { KanbanColumn } from "./kanban-column";
 import { TaskCard } from "./task-card";
-import { ProjectDetailSkeleton, BoardTabSkeleton } from "@/components/projects/details/skeleton-loading";
+import { BoardTabSkeleton } from "@/components/projects/details/skeleton-loading";
+import { createKanbanCoordinateGetter } from "@/lib/kanban-keyboard";
 import type { TaskRecord } from "@/actions/task-actions";
+import type { ListWithTasks } from "@/actions/list-actions";
 
 interface KanbanBoardProps {
   projectId: string;
@@ -34,16 +41,23 @@ export function KanbanBoard({ projectId, onSelectTask }: KanbanBoardProps) {
     draggedTask,
     loadProject,
     moveTask,
+    reorderLists,
     createList,
     setDraggedTask,
   } = useBoardStore();
 
+  const [draggedColumn, setDraggedColumn] = useState<ListWithTasks | null>(null);
   const [isAddingList, setIsAddingList] = useState(false);
   const [newListName, setNewListName] = useState("");
 
   useEffect(() => {
     loadProject(projectId);
   }, [projectId, loadProject]);
+
+  const keyboardCoordinateGetter = createKanbanCoordinateGetter(() => ({
+    tasks: tasks.map((t) => ({ id: t.id, listId: t.listId, position: t.position })),
+    lists: lists.map((l) => ({ id: l.id })),
+  }));
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
@@ -58,6 +72,13 @@ export function KanbanBoard({ projectId, onSelectTask }: KanbanBoardProps) {
   }
 
   function handleDragStart(event: DragStartEvent) {
+    const activeData = event.active.data.current;
+    if (activeData?.type === "column") {
+      const col = lists.find((l) => l.id === event.active.id);
+      setDraggedColumn(col ?? null);
+      return;
+    }
+
     const task = tasks.find((t) => t.id === event.active.id);
     setDraggedTask(task ?? null);
   }
@@ -65,8 +86,29 @@ export function KanbanBoard({ projectId, onSelectTask }: KanbanBoardProps) {
   function handleDragEnd(event: DragEndEvent) {
     const { active, over } = event;
     setDraggedTask(null);
+    setDraggedColumn(null);
     if (!over) return;
 
+    const activeType = active.data.current?.type;
+
+    // Handle column reordering
+    if (activeType === "column") {
+      const activeId = active.id as string;
+      const overId = over.id as string;
+
+      if (activeId !== overId) {
+        const oldIndex = lists.findIndex((l) => l.id === activeId);
+        const newIndex = lists.findIndex((l) => l.id === overId);
+
+        if (oldIndex !== -1 && newIndex !== -1) {
+          const newOrder = arrayMove(lists, oldIndex, newIndex);
+          reorderLists(newOrder.map((l) => l.id));
+        }
+      }
+      return;
+    }
+
+    // Handle task movement
     const taskId = active.id as string;
     const fromListId = findListOfTask(taskId);
     const toListId = (over.data.current?.listId as string) ?? findListOfTask(over.id as string);
@@ -122,19 +164,24 @@ export function KanbanBoard({ projectId, onSelectTask }: KanbanBoardProps) {
       >
         {/* Board scroll container */}
         <div className="flex flex-1 items-start gap-3 overflow-x-auto overflow-y-auto p-5 pb-8">
-          {lists.map((list) => (
-            <SortableContext
-              key={list.id}
-              items={tasksForList(list.id).map((t) => t.id)}
-              strategy={verticalListSortingStrategy}
-            >
-              <KanbanColumn
-                list={list}
-                tasks={tasksForList(list.id)}
-                onSelectTask={onSelectTask}
-              />
-            </SortableContext>
-          ))}
+          <SortableContext
+            items={lists.map((l) => l.id)}
+            strategy={horizontalListSortingStrategy}
+          >
+            {lists.map((list) => (
+              <SortableContext
+                key={list.id}
+                items={tasksForList(list.id).map((t) => t.id)}
+                strategy={verticalListSortingStrategy}
+              >
+                <KanbanColumn
+                  list={list}
+                  tasks={tasksForList(list.id)}
+                  onSelectTask={onSelectTask}
+                />
+              </SortableContext>
+            ))}
+          </SortableContext>
 
           {/* ── Add section column ── */}
           <div className="w-[272px] flex-shrink-0">
@@ -179,7 +226,17 @@ export function KanbanBoard({ projectId, onSelectTask }: KanbanBoardProps) {
         </div>
 
         <DragOverlay dropAnimation={{ duration: 200, easing: "ease" }}>
-          {draggedTask ? <TaskCard task={draggedTask} isDragging /> : null}
+          {draggedColumn ? (
+            <div className="opacity-80 rotate-1 shadow-2xl">
+              <KanbanColumn
+                list={draggedColumn}
+                tasks={tasksForList(draggedColumn.id)}
+                onSelectTask={onSelectTask}
+              />
+            </div>
+          ) : draggedTask ? (
+            <TaskCard task={draggedTask} isDragging />
+          ) : null}
         </DragOverlay>
       </DndContext>
     </div>

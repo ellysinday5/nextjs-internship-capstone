@@ -21,7 +21,7 @@ function taskRecordToTaskItem(task: TaskRecord, sectionTitle: string): TaskItem 
   return {
     id: task.id,
     title: task.title,
-    assignee: task.assignee ? { name: task.assignee.name, initials: getInitials(task.assignee.name) } : undefined,
+    assignee: task.assignee ? { id: task.assignee.name, name: task.assignee.name, initials: getInitials(task.assignee.name) } : undefined,
     dueDate: formatDueDate(task.dueDate),
     priority: (task.priority as TaskItem["priority"]) ?? undefined,
     status: (task.status as TaskItem["status"]) ?? undefined,

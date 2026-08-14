@@ -1,121 +1,112 @@
 "use server";
-
-import { eq, and } from "drizzle-orm";
+ 
+import { eq, and, inArray } from "drizzle-orm";
 import { db } from "@/lib/db";
-import { projectMembers, projects } from "@/lib/db/schema";
+import { projects, projectMembers, users, lists, tasks, comments } from "@/lib/db/schema";
 import { syncUser } from "@/lib/auth";
-import { revalidatePath } from "next/cache";
+import type { TeamMember } from "@/lib/team-data";
 
-export interface ProjectMember {
-  id: string;
-  projectId: string;
-  name: string;
-  role: string;
-  createdAt: Date | null;
+export type ProjectMember = TeamMember;
+ 
+async function assertOwnsProject(projectId: string, userId: string) {
+  const rows = await db
+    .select({ id: projects.id })
+    .from(projects)
+    .where(and(eq(projects.id, projectId), eq(projects.ownerId, userId)));
+  return rows.length > 0;
 }
-
-/* ─────────────────────────────────────────────────────────────
-   Get all members of a project
-───────────────────────────────────────────────────────────── */
-export async function getProjectMembersAction(
-  projectId: string
-): Promise<ProjectMember[]> {
+ 
+export async function getProjectMembersAction(projectId: string): Promise<TeamMember[]> {
   try {
     const user = await syncUser();
-    if (!user) return [];
-
+    if (!user || !projectId) return [];
+    if (!(await assertOwnsProject(projectId, user.id))) return [];
+ 
     const rows = await db
-      .select()
+      .select({
+        id: projectMembers.id,
+        userId: projectMembers.userId,
+        name: projectMembers.name,
+        role: projectMembers.role,
+        email: users.email,
+      })
       .from(projectMembers)
+      .leftJoin(users, eq(projectMembers.userId, users.id))
       .where(eq(projectMembers.projectId, projectId));
-
-    return rows;
+ 
+    return rows.map((r) => ({
+      id: r.id,
+      userId: r.userId,
+      name: r.name,
+      email: r.email ?? "—",
+      role: r.role,
+      status: "Offline" as const,
+      accountType: r.role === "admin" ? "Admin" : "Member",
+      projectCount: 0,
+    }));
   } catch (error) {
     console.error("[getProjectMembersAction] Error:", error);
     return [];
   }
 }
-
-/* ─────────────────────────────────────────────────────────────
-   Add a member to a project
-───────────────────────────────────────────────────────────── */
-export async function addProjectMemberAction(
-  projectId: string,
-  data: { name: string; role: string }
-) {
+ 
+export async function getMemberTasksAction(userId: string, projectId: string) {
   try {
     const user = await syncUser();
-    if (!user) return { success: false, error: "Unauthorized. Please sign in." };
-
-    // Verify the current user owns this project
-    const [project] = await db
-      .select({ id: projects.id })
-      .from(projects)
-      .where(and(eq(projects.id, projectId), eq(projects.ownerId, user.id)));
-
-    if (!project) {
-      return { success: false, error: "Project not found or access denied." };
-    }
-
-    if (!data.name.trim()) {
-      return { success: false, error: "Member name is required." };
-    }
-
-    if (!data.role.trim()) {
-      return { success: false, error: "Member role is required." };
-    }
-
-    const [newMember] = await db
-      .insert(projectMembers)
-      .values({
-        projectId,
-        name: data.name.trim(),
-        role: data.role,
-      })
-      .returning();
-
-    revalidatePath(`/projects`);
-
-    return { success: true, member: newMember };
+    if (!user) return [];
+    if (!(await assertOwnsProject(projectId, user.id))) return [];
+ 
+    const projectLists = await db
+      .select({ id: lists.id })
+      .from(lists)
+      .where(eq(lists.projectId, projectId));
+    if (projectLists.length === 0) return [];
+ 
+    const listIds = projectLists.map((l) => l.id);
+ 
+    return await db
+      .select()
+      .from(tasks)
+      .where(and(eq(tasks.assigneeId, userId), inArray(tasks.listId, listIds)));
   } catch (error) {
-    console.error("[addProjectMemberAction] Error:", error);
-    return { success: false, error: "Failed to add member. Please try again." };
+    console.error("[getMemberTasksAction] Error:", error);
+    return [];
   }
 }
-
-/* ─────────────────────────────────────────────────────────────
-   Remove a member from a project
-───────────────────────────────────────────────────────────── */
-export async function removeProjectMemberAction(
-  memberId: string,
-  projectId: string
-) {
+ 
+export async function getMemberCommentsAction(userId: string, projectId: string) {
   try {
     const user = await syncUser();
-    if (!user) return { success: false, error: "Unauthorized. Please sign in." };
-
-    // Verify the current user owns this project
-    const [project] = await db
-      .select({ id: projects.id })
-      .from(projects)
-      .where(and(eq(projects.id, projectId), eq(projects.ownerId, user.id)));
-
-    if (!project) {
-      return { success: false, error: "Project not found or access denied." };
-    }
-
-    await db
-      .delete(projectMembers)
-      .where(eq(projectMembers.id, memberId));
-
-    revalidatePath(`/projects`);
-
-    return { success: true };
+    if (!user) return [];
+    if (!(await assertOwnsProject(projectId, user.id))) return [];
+ 
+    const projectLists = await db
+      .select({ id: lists.id })
+      .from(lists)
+      .where(eq(lists.projectId, projectId));
+    if (projectLists.length === 0) return [];
+ 
+    const projectTasks = await db
+      .select({ id: tasks.id, title: tasks.title })
+      .from(tasks)
+      .where(inArray(tasks.listId, projectLists.map((l) => l.id)));
+    if (projectTasks.length === 0) return [];
+ 
+    const taskTitleMap = new Map(projectTasks.map((t) => [t.id, t.title]));
+ 
+    const rows = await db
+      .select()
+      .from(comments)
+      .where(
+        and(
+          eq(comments.authorId, userId),
+          inArray(comments.taskId, projectTasks.map((t) => t.id)),
+        ),
+      );
+ 
+    return rows.map((c) => ({ ...c, taskTitle: taskTitleMap.get(c.taskId) ?? "Untitled task" }));
   } catch (error) {
-    console.error("[removeProjectMemberAction] Error:", error);
-    return {
-      success: false,
-      error: "Failed to remove member. Please try again.",
-    };
+    console.error("[getMemberCommentsAction] Error:", error);
+    return [];
   }
 }

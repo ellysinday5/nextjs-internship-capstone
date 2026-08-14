@@ -1,17 +1,22 @@
 "use client";
 
-import React, { useState } from "react";
-import { UserPlus, Shield, Users, Mail } from "lucide-react";
+import React, { useState, useEffect } from "react";
+import { UserPlus, Shield, Users, Mail, FolderKanban } from "lucide-react";
 import { sileo } from "@/utils/alerts";
 import { Modal } from "@/components/modals/BaseModal";
 import { ConfirmationModal } from "@/components/modals/ConfirmationModal";
-import { addProjectMemberAction } from "@/actions/member-actions";
+import { inviteTeamMember } from "@/actions/invite-actions";
+
+interface ProjectOption {
+  id: string;
+  name: string;
+}
 
 interface AddMemberModalProps {
   isOpen: boolean;
-  projectId?: string;
+  projectOptions: ProjectOption[];
   onClose: () => void;
-  onSuccess?: (member: { id: string; name: string; role: string }) => void;
+  onSuccess?: () => void;
 }
 
 const ROLE_OPTIONS = [
@@ -37,25 +42,28 @@ const ROLE_OPTIONS = [
   },
 ];
 
-function formatNameFromEmail(email: string): string {
-  const prefix = email.split("@")[0] || "";
-  return prefix
-    .replace(/[._]/g, " ")
-    .replace(/\b\w/g, (char) => char.toUpperCase());
-}
-
 export function AddMemberModal({
   isOpen,
-  projectId = "",
+  projectOptions,
   onClose,
   onSuccess,
 }: AddMemberModalProps) {
   const [email, setEmail] = useState("");
   const [role, setRole] = useState("Member");
+  const [selectedProjectId, setSelectedProjectId] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [serverError, setServerError] = useState<string | null>(null);
   const [emailError, setEmailError] = useState<string | null>(null);
+  const [projectError, setProjectError] = useState<string | null>(null);
   const [showDiscardConfirm, setShowDiscardConfirm] = useState(false);
+
+  // Default to the first available project whenever the modal opens
+  // or the list of projects changes.
+  useEffect(() => {
+    if (isOpen && !selectedProjectId && projectOptions.length > 0) {
+      setSelectedProjectId(projectOptions[0].id);
+    }
+  }, [isOpen, projectOptions, selectedProjectId]);
 
   const isDirty = Boolean(email.trim());
 
@@ -70,8 +78,10 @@ export function AddMemberModal({
   const resetAndClose = () => {
     setEmail("");
     setRole("Member");
+    setSelectedProjectId("");
     setServerError(null);
     setEmailError(null);
+    setProjectError(null);
     setShowDiscardConfirm(false);
     onClose();
   };
@@ -79,6 +89,7 @@ export function AddMemberModal({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setEmailError(null);
+    setProjectError(null);
     setServerError(null);
 
     const trimmedEmail = email.trim();
@@ -87,25 +98,26 @@ export function AddMemberModal({
       return;
     }
 
-    const memberName = formatNameFromEmail(trimmedEmail);
+    const targetProjectId = selectedProjectId || projectOptions[0]?.id;
+    if (!targetProjectId) {
+      setServerError("No project found to add member to.");
+      return;
+    }
 
     setIsSubmitting(true);
-    const res = await addProjectMemberAction(projectId, {
-      name: memberName,
-      role,
-    });
+    const res = await inviteTeamMember(targetProjectId, trimmedEmail, role);
     setIsSubmitting(false);
 
-    if (res.success && res.member) {
+    if (res.success) {
       sileo.success(
-        `Invitation sent to ${trimmedEmail} as ${role}!`,
-        "Member Invited"
+        `Invitation sent to ${trimmedEmail} as ${role}. They'll appear in the team list once they accept.`,
+        "Invitation Sent"
       );
-      onSuccess?.(res.member);
+      onSuccess?.();
       resetAndClose();
     } else {
-      setServerError(res.error || "Failed to add member.");
-      sileo.error(res.error || "Failed to add member.", "Error");
+      setServerError(res.error || "Failed to send invite.");
+      sileo.error(res.error || "Failed to send invite.", "Error");
     }
   };
 
@@ -146,6 +158,7 @@ export function AddMemberModal({
         )}
 
         <form id="add-member-form" onSubmit={handleSubmit} className="space-y-5" noValidate>
+
           {/* Email Address */}
           <div>
             <label className="mb-1.5 flex items-center justify-between text-sm font-medium text-slate-700 dark:text-slate-200">
