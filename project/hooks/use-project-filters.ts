@@ -1,8 +1,8 @@
 "use client";
 
-import { useState, useMemo, useEffect, useCallback } from "react";
-import { getProjectsAction, ProjectWithStats } from "@/actions/project-actions";
-import { ProjectItem } from "@/lib/project-data";
+import { type ProjectWithStats, getProjectsAction } from "@/actions/project-actions";
+import type { ProjectItem } from "@/lib/project-data";
+import { useCallback, useEffect, useMemo, useState } from "react";
 
 export type DropdownKey = "status" | "priority" | "category" | "owner" | "team" | "members" | null;
 export type ViewMode = "grid" | "table";
@@ -79,12 +79,30 @@ export function useProjectFilters() {
 
       let matchesMembers = true;
       if (selectedMembers === "1 Dev") matchesMembers = project.members === 1;
-      else if (selectedMembers === "2-4 Devs") matchesMembers = project.members >= 2 && project.members <= 4;
+      else if (selectedMembers === "2-4 Devs")
+        matchesMembers = project.members >= 2 && project.members <= 4;
       else if (selectedMembers === "5+ Devs") matchesMembers = project.members >= 5;
 
-      return matchesSearch && matchesCategory && matchesStatus && matchesPriority && matchesOwner && matchesTeam && matchesMembers;
+      return (
+        matchesSearch &&
+        matchesCategory &&
+        matchesStatus &&
+        matchesPriority &&
+        matchesOwner &&
+        matchesTeam &&
+        matchesMembers
+      );
     });
-  }, [allProjectItems, searchQuery, selectedCategory, selectedStatus, selectedPriority, selectedOwner, selectedTeam, selectedMembers]);
+  }, [
+    allProjectItems,
+    searchQuery,
+    selectedCategory,
+    selectedStatus,
+    selectedPriority,
+    selectedOwner,
+    selectedTeam,
+    selectedMembers,
+  ]);
 
   const hasActiveFilters =
     searchQuery !== "" ||
@@ -113,15 +131,24 @@ export function useProjectFilters() {
     loading,
     filteredProjects,
     fetchProjects,
-    searchQuery, setSearchQuery,
-    selectedCategory, setSelectedCategory,
-    selectedStatus, setSelectedStatus,
-    selectedPriority, setSelectedPriority,
-    selectedOwner, setSelectedOwner,
-    selectedTeam, setSelectedTeam,
-    selectedMembers, setSelectedMembers,
-    openDropdown, setOpenDropdown,
-    viewMode, setViewMode,
+    searchQuery,
+    setSearchQuery,
+    selectedCategory,
+    setSelectedCategory,
+    selectedStatus,
+    setSelectedStatus,
+    selectedPriority,
+    setSelectedPriority,
+    selectedOwner,
+    setSelectedOwner,
+    selectedTeam,
+    setSelectedTeam,
+    selectedMembers,
+    setSelectedMembers,
+    openDropdown,
+    setOpenDropdown,
+    viewMode,
+    setViewMode,
     hasActiveFilters,
     clearFilters,
     toggleDropdown,

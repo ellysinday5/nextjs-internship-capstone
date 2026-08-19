@@ -1,23 +1,24 @@
 "use client";
 
-import React, { useState, useEffect, useRef, useMemo } from "react";
-import { useRouter } from "next/navigation";
+import { type ProjectWithStats, getProjectsAction } from "@/actions/project-actions";
+import { type TaskRecord, getProjectTasksAction } from "@/actions/task-actions";
+import { toSlug } from "@/lib/project-data";
 import {
+  CheckCircle2,
+  ChevronRight,
+  ClipboardList,
+  Filter,
+  History,
   Search,
   SlidersHorizontal,
-  CheckCircle2,
-  ClipboardList,
-  User,
-  ChevronRight,
-  Filter,
-  X,
   Sparkles,
-  History,
   Trash2,
+  User,
+  X,
 } from "lucide-react";
-import { toSlug } from "@/lib/project-data";
-import { getProjectsAction, type ProjectWithStats } from "@/actions/project-actions";
-import { getProjectTasksAction, type TaskRecord } from "@/actions/task-actions";
+import { useRouter } from "next/navigation";
+import type React from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 
 interface HeaderSearchModalProps {
   isOpen: boolean;
@@ -148,9 +149,7 @@ export function HeaderSearchModal({ isOpen, onClose }: HeaderSearchModalProps) {
 
     setRecentSearches((prev) => {
       // Remove duplicates
-      const filtered = prev.filter(
-        (item) => item.query.toLowerCase() !== trimmed.toLowerCase()
-      );
+      const filtered = prev.filter((item) => item.query.toLowerCase() !== trimmed.toLowerCase());
 
       const newItem: RecentSearchItem = {
         id: `recent-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
@@ -204,7 +203,11 @@ export function HeaderSearchModal({ isOpen, onClose }: HeaderSearchModalProps) {
   // Handle pressing Enter in the search input
   const handleInputKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === "Enter" && query.trim()) {
-      saveRecentSearch(query.trim(), undefined, selectedCategory !== "All" ? selectedCategory : "Search");
+      saveRecentSearch(
+        query.trim(),
+        undefined,
+        selectedCategory !== "All" ? selectedCategory : "Search",
+      );
     }
   };
 
@@ -275,14 +278,12 @@ export function HeaderSearchModal({ isOpen, onClose }: HeaderSearchModalProps) {
         (item) =>
           item.name.toLowerCase().includes(q) ||
           (item.subtitle && item.subtitle.toLowerCase().includes(q)) ||
-          (item.badge && item.badge.toLowerCase().includes(q))
+          (item.badge && item.badge.toLowerCase().includes(q)),
       );
     }
 
     if (statusFilter !== "All") {
-      list = list.filter(
-        (item) => item.status === statusFilter || item.badge === statusFilter
-      );
+      list = list.filter((item) => item.status === statusFilter || item.badge === statusFilter);
     }
 
     if (sortBy === "name") {
@@ -448,7 +449,10 @@ export function HeaderSearchModal({ isOpen, onClose }: HeaderSearchModalProps) {
                       className="flex items-center justify-between p-2.5 rounded-xl hover:bg-slate-100 dark:hover:bg-[#1c304a] transition-all cursor-pointer group border border-transparent hover:border-slate-200 dark:hover:border-slate-700"
                     >
                       <div className="flex items-center gap-2.5 min-w-0 flex-1">
-                        <History size={14} className="text-slate-400 shrink-0 group-hover:text-[#00b4d8] transition-colors" />
+                        <History
+                          size={14}
+                          className="text-slate-400 shrink-0 group-hover:text-[#00b4d8] transition-colors"
+                        />
                         <span className="text-xs font-semibold text-[#142843] dark:text-slate-100 group-hover:text-[#00b4d8] transition-colors truncate">
                           {item.query}
                         </span>
@@ -491,7 +495,11 @@ export function HeaderSearchModal({ isOpen, onClose }: HeaderSearchModalProps) {
                   ? `Search Results (${filteredItems.length})`
                   : `All Workspace Items (${filteredItems.length})`}
               </h4>
-              {loadingDb && <span className="text-[11px] text-slate-400 animate-pulse">Loading workspace items...</span>}
+              {loadingDb && (
+                <span className="text-[11px] text-slate-400 animate-pulse">
+                  Loading workspace items...
+                </span>
+              )}
             </div>
 
             {filteredItems.length > 0 ? (
@@ -545,8 +553,8 @@ export function HeaderSearchModal({ isOpen, onClose }: HeaderSearchModalProps) {
                               item.badge === "Completed"
                                 ? "bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-400 dark:border-emerald-800"
                                 : item.badge === "In Progress" || item.badge === "On track"
-                                ? "bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-950/40 dark:text-blue-400 dark:border-blue-800"
-                                : "bg-slate-50 text-slate-600 border-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:border-slate-700"
+                                  ? "bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-950/40 dark:text-blue-400 dark:border-blue-800"
+                                  : "bg-slate-50 text-slate-600 border-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:border-slate-700"
                             }`}
                           >
                             {item.badge}

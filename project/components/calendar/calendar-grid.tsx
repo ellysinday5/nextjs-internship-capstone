@@ -1,10 +1,20 @@
 "use client";
 
-import { ChevronLeft, ChevronRight, CalendarDays } from "lucide-react";
+import { CalendarDays, ChevronLeft, ChevronRight } from "lucide-react";
 
 const monthNames = [
-  "January","February","March","April","May","June",
-  "July","August","September","October","November","December",
+  "January",
+  "February",
+  "March",
+  "April",
+  "May",
+  "June",
+  "July",
+  "August",
+  "September",
+  "October",
+  "November",
+  "December",
 ];
 const dayLabels = ["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"];
 
@@ -59,7 +69,10 @@ export function CalendarGrid({
       {/* Day labels */}
       <div className="grid grid-cols-7 mb-1">
         {dayLabels.map((d) => (
-          <div key={d} className="text-center text-[10px] font-extrabold text-slate-400 dark:text-slate-500 py-1">
+          <div
+            key={d}
+            className="text-center text-[10px] font-extrabold text-slate-400 dark:text-slate-500 py-1"
+          >
             {d}
           </div>
         ))}
@@ -80,11 +93,12 @@ export function CalendarGrid({
               key={day}
               onClick={() => onSelectDay(isSelected ? null : day)}
               className={`relative flex flex-col items-center justify-center h-9 rounded-xl text-xs font-bold transition-all
-                ${isSelected
-                  ? "bg-[#0052cc] text-white shadow-sm"
-                  : isToday
-                  ? "bg-blue-50 dark:bg-blue-950/40 text-[#0052cc]"
-                  : "text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700/50"
+                ${
+                  isSelected
+                    ? "bg-[#0052cc] text-white shadow-sm"
+                    : isToday
+                      ? "bg-blue-50 dark:bg-blue-950/40 text-[#0052cc]"
+                      : "text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700/50"
                 }`}
             >
               {day}
@@ -98,10 +112,7 @@ export function CalendarGrid({
 
       {/* Today button */}
       <div className="mt-3 pt-3 border-t border-slate-100 dark:border-slate-800 text-center">
-        <button
-          onClick={onGoToToday}
-          className="text-xs font-bold text-[#0052cc] hover:underline"
-        >
+        <button onClick={onGoToToday} className="text-xs font-bold text-[#0052cc] hover:underline">
           Go to Today
         </button>
       </div>

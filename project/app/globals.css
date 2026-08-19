@@ -10,10 +10,30 @@
     --outer-space: #46494c;
     --paynes-gray: #4c5c68;
     --blue-munsell: #1985a1;
+    --accent-color: #0052cc;
+    --primary-color: #0052cc;
   }
 
-  .dark {
-    /* Dark theme color adjustments */
+  html[data-font-size="small"] {
+    font-size: 13.5px;
+  }
+  html[data-font-size="medium"] {
+    font-size: 14.5px;
+  }
+  html[data-font-size="large"] {
+    font-size: 16px;
+  }
+
+  html.disable-animations *,
+  html.disable-animations *::before,
+  html.disable-animations *::after {
+    transition-duration: 0.001ms !important;
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+  }
+
+  html.high-contrast {
+    filter: contrast(115%);
   }
 }
 
@@ -23,6 +43,7 @@
     display: -webkit-box;
     -webkit-box-orient: vertical;
     -webkit-line-clamp: 2;
+    line-clamp: 2;
   }
 
   .line-clamp-3 {
@@ -30,6 +51,7 @@
     display: -webkit-box;
     -webkit-box-orient: vertical;
     -webkit-line-clamp: 3;
+    line-clamp: 3;
   }
 
   /* Hide scrollbar utility */

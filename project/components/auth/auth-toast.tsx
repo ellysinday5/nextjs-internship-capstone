@@ -1,8 +1,8 @@
 "use client";
 
-import { useEffect } from "react";
-import { useUser } from "@clerk/nextjs";
 import { sileo } from "@/utils/alerts";
+import { useUser } from "@clerk/nextjs";
+import { useEffect } from "react";
 
 export function AuthToast() {
   const { user, isLoaded } = useUser();

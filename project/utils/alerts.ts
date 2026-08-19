@@ -69,61 +69,61 @@ const emitSwal = (options: SwalModalOptions | null) => {
 
 // ======================= SILEO TOASTS ========================== //
 export const sileo = {
-  success: (message: string, title: string = "Success") => {
+  success: (message: string, title = "Success") => {
     emitToast({ type: "success", title, message, duration: 4000 });
   },
 
-  error: (message: string, title: string = "Error") => {
+  error: (message: string, title = "Error") => {
     emitToast({ type: "error", title, message, duration: 5000 });
   },
 
-  warning: (message: string, title: string = "Warning") => {
+  warning: (message: string, title = "Warning") => {
     emitToast({ type: "warning", title, message, duration: 4000 });
   },
 
-  info: (message: string, title: string = "Info") => {
+  info: (message: string, title = "Info") => {
     emitToast({ type: "info", title, message, duration: 3500 });
   },
 };
 
 // ======================= MANTINE / STANDARD TOAST ========================== //
 export const toast = {
-  success: (message: string, title: string = "Success") => {
+  success: (message: string, title = "Success") => {
     sileo.success(message, title);
   },
 
-  error: (message: string, title: string = "Error") => {
+  error: (message: string, title = "Error") => {
     sileo.error(message, title);
   },
 
-  warning: (message: string, title: string = "Warning") => {
+  warning: (message: string, title = "Warning") => {
     sileo.warning(message, title);
   },
 
-  info: (message: string, title: string = "Info") => {
+  info: (message: string, title = "Info") => {
     sileo.info(message, title);
   },
 };
 
 // ======================= SWEETALERT2 MODALS ========================== //
 export const swal = {
-  success: (title: string, text: string = "") => {
+  success: (title: string, text = "") => {
     emitSwal({ type: "success", title, text });
   },
 
-  error: (title: string, text: string = "") => {
+  error: (title: string, text = "") => {
     emitSwal({ type: "error", title, text });
   },
 
-  warning: (title: string, text: string = "") => {
+  warning: (title: string, text = "") => {
     emitSwal({ type: "warning", title, text });
   },
 
-  info: (title: string, text: string = "") => {
+  info: (title: string, text = "") => {
     emitSwal({ type: "info", title, text });
   },
 
-  confirm: (title: string, text: string = ""): Promise<boolean> => {
+  confirm: (title: string, text = ""): Promise<boolean> => {
     return new Promise((resolve) => {
       emitSwal({
         type: "question",
@@ -144,7 +144,7 @@ export const swal = {
     });
   },
 
-  loading: (title: string = "Loading...") => {
+  loading: (title = "Loading...") => {
     emitSwal({ type: "loading", title });
   },
 
@@ -152,7 +152,6 @@ export const swal = {
 };
 
 // Regie / Legacy helpers
-export const showSuccessAlert = (title: string, text: string = "") => swal.success(title, text);
-export const showErrorAlert = (title: string, text: string = "") => swal.error(title, text);
-export const showConfirmationAlert = (title: string, text: string = "") =>
-  swal.confirm(title, text);
+export const showSuccessAlert = (title: string, text = "") => swal.success(title, text);
+export const showErrorAlert = (title: string, text = "") => swal.error(title, text);
+export const showConfirmationAlert = (title: string, text = "") => swal.confirm(title, text);

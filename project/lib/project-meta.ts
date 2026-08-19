@@ -3,19 +3,19 @@
  * and the project card display on the projects listing page.
  */
 import {
-  ListTodo,
-  Kanban,
-  Columns,
-  Calendar,
-  Rocket,
-  Users,
-  TrendingUp,
-  Star,
   Bug,
-  Lightbulb,
+  Calendar,
+  Columns,
   Globe,
-  Settings,
+  Kanban,
+  Lightbulb,
+  ListTodo,
   type LucideIcon,
+  Rocket,
+  Settings,
+  Star,
+  TrendingUp,
+  Users,
 } from "lucide-react";
 
 export const PROJECT_ICON_LIST: { id: string; Icon: LucideIcon }[] = [
@@ -60,7 +60,10 @@ export function saveProjectMeta(projectId: string, meta: Partial<ProjectMeta>): 
   try {
     const raw = localStorage.getItem(LS_KEY);
     const all: Record<string, ProjectMeta> = raw ? JSON.parse(raw) : {};
-    all[projectId] = { ...( all[projectId] ?? { color: "#3b82f6", iconIndex: 0, isFavorite: false }), ...meta };
+    all[projectId] = {
+      ...(all[projectId] ?? { color: "#3b82f6", iconIndex: 0, isFavorite: false }),
+      ...meta,
+    };
     localStorage.setItem(LS_KEY, JSON.stringify(all));
   } catch {}
 }

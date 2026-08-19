@@ -1,26 +1,21 @@
 "use client";
 
-import type React from "react";
-import { useState, useEffect, Suspense } from "react";
-import { usePathname } from "next/navigation";
-import { Header } from "@/components/layout/header";
 import { DashboardSidebar } from "@/components/layout/dashboard-sidebar";
 import { Footer } from "@/components/layout/footer";
-import {
-  Home,
-  FolderOpen,
-  Users,
-  Settings,
-  BarChart2,
-  Calendar,
-} from "lucide-react";
+import { Header } from "@/components/layout/header";
+import { useTheme } from "@/components/ui/theme-provider";
 import { CategoryProvider } from "@/context/category-context";
 import { ProjectTitleProvider, useProjectTitle } from "@/context/project-title-context";
+import { BarChart2, Building2, Calendar, FolderOpen, Home, Settings, Users } from "lucide-react";
+import { usePathname } from "next/navigation";
+import type React from "react";
+import { Suspense, useEffect, useState } from "react";
 
 const navigation = [
   { name: "Dashboard", href: "/dashboard", icon: Home },
   { name: "Projects", href: "/projects", icon: FolderOpen },
   { name: "Team", href: "/team", icon: Users },
+  { name: "Workspaces", href: "/workspaces", icon: Building2 },
   { name: "Analytics", href: "/analytics", icon: BarChart2 },
   { name: "Calendar", href: "/calendar", icon: Calendar },
   { name: "Settings", href: "/settings", icon: Settings },
@@ -42,13 +37,17 @@ function getPageTitle(pathname: string): string {
   return currentNav ? currentNav.name : "Dashboard";
 }
 
-
 function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
-  const [collapsed, setCollapsed] = useState(false);
+  const { compactSidebar } = useTheme();
+  const [collapsed, setCollapsed] = useState(compactSidebar);
   const [sidebarHovered, setSidebarHovered] = useState(false);
   const pathname = usePathname();
   const { projectTitle } = useProjectTitle();
+
+  useEffect(() => {
+    setCollapsed(compactSidebar);
+  }, [compactSidebar]);
 
   useEffect(() => {
     fetch("/api/auth/sync").catch((err) => {
@@ -59,9 +58,7 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
   // Use live project title from context when on a project detail page
   const urlPageTitle = getPageTitle(pathname);
   const pageTitle =
-    pathname.startsWith("/projects/") && projectTitle
-      ? `Projects | ${projectTitle}`
-      : urlPageTitle;
+    pathname.startsWith("/projects/") && projectTitle ? `Projects | ${projectTitle}` : urlPageTitle;
 
   return (
     <CategoryProvider>

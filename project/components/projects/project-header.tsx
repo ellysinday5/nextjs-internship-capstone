@@ -1,4 +1,4 @@
-import { Calendar, Users, Settings, MoreHorizontal } from "lucide-react";
+import { Calendar, MoreHorizontal, Settings, Users } from "lucide-react";
 
 export function ProjectHeader({ projectId }: { projectId: string }) {
   return (

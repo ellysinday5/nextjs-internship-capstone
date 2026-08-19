@@ -1,22 +1,24 @@
 "use client";
 
-import { useRouter } from "next/navigation";
-import { CheckCircle2, Archive, Trash2, CalendarDays, FileEdit } from "lucide-react";
 import type { EventItem } from "@/app/(dashboard)/calendar/page";
+import { Archive, CalendarDays, CheckCircle2, FileEdit, Trash2 } from "lucide-react";
+import { useRouter } from "next/navigation";
 
 function priorityBadge(p?: string) {
-  if (p === "High") return "bg-rose-100 text-rose-700 dark:bg-rose-950/60 dark:text-rose-300 border border-rose-200 dark:border-rose-800";
-  if (p === "Medium") return "bg-amber-100 text-amber-700 dark:bg-amber-950/60 dark:text-amber-300 border border-amber-200 dark:border-amber-800";
+  if (p === "High")
+    return "bg-rose-100 text-rose-700 dark:bg-rose-950/60 dark:text-rose-300 border border-rose-200 dark:border-rose-800";
+  if (p === "Medium")
+    return "bg-amber-100 text-amber-700 dark:bg-amber-950/60 dark:text-amber-300 border border-amber-200 dark:border-amber-800";
   return "bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300 border border-slate-200 dark:border-slate-700";
 }
 
 function typeBadge(t: string) {
   const m: Record<string, string> = {
     "Project Deadline": "bg-violet-100 text-violet-700 dark:bg-violet-950/60 dark:text-violet-300",
-    "Meeting": "bg-sky-100 text-sky-700 dark:bg-sky-950/60 dark:text-sky-300",
-    "Milestone": "bg-emerald-100 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300",
-    "Presentation": "bg-orange-100 text-orange-700 dark:bg-orange-950/60 dark:text-orange-300",
-    "Task": "bg-indigo-100 text-indigo-700 dark:bg-indigo-950/60 dark:text-indigo-300",
+    Meeting: "bg-sky-100 text-sky-700 dark:bg-sky-950/60 dark:text-sky-300",
+    Milestone: "bg-emerald-100 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300",
+    Presentation: "bg-orange-100 text-orange-700 dark:bg-orange-950/60 dark:text-orange-300",
+    Task: "bg-indigo-100 text-indigo-700 dark:bg-indigo-950/60 dark:text-indigo-300",
   };
   return m[t] || "bg-slate-100 text-slate-600";
 }
@@ -45,7 +47,9 @@ export function EventsList({
         <div className="flex items-center justify-between px-5 py-4 border-b border-slate-100 dark:border-slate-800">
           <h2 className="text-sm font-extrabold text-[#142843] dark:text-white">
             Upcoming Deadlines &amp; Events
-            <span className="ml-2 text-xs font-semibold text-slate-400">({filteredEvents.length})</span>
+            <span className="ml-2 text-xs font-semibold text-slate-400">
+              ({filteredEvents.length})
+            </span>
           </h2>
           <button
             onClick={() => router.push("/calendar/events")}
@@ -81,18 +85,27 @@ export function EventsList({
 
                 <div className="flex-1 min-w-0">
                   <div className="flex flex-wrap items-center gap-1.5 mb-1">
-                    <span className={`text-sm font-extrabold text-[#142843] dark:text-white ${event.completed ? "line-through opacity-60" : ""}`}>
+                    <span
+                      className={`text-sm font-extrabold text-[#142843] dark:text-white ${event.completed ? "line-through opacity-60" : ""}`}
+                    >
                       {event.title}
                     </span>
-                    <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${typeBadge(event.type)}`}>{event.type}</span>
+                    <span
+                      className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${typeBadge(event.type)}`}
+                    >
+                      {event.type}
+                    </span>
                     {event.priority && (
-                      <span className={`text-[10px] font-bold px-2 py-0.5 rounded-md ${priorityBadge(event.priority)}`}>
+                      <span
+                        className={`text-[10px] font-bold px-2 py-0.5 rounded-md ${priorityBadge(event.priority)}`}
+                      >
                         {event.priority} Priority
                       </span>
                     )}
                   </div>
                   <p className="text-xs text-slate-500 dark:text-slate-400 font-medium">
-                    {event.date}{event.time ? ` · ${event.time}` : ""} · {event.projectName || "General"}
+                    {event.date}
+                    {event.time ? ` · ${event.time}` : ""} · {event.projectName || "General"}
                   </p>
                 </div>
 
@@ -135,7 +148,9 @@ export function EventsList({
           <div className="flex items-center justify-between mb-3">
             <div className="flex items-center gap-2">
               <FileEdit size={16} className="text-amber-600" />
-              <h3 className="text-sm font-extrabold text-amber-800 dark:text-amber-300">Draft Events</h3>
+              <h3 className="text-sm font-extrabold text-amber-800 dark:text-amber-300">
+                Draft Events
+              </h3>
               <span className="px-2 py-0.5 bg-amber-200 dark:bg-amber-800 text-amber-800 dark:text-amber-200 text-[10px] font-bold rounded-full">
                 {draftEvents.length}
               </span>
@@ -156,9 +171,13 @@ export function EventsList({
               >
                 <div className="flex items-center gap-2 min-w-0">
                   <FileEdit size={13} className="text-amber-500 shrink-0" />
-                  <span className="text-xs font-bold text-[#142843] dark:text-white truncate">{e.title || "Untitled Draft"}</span>
+                  <span className="text-xs font-bold text-[#142843] dark:text-white truncate">
+                    {e.title || "Untitled Draft"}
+                  </span>
                 </div>
-                <span className="text-[10px] font-semibold text-amber-600 dark:text-amber-400 shrink-0">Continue editing →</span>
+                <span className="text-[10px] font-semibold text-amber-600 dark:text-amber-400 shrink-0">
+                  Continue editing →
+                </span>
               </div>
             ))}
           </div>

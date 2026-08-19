@@ -3,7 +3,14 @@ import { TeamPageClient } from "@/components/team/team-page-client";
 
 export default async function TeamPage() {
   const projects = await getProjectsAction();
-  const projectOptions = projects.map((p: { id: string; name: string; ownerName: string; description: string | null }) => ({ id: p.id, name: p.name, ownerName: p.ownerName, description: p.description ?? null }));
+  const projectOptions = projects.map(
+    (p: { id: string; name: string; ownerName: string; description: string | null }) => ({
+      id: p.id,
+      name: p.name,
+      ownerName: p.ownerName,
+      description: p.description ?? null,
+    }),
+  );
 
   return (
     <div className="overflow-y-auto h-full p-4 sm:p-6 lg:p-8">

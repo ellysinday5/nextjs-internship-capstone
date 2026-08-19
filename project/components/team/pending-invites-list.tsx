@@ -1,66 +1,66 @@
-"use client"
+"use client";
 
-import { useEffect, useState, useCallback } from "react"
-import { Mail, X, RotateCcw, Clock } from "lucide-react"
 import {
-  getPendingInvitesAction,
-  cancelInviteAction,
-  resendInviteAction,
   type PendingInvite,
-} from "@/actions/invite-actions"
-import { sileo } from "@/utils/alerts"
+  cancelInviteAction,
+  getPendingInvitesAction,
+  resendInviteAction,
+} from "@/actions/invite-actions";
+import { sileo } from "@/utils/alerts";
+import { Clock, Mail, RotateCcw, X } from "lucide-react";
+import { useCallback, useEffect, useState } from "react";
 
 interface PendingInvitesListProps {
-  projectId: string
-  refreshKey: number 
+  projectId: string;
+  refreshKey: number;
 }
 
 export function PendingInvitesList({ projectId, refreshKey }: PendingInvitesListProps) {
-  const [invites, setInvites] = useState<PendingInvite[]>([])
-  const [loading, setLoading] = useState(false)
-  const [actingOnId, setActingOnId] = useState<string | null>(null)
+  const [invites, setInvites] = useState<PendingInvite[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [actingOnId, setActingOnId] = useState<string | null>(null);
 
   const loadInvites = useCallback(async () => {
     if (!projectId) {
-      setInvites([])
-      return
+      setInvites([]);
+      return;
     }
-    setLoading(true)
-    const rows = await getPendingInvitesAction(projectId)
-    setInvites(rows)
-    setLoading(false)
-  }, [projectId])
+    setLoading(true);
+    const rows = await getPendingInvitesAction(projectId);
+    setInvites(rows);
+    setLoading(false);
+  }, [projectId]);
 
   useEffect(() => {
-    loadInvites()
-  }, [loadInvites, refreshKey])
+    loadInvites();
+  }, [loadInvites, refreshKey]);
 
   const handleCancel = async (inviteId: string) => {
-    setActingOnId(inviteId)
-    const result = await cancelInviteAction(inviteId, projectId)
+    setActingOnId(inviteId);
+    const result = await cancelInviteAction(inviteId, projectId);
     if (result.success) {
-      setInvites((prev) => prev.filter((i) => i.id !== inviteId))
-      sileo.success("Invite cancelled.", "Cancelled")
+      setInvites((prev) => prev.filter((i) => i.id !== inviteId));
+      sileo.success("Invite cancelled.", "Cancelled");
     } else {
-      sileo.error(result.error ?? "Failed to cancel invite.", "Error")
+      sileo.error(result.error ?? "Failed to cancel invite.", "Error");
     }
-    setActingOnId(null)
-  }
+    setActingOnId(null);
+  };
 
   const handleResend = async (inviteId: string) => {
-    setActingOnId(inviteId)
-    const result = await resendInviteAction(inviteId, projectId)
+    setActingOnId(inviteId);
+    const result = await resendInviteAction(inviteId, projectId);
     if (result.success) {
-      sileo.success("Invite resent.", "Sent")
-      loadInvites()
+      sileo.success("Invite resent.", "Sent");
+      loadInvites();
     } else {
-      sileo.error(result.error ?? "Failed to resend invite.", "Error")
+      sileo.error(result.error ?? "Failed to resend invite.", "Error");
     }
-    setActingOnId(null)
-  }
+    setActingOnId(null);
+  };
 
-  if (!projectId) return null
-  if (!loading && invites.length === 0) return null
+  if (!projectId) return null;
+  if (!loading && invites.length === 0) return null;
 
   return (
     <div className="rounded-xl border-2 border-slate-200 bg-white p-4 dark:border-slate-700 dark:bg-slate-900">
@@ -113,5 +113,5 @@ export function PendingInvitesList({ projectId, refreshKey }: PendingInvitesList
         </ul>
       )}
     </div>
-  )
+  );
 }

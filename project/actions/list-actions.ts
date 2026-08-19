@@ -1,18 +1,25 @@
 "use server";
 
-import { revalidatePath } from "next/cache";
-import { eq, and, asc, sql } from "drizzle-orm";
 import { db } from "@/lib/db";
-import { lists, projects, tasks } from "@/lib/db/schema";
-import { syncUser } from "@/lib/auth";
+import { syncUser } from "@/lib/db/auth";
 import {
+  type CreateListFormValues,
+  type ReorderListsFormValues,
+  type UpdateListFormValues,
   createListSchema,
-  updateListSchema,
   reorderListsSchema,
-  CreateListFormValues,
-  UpdateListFormValues,
-  ReorderListsFormValues,
-} from "@/lib/list-schemas";
+  updateListSchema,
+} from "@/lib/db/list-schemas";
+import {
+  lists,
+  projectMembers,
+  projects,
+  tasks,
+  workspaceMembers,
+  workspaces,
+} from "@/lib/db/schema";
+import { and, asc, eq, sql } from "drizzle-orm";
+import { revalidatePath } from "next/cache";
 
 export interface ListWithTasks {
   id: string;
@@ -24,12 +31,80 @@ export interface ListWithTasks {
   taskCount: number;
 }
 
-async function assertProjectOwnership(projectId: string, userId: string) {
+async function assertProjectAccess(projectId: string, userId: string): Promise<boolean> {
   const [project] = await db
-    .select({ id: projects.id })
+    .select({ id: projects.id, ownerId: projects.ownerId, workspaceId: projects.workspaceId })
     .from(projects)
-    .where(and(eq(projects.id, projectId), eq(projects.ownerId, userId)));
-  return !!project;
+    .where(eq(projects.id, projectId));
+
+  if (!project) return false;
+  if (project.ownerId === userId) return true;
+
+  const [member] = await db
+    .select({ id: projectMembers.id })
+    .from(projectMembers)
+    .where(and(eq(projectMembers.projectId, projectId), eq(projectMembers.userId, userId)));
+
+  if (member) return true;
+
+  if (project.workspaceId) {
+    const [ws] = await db
+      .select({ id: workspaces.id })
+      .from(workspaces)
+      .where(and(eq(workspaces.id, project.workspaceId), eq(workspaces.ownerId, userId)));
+    if (ws) return true;
+  }
+
+  return false;
+}
+
+async function assertCanManageProject(projectId: string, userId: string): Promise<boolean> {
+  const [project] = await db
+    .select({ id: projects.id, ownerId: projects.ownerId, workspaceId: projects.workspaceId })
+    .from(projects)
+    .where(eq(projects.id, projectId));
+
+  if (!project) return false;
+  if (project.ownerId === userId) return true;
+
+  // Check project role (owner / pm / admin)
+  const [member] = await db
+    .select({ role: projectMembers.role })
+    .from(projectMembers)
+    .where(and(eq(projectMembers.projectId, projectId), eq(projectMembers.userId, userId)));
+
+  if (member) {
+    const r = member.role.toLowerCase();
+    if (r === "owner" || r === "pm" || r === "project manager" || r === "admin") {
+      return true;
+    }
+  }
+
+  // Check workspace role (owner / admin)
+  if (project.workspaceId) {
+    const [ws] = await db
+      .select({ ownerId: workspaces.ownerId })
+      .from(workspaces)
+      .where(eq(workspaces.id, project.workspaceId));
+    if (ws && ws.ownerId === userId) return true;
+
+    const [wsMember] = await db
+      .select({ role: workspaceMembers.role })
+      .from(workspaceMembers)
+      .where(
+        and(
+          eq(workspaceMembers.workspaceId, project.workspaceId),
+          eq(workspaceMembers.userId, userId),
+        ),
+      );
+
+    if (wsMember) {
+      const wr = wsMember.role.toLowerCase();
+      if (wr === "owner" || wr === "admin") return true;
+    }
+  }
+
+  return false;
 }
 
 /* Get Lists for a Project */
@@ -38,8 +113,8 @@ export async function getListsAction(projectId: string): Promise<ListWithTasks[]
     const user = await syncUser();
     if (!user) return [];
 
-    const ownsProject = await assertProjectOwnership(projectId, user.id);
-    if (!ownsProject) return [];
+    const hasAccess = await assertProjectAccess(projectId, user.id);
+    if (!hasAccess) return [];
 
     const projectLists = await db
       .select()
@@ -78,8 +153,8 @@ export async function createListAction(data: CreateListFormValues) {
 
     const { name, projectId } = validated.data;
 
-    const ownsProject = await assertProjectOwnership(projectId, user.id);
-    if (!ownsProject) return { success: false, error: "Project not found or access denied." };
+    const hasAccess = await assertProjectAccess(projectId, user.id);
+    if (!hasAccess) return { success: false, error: "Project not found or access denied." };
 
     const [{ maxPosition }] = await db
       .select({ maxPosition: sql<number>`coalesce(max(${lists.position}), -1)::int` })
@@ -112,11 +187,14 @@ export async function updateListAction(data: UpdateListFormValues) {
 
     const { id, ...updates } = validated.data;
 
-    const [existing] = await db.select({ projectId: lists.projectId }).from(lists).where(eq(lists.id, id));
+    const [existing] = await db
+      .select({ projectId: lists.projectId })
+      .from(lists)
+      .where(eq(lists.id, id));
     if (!existing) return { success: false, error: "List not found." };
 
-    const ownsProject = await assertProjectOwnership(existing.projectId, user.id);
-    if (!ownsProject) return { success: false, error: "Access denied." };
+    const hasAccess = await assertProjectAccess(existing.projectId, user.id);
+    if (!hasAccess) return { success: false, error: "Access denied." };
 
     const [updatedList] = await db
       .update(lists)
@@ -143,8 +221,8 @@ export async function reorderListsAction(data: ReorderListsFormValues) {
 
     const { projectId, orderedIds } = validated.data;
 
-    const ownsProject = await assertProjectOwnership(projectId, user.id);
-    if (!ownsProject) return { success: false, error: "Access denied." };
+    const hasAccess = await assertProjectAccess(projectId, user.id);
+    if (!hasAccess) return { success: false, error: "Access denied." };
 
     await db.transaction(async (tx) => {
       for (let i = 0; i < orderedIds.length; i++) {
@@ -166,11 +244,15 @@ export async function deleteListAction(listId: string) {
     const user = await syncUser();
     if (!user) return { success: false, error: "Unauthorized. Please sign in." };
 
-    const [existing] = await db.select({ projectId: lists.projectId }).from(lists).where(eq(lists.id, listId));
+    const [existing] = await db
+      .select({ projectId: lists.projectId })
+      .from(lists)
+      .where(eq(lists.id, listId));
     if (!existing) return { success: false, error: "List not found." };
 
-    const ownsProject = await assertProjectOwnership(existing.projectId, user.id);
-    if (!ownsProject) return { success: false, error: "Access denied." };
+    const canManage = await assertCanManageProject(existing.projectId, user.id);
+    if (!canManage)
+      return { success: false, error: "Only project managers and owners can delete lists." };
 
     await db.delete(lists).where(eq(lists.id, listId));
 

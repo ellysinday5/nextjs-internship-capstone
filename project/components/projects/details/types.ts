@@ -1,4 +1,4 @@
-import { TaskItem } from "@/components/tasks/task-details";
+import type { TaskItem } from "@/components/tasks/task-details";
 
 export type ProjectStatusType =
   | "On track"
@@ -22,7 +22,12 @@ export interface WidgetOption {
   type: "metric" | "chart" | "list";
 }
 
-export const STATUS_OPTIONS: { label: string; value: ProjectStatusType; colorClass: string; dotClass: string }[] = [
+export const STATUS_OPTIONS: {
+  label: string;
+  value: ProjectStatusType;
+  colorClass: string;
+  dotClass: string;
+}[] = [
   {
     label: "No status",
     value: null,
@@ -68,7 +73,18 @@ export const STATUS_OPTIONS: { label: string; value: ProjectStatusType; colorCla
 ];
 
 export const COLOR_SWATCHES = [
-  "#64748b", "#3b82f6", "#ef4444", "#f97316", "#eab308",
-  "#84cc16", "#22c55e", "#06b6d4", "#6366f1", "#a855f7",
-  "#ec4899", "#f43f5e", "#14b8a6", "#0f172a",
+  "#64748b",
+  "#3b82f6",
+  "#ef4444",
+  "#f97316",
+  "#eab308",
+  "#84cc16",
+  "#22c55e",
+  "#06b6d4",
+  "#6366f1",
+  "#a855f7",
+  "#ec4899",
+  "#f43f5e",
+  "#14b8a6",
+  "#0f172a",
 ];

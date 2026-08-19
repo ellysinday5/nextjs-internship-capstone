@@ -1,20 +1,20 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
-import { useUser, useClerk } from "@clerk/nextjs";
-import Image from "next/image";
-import { LogOut, User as UserIcon } from "lucide-react";
-import { useUserProfile } from "@/context/user-profile-context";
 import {
   AlertDialog,
-  AlertDialogContent,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogDescription,
-  AlertDialogFooter,
   AlertDialogAction,
   AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { useUserProfile } from "@/context/user-profile-context";
+import { useClerk, useUser } from "@clerk/nextjs";
+import { LogOut, User as UserIcon } from "lucide-react";
+import Image from "next/image";
+import { useEffect, useRef, useState } from "react";
 
 export function UserMenu() {
   const { user } = useUser();

@@ -1,22 +1,22 @@
-"use client"
+"use client";
 
-import { useMemo, useState, useRef, useEffect } from "react"
-import { ChevronLeft, ChevronRight, X, BarChart2, ChevronDown, ChevronUp } from "lucide-react"
-import type { Team, TeamMember } from "@/lib/team-data"
+import type { Team, TeamMember } from "@/lib/team-data";
+import { BarChart2, ChevronDown, ChevronLeft, ChevronRight, ChevronUp, X } from "lucide-react";
+import { useEffect, useMemo, useRef, useState } from "react";
 
 interface AnalyticsTabProps {
-  members: TeamMember[]
-  teams: Team[]
+  members: TeamMember[];
+  teams: Team[];
 }
 
 // ─── Date helpers ───────────────────────────────────────────────────────────
 
 function formatMonthYear(date: Date) {
-  return date.toLocaleDateString("en-US", { month: "long", year: "numeric" })
+  return date.toLocaleDateString("en-US", { month: "long", year: "numeric" });
 }
 
 function formatDisplayDate(date: Date) {
-  return date.toLocaleDateString("en-US", { month: "short", day: "numeric" })
+  return date.toLocaleDateString("en-US", { month: "short", day: "numeric" });
 }
 
 function sameDay(a: Date, b: Date) {
@@ -24,46 +24,46 @@ function sameDay(a: Date, b: Date) {
     a.getFullYear() === b.getFullYear() &&
     a.getMonth() === b.getMonth() &&
     a.getDate() === b.getDate()
-  )
+  );
 }
 
 function startOfDay(d: Date) {
-  return new Date(d.getFullYear(), d.getMonth(), d.getDate())
+  return new Date(d.getFullYear(), d.getMonth(), d.getDate());
 }
 
 function addDays(d: Date, n: number) {
-  const r = new Date(d)
-  r.setDate(r.getDate() + n)
-  return r
+  const r = new Date(d);
+  r.setDate(r.getDate() + n);
+  return r;
 }
 
 // ─── Calendar ───────────────────────────────────────────────────────────────
 
 interface CalendarProps {
-  value: Date
-  onChange: (d: Date) => void
+  value: Date;
+  onChange: (d: Date) => void;
 }
 
 function MiniCalendar({ value, onChange }: CalendarProps) {
-  const [viewDate, setViewDate] = useState(new Date(value.getFullYear(), value.getMonth(), 1))
+  const [viewDate, setViewDate] = useState(new Date(value.getFullYear(), value.getMonth(), 1));
 
-  const today = startOfDay(new Date())
+  const today = startOfDay(new Date());
 
-  const prevMonth = () => setViewDate(new Date(viewDate.getFullYear(), viewDate.getMonth() - 1, 1))
-  const nextMonth = () => setViewDate(new Date(viewDate.getFullYear(), viewDate.getMonth() + 1, 1))
+  const prevMonth = () => setViewDate(new Date(viewDate.getFullYear(), viewDate.getMonth() - 1, 1));
+  const nextMonth = () => setViewDate(new Date(viewDate.getFullYear(), viewDate.getMonth() + 1, 1));
 
   // Build calendar grid: Sun–Sat rows
-  const firstDay = viewDate.getDay() // 0=Sun
-  const daysInMonth = new Date(viewDate.getFullYear(), viewDate.getMonth() + 1, 0).getDate()
+  const firstDay = viewDate.getDay(); // 0=Sun
+  const daysInMonth = new Date(viewDate.getFullYear(), viewDate.getMonth() + 1, 0).getDate();
 
-  const cells: (Date | null)[] = []
-  for (let i = 0; i < firstDay; i++) cells.push(null)
+  const cells: (Date | null)[] = [];
+  for (let i = 0; i < firstDay; i++) cells.push(null);
   for (let d = 1; d <= daysInMonth; d++) {
-    cells.push(new Date(viewDate.getFullYear(), viewDate.getMonth(), d))
+    cells.push(new Date(viewDate.getFullYear(), viewDate.getMonth(), d));
   }
 
-  const weeks: (Date | null)[][] = []
-  for (let i = 0; i < cells.length; i += 7) weeks.push(cells.slice(i, i + 7))
+  const weeks: (Date | null)[][] = [];
+  for (let i = 0; i < cells.length; i += 7) weeks.push(cells.slice(i, i + 7));
 
   return (
     <div className="w-44">
@@ -93,7 +93,10 @@ function MiniCalendar({ value, onChange }: CalendarProps) {
       {/* Weekday headers */}
       <div className="grid grid-cols-7 mb-1">
         {["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"].map((d) => (
-          <span key={d} className="text-center text-[10px] font-semibold text-slate-400 dark:text-slate-500">
+          <span
+            key={d}
+            className="text-center text-[10px] font-semibold text-slate-400 dark:text-slate-500"
+          >
             {d}
           </span>
         ))}
@@ -103,9 +106,9 @@ function MiniCalendar({ value, onChange }: CalendarProps) {
       {weeks.map((week, wi) => (
         <div key={wi} className="grid grid-cols-7">
           {week.map((day, di) => {
-            if (!day) return <span key={di} />
-            const isSelected = sameDay(day, value)
-            const isToday = sameDay(day, today)
+            if (!day) return <span key={di} />;
+            const isSelected = sameDay(day, value);
+            const isToday = sameDay(day, today);
             return (
               <button
                 key={di}
@@ -113,115 +116,157 @@ function MiniCalendar({ value, onChange }: CalendarProps) {
                 onClick={() => onChange(day)}
                 className={`
                   aspect-square flex items-center justify-center rounded-full text-[11px] transition-colors
-                  ${isSelected
-                    ? "bg-violet-600 text-white font-bold"
-                    : isToday
-                      ? "border border-violet-500 text-violet-600 dark:text-violet-400 font-semibold"
-                      : "text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700"
+                  ${
+                    isSelected
+                      ? "bg-violet-600 text-white font-bold"
+                      : isToday
+                        ? "border border-violet-500 text-violet-600 dark:text-violet-400 font-semibold"
+                        : "text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700"
                   }
                 `}
               >
                 {day.getDate()}
               </button>
-            )
+            );
           })}
         </div>
       ))}
     </div>
-  )
+  );
 }
 
 // ─── Date range picker (dropdown) ───────────────────────────────────────────
 
 type Preset = {
-  label: string
-  getDates: () => { start: Date; end: Date }
-}
+  label: string;
+  getDates: () => { start: Date; end: Date };
+};
 
 const PRESETS: Preset[] = [
-  { label: "Today", getDates: () => { const t = startOfDay(new Date()); return { start: t, end: t } } },
-  { label: "Yesterday", getDates: () => { const y = addDays(startOfDay(new Date()), -1); return { start: y, end: y } } },
-  { label: "This week", getDates: () => {
-    const t = startOfDay(new Date()); const dow = t.getDay()
-    return { start: addDays(t, -dow), end: addDays(t, 6 - dow) }
-  }},
-  { label: "Last week", getDates: () => {
-    const t = startOfDay(new Date()); const dow = t.getDay()
-    const startOfThisWeek = addDays(t, -dow)
-    return { start: addDays(startOfThisWeek, -7), end: addDays(startOfThisWeek, -1) }
-  }},
-  { label: "Last 7 days", getDates: () => ({ start: addDays(startOfDay(new Date()), -6), end: startOfDay(new Date()) }) },
-  { label: "Last 30 days", getDates: () => ({ start: addDays(startOfDay(new Date()), -29), end: startOfDay(new Date()) }) },
-  { label: "This month", getDates: () => {
-    const t = new Date(); return { start: new Date(t.getFullYear(), t.getMonth(), 1), end: new Date(t.getFullYear(), t.getMonth() + 1, 0) }
-  }},
-  { label: "Last month", getDates: () => {
-    const t = new Date(); return { start: new Date(t.getFullYear(), t.getMonth() - 1, 1), end: new Date(t.getFullYear(), t.getMonth(), 0) }
-  }},
-]
+  {
+    label: "Today",
+    getDates: () => {
+      const t = startOfDay(new Date());
+      return { start: t, end: t };
+    },
+  },
+  {
+    label: "Yesterday",
+    getDates: () => {
+      const y = addDays(startOfDay(new Date()), -1);
+      return { start: y, end: y };
+    },
+  },
+  {
+    label: "This week",
+    getDates: () => {
+      const t = startOfDay(new Date());
+      const dow = t.getDay();
+      return { start: addDays(t, -dow), end: addDays(t, 6 - dow) };
+    },
+  },
+  {
+    label: "Last week",
+    getDates: () => {
+      const t = startOfDay(new Date());
+      const dow = t.getDay();
+      const startOfThisWeek = addDays(t, -dow);
+      return { start: addDays(startOfThisWeek, -7), end: addDays(startOfThisWeek, -1) };
+    },
+  },
+  {
+    label: "Last 7 days",
+    getDates: () => ({ start: addDays(startOfDay(new Date()), -6), end: startOfDay(new Date()) }),
+  },
+  {
+    label: "Last 30 days",
+    getDates: () => ({ start: addDays(startOfDay(new Date()), -29), end: startOfDay(new Date()) }),
+  },
+  {
+    label: "This month",
+    getDates: () => {
+      const t = new Date();
+      return {
+        start: new Date(t.getFullYear(), t.getMonth(), 1),
+        end: new Date(t.getFullYear(), t.getMonth() + 1, 0),
+      };
+    },
+  },
+  {
+    label: "Last month",
+    getDates: () => {
+      const t = new Date();
+      return {
+        start: new Date(t.getFullYear(), t.getMonth() - 1, 1),
+        end: new Date(t.getFullYear(), t.getMonth(), 0),
+      };
+    },
+  },
+];
 
 interface DateRange {
-  start: Date
-  end: Date
-  label?: string
+  start: Date;
+  end: Date;
+  label?: string;
 }
 
 interface DatePickerDropdownProps {
-  range: DateRange
-  onChange: (r: DateRange) => void
+  range: DateRange;
+  onChange: (r: DateRange) => void;
 }
 
 function DatePickerDropdown({ range, onChange }: DatePickerDropdownProps) {
-  const [open, setOpen] = useState(false)
-  const [calStart, setCalStart] = useState<Date>(range.start)
-  const [calEnd, setCalEnd] = useState<Date | null>(range.end)
-  const [activePreset, setActivePreset] = useState<string | null>(range.label ?? "Today")
-  const [pickingEnd, setPickingEnd] = useState(false)
-  const ref = useRef<HTMLDivElement>(null)
+  const [open, setOpen] = useState(false);
+  const [calStart, setCalStart] = useState<Date>(range.start);
+  const [calEnd, setCalEnd] = useState<Date | null>(range.end);
+  const [activePreset, setActivePreset] = useState<string | null>(range.label ?? "Today");
+  const [pickingEnd, setPickingEnd] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
 
   // Close on outside click
   useEffect(() => {
     function handle(e: MouseEvent) {
-      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false)
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
     }
-    document.addEventListener("mousedown", handle)
-    return () => document.removeEventListener("mousedown", handle)
-  }, [])
+    document.addEventListener("mousedown", handle);
+    return () => document.removeEventListener("mousedown", handle);
+  }, []);
 
   function applyPreset(p: Preset) {
-    const { start, end } = p.getDates()
-    setCalStart(start)
-    setCalEnd(end)
-    setActivePreset(p.label)
-    onChange({ start, end, label: p.label })
-    setOpen(false)
+    const { start, end } = p.getDates();
+    setCalStart(start);
+    setCalEnd(end);
+    setActivePreset(p.label);
+    onChange({ start, end, label: p.label });
+    setOpen(false);
   }
 
   function handleCalendarStart(d: Date) {
-    setCalStart(d)
-    setCalEnd(null)
-    setActivePreset(null)
-    setPickingEnd(true)
+    setCalStart(d);
+    setCalEnd(null);
+    setActivePreset(null);
+    setPickingEnd(true);
   }
 
   function handleCalendarEnd(d: Date) {
     if (d < calStart) {
-      setCalEnd(calStart)
-      setCalStart(d)
+      setCalEnd(calStart);
+      setCalStart(d);
     } else {
-      setCalEnd(d)
+      setCalEnd(d);
     }
-    setActivePreset(null)
-    setPickingEnd(false)
+    setActivePreset(null);
+    setPickingEnd(false);
   }
 
   function handleSet() {
-    const end = calEnd ?? calStart
-    onChange({ start: calStart, end, label: undefined })
-    setOpen(false)
+    const end = calEnd ?? calStart;
+    onChange({ start: calStart, end, label: undefined });
+    setOpen(false);
   }
 
-  const displayLabel = range.label ?? `${formatDisplayDate(range.start)} – ${formatDisplayDate(range.end)}`
+  const displayLabel =
+    range.label ?? `${formatDisplayDate(range.start)} – ${formatDisplayDate(range.end)}`;
 
   return (
     <div ref={ref} className="relative inline-block">
@@ -231,13 +276,21 @@ function DatePickerDropdown({ range, onChange }: DatePickerDropdownProps) {
       >
         <span className="w-2 h-2 rounded-sm bg-violet-500 shrink-0" />
         {displayLabel}
-        {open
-          ? <ChevronUp size={12} className="text-slate-400" />
-          : <ChevronDown size={12} className="text-slate-400" />
-        }
+        {open ? (
+          <ChevronUp size={12} className="text-slate-400" />
+        ) : (
+          <ChevronDown size={12} className="text-slate-400" />
+        )}
         <button
           type="button"
-          onClick={(e) => { e.stopPropagation(); onChange({ start: startOfDay(new Date()), end: startOfDay(new Date()), label: "Today" }) }}
+          onClick={(e) => {
+            e.stopPropagation();
+            onChange({
+              start: startOfDay(new Date()),
+              end: startOfDay(new Date()),
+              label: "Today",
+            });
+          }}
           className="ml-0.5 rounded-full hover:bg-slate-200 dark:hover:bg-slate-600 p-0.5"
         >
           <X size={10} className="text-slate-400" />
@@ -254,9 +307,10 @@ function DatePickerDropdown({ range, onChange }: DatePickerDropdownProps) {
                 type="button"
                 onClick={() => applyPreset(p)}
                 className={`w-full text-left px-4 py-1.5 text-xs font-medium transition-colors
-                  ${activePreset === p.label
-                    ? "text-violet-600 dark:text-violet-400 bg-violet-50 dark:bg-violet-900/20"
-                    : "text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700/50"
+                  ${
+                    activePreset === p.label
+                      ? "text-violet-600 dark:text-violet-400 bg-violet-50 dark:bg-violet-900/20"
+                      : "text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700/50"
                   }`}
               >
                 {p.label}
@@ -272,9 +326,10 @@ function DatePickerDropdown({ range, onChange }: DatePickerDropdownProps) {
                 type="button"
                 onClick={() => setPickingEnd(false)}
                 className={`flex-1 text-center text-xs rounded-lg border px-2 py-1.5 transition-colors
-                  ${!pickingEnd
-                    ? "border-violet-500 bg-violet-50 dark:bg-violet-900/20 text-violet-700 dark:text-violet-300"
-                    : "border-slate-200 dark:border-slate-600 text-slate-500 dark:text-slate-400 hover:border-slate-300"
+                  ${
+                    !pickingEnd
+                      ? "border-violet-500 bg-violet-50 dark:bg-violet-900/20 text-violet-700 dark:text-violet-300"
+                      : "border-slate-200 dark:border-slate-600 text-slate-500 dark:text-slate-400 hover:border-slate-300"
                   }`}
               >
                 {formatDisplayDate(calStart)}
@@ -283,9 +338,10 @@ function DatePickerDropdown({ range, onChange }: DatePickerDropdownProps) {
                 type="button"
                 onClick={() => setPickingEnd(true)}
                 className={`flex-1 text-center text-xs rounded-lg border px-2 py-1.5 transition-colors
-                  ${pickingEnd
-                    ? "border-violet-500 bg-violet-50 dark:bg-violet-900/20 text-violet-700 dark:text-violet-300"
-                    : "border-slate-200 dark:border-slate-600 text-slate-400 dark:text-slate-500 hover:border-slate-300"
+                  ${
+                    pickingEnd
+                      ? "border-violet-500 bg-violet-50 dark:bg-violet-900/20 text-violet-700 dark:text-violet-300"
+                      : "border-slate-200 dark:border-slate-600 text-slate-400 dark:text-slate-500 hover:border-slate-300"
                   }`}
               >
                 {calEnd ? formatDisplayDate(calEnd) : "End Date"}
@@ -308,7 +364,7 @@ function DatePickerDropdown({ range, onChange }: DatePickerDropdownProps) {
         </div>
       )}
     </div>
-  )
+  );
 }
 
 // ─── Activity bar chart (online count per day in range) ─────────────────────
@@ -319,89 +375,101 @@ function getInitials(name: string) {
     .map((p) => p[0])
     .slice(0, 2)
     .join("")
-    .toUpperCase()
+    .toUpperCase();
 }
 
 function AVATAR_COLOR(id: string) {
   const colors = [
-    "bg-violet-500", "bg-blue-500", "bg-emerald-500",
-    "bg-rose-500", "bg-amber-500", "bg-cyan-500", "bg-indigo-500",
-  ]
-  let hash = 0
-  for (let i = 0; i < id.length; i++) hash = (hash * 31 + id.charCodeAt(i)) & 0xffff
-  return colors[hash % colors.length]
+    "bg-violet-500",
+    "bg-blue-500",
+    "bg-emerald-500",
+    "bg-rose-500",
+    "bg-amber-500",
+    "bg-cyan-500",
+    "bg-indigo-500",
+  ];
+  let hash = 0;
+  for (let i = 0; i < id.length; i++) hash = (hash * 31 + id.charCodeAt(i)) & 0xffff;
+  return colors[hash % colors.length];
 }
 
 // ─── Main component ──────────────────────────────────────────────────────────
 
-type MemberFilter = "Online" | "Offline"
+type MemberFilter = "Online" | "Offline";
 
 export function AnalyticsTab({ members, teams: _teams }: AnalyticsTabProps) {
-  const today = startOfDay(new Date())
+  const today = startOfDay(new Date());
 
   const [dateRange, setDateRange] = useState<DateRange>({
     start: today,
     end: today,
     label: "Today",
-  })
-  const [memberFilter, setMemberFilter] = useState<MemberFilter>("Online")
-  const [itemTypeOpen, setItemTypeOpen] = useState(false)
-  const [itemType, setItemType] = useState<"Tasks" | "Subtasks" | "All">("All")
+  });
+  const [memberFilter, setMemberFilter] = useState<MemberFilter>("Online");
+  const [itemTypeOpen, setItemTypeOpen] = useState(false);
+  const [itemType, setItemType] = useState<"Tasks" | "Subtasks" | "All">("All");
 
-  const onlineMembers = useMemo(() => members.filter((m) => m.status === "Online"), [members])
-  const offlineMembers = useMemo(() => members.filter((m) => m.status === "Offline" || m.status === "Away"), [members])
+  const onlineMembers = useMemo(() => members.filter((m) => m.status === "Online"), [members]);
+  const offlineMembers = useMemo(
+    () => members.filter((m) => m.status === "Offline" || m.status === "Away"),
+    [members],
+  );
 
-  const displayedMembers = memberFilter === "Online" ? onlineMembers : offlineMembers
+  const displayedMembers = memberFilter === "Online" ? onlineMembers : offlineMembers;
 
   // Build chart data: for each day in range, derive an "online count"
   const daysInRange = useMemo(() => {
-    const days: Date[] = []
-    let cur = new Date(dateRange.start)
+    const days: Date[] = [];
+    let cur = new Date(dateRange.start);
     while (cur <= dateRange.end) {
-      days.push(new Date(cur))
-      cur = addDays(cur, 1)
+      days.push(new Date(cur));
+      cur = addDays(cur, 1);
     }
-    return days
-  }, [dateRange])
+    return days;
+  }, [dateRange]);
 
-  const isToday = sameDay(dateRange.start, today) && sameDay(dateRange.end, today)
+  const isToday = sameDay(dateRange.start, today) && sameDay(dateRange.end, today);
 
   // Chart bars: simulated data for historical ranges, real data for today, influenced by itemType filter
   const chartBars = useMemo(() => {
     return daysInRange.map((d) => {
-      const daySeed = d.getFullYear() * 10000 + (d.getMonth() + 1) * 100 + d.getDate()
-      const x = Math.sin(daySeed) * 10000
-      let baseVal = Math.floor((x - Math.floor(x)) * (members.length + 1))
+      const daySeed = d.getFullYear() * 10000 + (d.getMonth() + 1) * 100 + d.getDate();
+      const x = Math.sin(daySeed) * 10000;
+      let baseVal = Math.floor((x - Math.floor(x)) * (members.length + 1));
 
       if (itemType === "Tasks") {
-        baseVal = Math.max(1, Math.min(members.length, Math.floor(baseVal * 0.8)))
+        baseVal = Math.max(1, Math.min(members.length, Math.floor(baseVal * 0.8)));
       } else if (itemType === "Subtasks") {
-        baseVal = Math.max(0, Math.min(members.length, Math.floor(baseVal * 0.5)))
+        baseVal = Math.max(0, Math.min(members.length, Math.floor(baseVal * 0.5)));
       }
 
-      const isCurrentDay = sameDay(d, today)
-      let todayVal = onlineMembers.length
+      const isCurrentDay = sameDay(d, today);
+      let todayVal = onlineMembers.length;
       if (isCurrentDay) {
-        if (itemType === "Tasks") todayVal = Math.max(1, Math.floor(todayVal * 0.8))
-        else if (itemType === "Subtasks") todayVal = Math.max(0, Math.floor(todayVal * 0.5))
+        if (itemType === "Tasks") todayVal = Math.max(1, Math.floor(todayVal * 0.8));
+        else if (itemType === "Subtasks") todayVal = Math.max(0, Math.floor(todayVal * 0.5));
       }
 
       return {
         date: d,
         value: isCurrentDay ? todayVal : Math.max(0, baseVal),
-      }
-    })
-  }, [daysInRange, onlineMembers.length, today, members.length, itemType])
+      };
+    });
+  }, [daysInRange, onlineMembers.length, today, members.length, itemType]);
 
-  const maxBar = Math.max(...chartBars.map((b) => b.value), 1)
-  const hasData = chartBars.some((b) => b.value > 0)
+  const maxBar = Math.max(...chartBars.map((b) => b.value), 1);
+  const hasData = chartBars.some((b) => b.value > 0);
 
   // Nav arrows shift the entire range by 1 day
   function prevDay() {
-    setDateRange((r) => ({ start: addDays(r.start, -1), end: addDays(r.end, -1), label: undefined }))
+    setDateRange((r) => ({
+      start: addDays(r.start, -1),
+      end: addDays(r.end, -1),
+      label: undefined,
+    }));
   }
   function nextDay() {
-    setDateRange((r) => ({ start: addDays(r.start, 1), end: addDays(r.end, 1), label: undefined }))
+    setDateRange((r) => ({ start: addDays(r.start, 1), end: addDays(r.end, 1), label: undefined }));
   }
 
   return (
@@ -441,18 +509,24 @@ export function AnalyticsTab({ members, teams: _teams }: AnalyticsTabProps) {
         {!hasData ? (
           <div className="flex flex-col items-center justify-center py-8 text-slate-400 dark:text-slate-600">
             <div className="relative mb-2">
-              <BarChart2 size={48} strokeWidth={1.5} className="text-slate-300 dark:text-slate-600" />
+              <BarChart2
+                size={48}
+                strokeWidth={1.5}
+                className="text-slate-300 dark:text-slate-600"
+              />
               <div className="absolute -bottom-1 -right-1 w-5 h-5 rounded-full bg-blue-500/20 dark:bg-blue-400/20 flex items-center justify-center">
                 <span className="text-blue-500 dark:text-blue-400 text-xs font-bold">+</span>
               </div>
             </div>
-            <p className="text-sm text-slate-400 dark:text-slate-500 font-medium">Not enough data.</p>
+            <p className="text-sm text-slate-400 dark:text-slate-500 font-medium">
+              Not enough data.
+            </p>
           </div>
         ) : (
           <div className="flex flex-col gap-2">
             <div className="flex items-end gap-1 h-16 px-1">
               {chartBars.map((bar, i) => {
-                const heightPct = (bar.value / maxBar) * 100
+                const heightPct = (bar.value / maxBar) * 100;
                 return (
                   <div
                     key={i}
@@ -464,7 +538,7 @@ export function AnalyticsTab({ members, teams: _teams }: AnalyticsTabProps) {
                       style={{ height: `${heightPct}%`, minHeight: bar.value > 0 ? "4px" : "0" }}
                     />
                   </div>
-                )
+                );
               })}
             </div>
             {/* Date labels under the bars */}
@@ -486,9 +560,10 @@ export function AnalyticsTab({ members, teams: _teams }: AnalyticsTabProps) {
             type="button"
             onClick={() => setMemberFilter("Online")}
             className={`px-3 py-1 rounded-l-full text-xs font-semibold border transition-colors
-              ${memberFilter === "Online"
-                ? "bg-white dark:bg-slate-800 border-slate-300 dark:border-slate-600 text-[#142843] dark:text-white shadow-sm"
-                : "bg-transparent border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200"
+              ${
+                memberFilter === "Online"
+                  ? "bg-white dark:bg-slate-800 border-slate-300 dark:border-slate-600 text-[#142843] dark:text-white shadow-sm"
+                  : "bg-transparent border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200"
               }`}
           >
             {onlineMembers.length} Online
@@ -497,9 +572,10 @@ export function AnalyticsTab({ members, teams: _teams }: AnalyticsTabProps) {
             type="button"
             onClick={() => setMemberFilter("Offline")}
             className={`px-3 py-1 rounded-r-full text-xs font-semibold border transition-colors
-              ${memberFilter === "Offline"
-                ? "bg-white dark:bg-slate-800 border-slate-300 dark:border-slate-600 text-[#142843] dark:text-white shadow-sm"
-                : "bg-transparent border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200"
+              ${
+                memberFilter === "Offline"
+                  ? "bg-white dark:bg-slate-800 border-slate-300 dark:border-slate-600 text-[#142843] dark:text-white shadow-sm"
+                  : "bg-transparent border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200"
               }`}
           >
             {offlineMembers.length} Offline
@@ -523,13 +599,14 @@ export function AnalyticsTab({ members, teams: _teams }: AnalyticsTabProps) {
                   key={t}
                   type="button"
                   onClick={() => {
-                    setItemType(t)
-                    setItemTypeOpen(false)
+                    setItemType(t);
+                    setItemTypeOpen(false);
                   }}
                   className={`w-full text-left px-4 py-1.5 text-xs transition-colors
-                    ${itemType === t
-                      ? "text-violet-600 dark:text-violet-400 bg-violet-50 dark:bg-violet-900/20 font-semibold"
-                      : "text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700/50"
+                    ${
+                      itemType === t
+                        ? "text-violet-600 dark:text-violet-400 bg-violet-50 dark:bg-violet-900/20 font-semibold"
+                        : "text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700/50"
                     }`}
                 >
                   {t}
@@ -547,19 +624,17 @@ export function AnalyticsTab({ members, teams: _teams }: AnalyticsTabProps) {
             No {memberFilter.toLowerCase()} members.
           </div>
         ) : (
-          displayedMembers.map((member) => (
-            <MemberCard key={member.id} member={member} />
-          ))
+          displayedMembers.map((member) => <MemberCard key={member.id} member={member} />)
         )}
       </div>
     </div>
-  )
+  );
 }
 
 // ─── Time tracker dots ───────────────────────────────────────────────────────
 
 function TimeTrackerDots() {
-  const [show, setShow] = useState(false)
+  const [show, setShow] = useState(false);
 
   return (
     <div className="relative flex items-center">
@@ -588,7 +663,7 @@ function TimeTrackerDots() {
         </div>
       )}
     </div>
-  )
+  );
 }
 
 // ─── Member card ─────────────────────────────────────────────────────────────
@@ -598,7 +673,7 @@ function MemberCard({ member }: { member: TeamMember }) {
     Online: "bg-emerald-500",
     Away: "bg-amber-500",
     Offline: "bg-slate-400 dark:bg-slate-500",
-  }
+  };
 
   // Generate dynamic, realistic activity text based on member details
   const activityText = useMemo(() => {
@@ -609,16 +684,16 @@ function MemberCard({ member }: { member: TeamMember }) {
         "Reviewing pending pull requests",
         "Updating database schema",
         "Designing dashboard layouts",
-      ]
-      const idx = member.id.charCodeAt(0) % activities.length
-      return activities[idx]
+      ];
+      const idx = member.id.charCodeAt(0) % activities.length;
+      return activities[idx];
     } else if (member.status === "Away") {
-      return "Idle • last active 15m ago"
+      return "Idle • last active 15m ago";
     } else {
-      const hours = (member.id.charCodeAt(0) % 8) + 1
-      return `Offline • active ${hours}h ago`
+      const hours = (member.id.charCodeAt(0) % 8) + 1;
+      return `Offline • active ${hours}h ago`;
     }
-  }, [member.status, member.id])
+  }, [member.status, member.id]);
 
   return (
     <div className="rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-[#14263e] p-4 flex flex-col gap-3 min-h-[140px] hover:shadow-md transition-shadow duration-200">
@@ -662,10 +737,8 @@ function MemberCard({ member }: { member: TeamMember }) {
         <span className="text-[9px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-0.5 select-none">
           Current Activity
         </span>
-        <p className="text-xs text-slate-700 dark:text-slate-300 font-medium">
-          {activityText}
-        </p>
+        <p className="text-xs text-slate-700 dark:text-slate-300 font-medium">{activityText}</p>
       </div>
     </div>
-  )
+  );
 }

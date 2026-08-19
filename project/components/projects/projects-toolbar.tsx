@@ -1,16 +1,31 @@
 "use client";
 
-import { useRef, useEffect } from "react";
-import Link from "next/link";
-import {
-  Plus, Search, X, Filter, ArrowUpDown, ChevronDown,
-  LayoutGrid, Table as TableIcon, User, Users, Shield, Sparkles,
-} from "lucide-react";
 import { FilterDropdown } from "@/components/projects/filter-dropdown";
-import {
-  categories, statuses, priorities, owners, teamsList, membersFilterOptions,
-} from "@/lib/project-data";
 import type { DropdownKey, ViewMode } from "@/hooks/use-project-filters";
+import {
+  categories,
+  membersFilterOptions,
+  owners,
+  priorities,
+  statuses,
+  teamsList,
+} from "@/lib/project-data";
+import {
+  ArrowUpDown,
+  ChevronDown,
+  Filter,
+  LayoutGrid,
+  Plus,
+  Search,
+  Shield,
+  Sparkles,
+  Table as TableIcon,
+  User,
+  Users,
+  X,
+} from "lucide-react";
+import Link from "next/link";
+import { useEffect, useRef } from "react";
 
 interface ProjectsToolbarProps {
   searchQuery: string;
@@ -38,17 +53,27 @@ interface ProjectsToolbarProps {
 }
 
 export function ProjectsToolbar({
-  searchQuery, setSearchQuery,
-  selectedCategory, setSelectedCategory,
-  selectedStatus, setSelectedStatus,
-  selectedPriority, setSelectedPriority,
-  selectedOwner, setSelectedOwner,
-  selectedTeam, setSelectedTeam,
-  selectedMembers, setSelectedMembers,
-  openDropdown, setOpenDropdown,
+  searchQuery,
+  setSearchQuery,
+  selectedCategory,
+  setSelectedCategory,
+  selectedStatus,
+  setSelectedStatus,
+  selectedPriority,
+  setSelectedPriority,
+  selectedOwner,
+  setSelectedOwner,
+  selectedTeam,
+  setSelectedTeam,
+  selectedMembers,
+  setSelectedMembers,
+  openDropdown,
+  setOpenDropdown,
   toggleDropdown,
-  hasActiveFilters, clearFilters,
-  viewMode, setViewMode,
+  hasActiveFilters,
+  clearFilters,
+  viewMode,
+  setViewMode,
   filteredCount,
 }: ProjectsToolbarProps) {
   const filterBarRef = useRef<HTMLDivElement>(null);
@@ -66,7 +91,10 @@ export function ProjectsToolbar({
   return (
     <>
       {/* Filter Bar & New Project Button */}
-      <div ref={filterBarRef} className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+      <div
+        ref={filterBarRef}
+        className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3"
+      >
         <div className="flex flex-wrap items-center gap-2.5">
           {/* Search Input */}
           <div className="relative w-56">
@@ -89,33 +117,90 @@ export function ProjectsToolbar({
                 <X size={14} />
               </button>
             ) : (
-              <Search className="absolute right-3 top-1/2 -translate-y-1/2 text-[#142843] dark:text-slate-300 pointer-events-none" size={14} />
+              <Search
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-[#142843] dark:text-slate-300 pointer-events-none"
+                size={14}
+              />
             )}
           </div>
 
-          <FilterDropdown label="Owner" icon={<User size={14} />} value={selectedOwner} options={owners}
-            isOpen={openDropdown === "owner"} onToggle={() => toggleDropdown("owner")}
-            onSelect={(val) => { setSelectedOwner(val); setOpenDropdown(null); }} />
+          <FilterDropdown
+            label="Owner"
+            icon={<User size={14} />}
+            value={selectedOwner}
+            options={owners}
+            isOpen={openDropdown === "owner"}
+            onToggle={() => toggleDropdown("owner")}
+            onSelect={(val) => {
+              setSelectedOwner(val);
+              setOpenDropdown(null);
+            }}
+          />
 
-          <FilterDropdown label="Team" icon={<Shield size={14} />} value={selectedTeam} options={teamsList}
-            isOpen={openDropdown === "team"} onToggle={() => toggleDropdown("team")}
-            onSelect={(val) => { setSelectedTeam(val); setOpenDropdown(null); }} />
+          <FilterDropdown
+            label="Team"
+            icon={<Shield size={14} />}
+            value={selectedTeam}
+            options={teamsList}
+            isOpen={openDropdown === "team"}
+            onToggle={() => toggleDropdown("team")}
+            onSelect={(val) => {
+              setSelectedTeam(val);
+              setOpenDropdown(null);
+            }}
+          />
 
-          <FilterDropdown label="Members" icon={<Users size={14} />} value={selectedMembers} options={membersFilterOptions}
-            isOpen={openDropdown === "members"} onToggle={() => toggleDropdown("members")}
-            onSelect={(val) => { setSelectedMembers(val); setOpenDropdown(null); }} />
+          <FilterDropdown
+            label="Members"
+            icon={<Users size={14} />}
+            value={selectedMembers}
+            options={membersFilterOptions}
+            isOpen={openDropdown === "members"}
+            onToggle={() => toggleDropdown("members")}
+            onSelect={(val) => {
+              setSelectedMembers(val);
+              setOpenDropdown(null);
+            }}
+          />
 
-          <FilterDropdown label="Category" icon={<ChevronDown size={14} />} value={selectedCategory} options={categories}
-            isOpen={openDropdown === "category"} onToggle={() => toggleDropdown("category")}
-            onSelect={(val) => { setSelectedCategory(val); setOpenDropdown(null); }} />
+          <FilterDropdown
+            label="Category"
+            icon={<ChevronDown size={14} />}
+            value={selectedCategory}
+            options={categories}
+            isOpen={openDropdown === "category"}
+            onToggle={() => toggleDropdown("category")}
+            onSelect={(val) => {
+              setSelectedCategory(val);
+              setOpenDropdown(null);
+            }}
+          />
 
-          <FilterDropdown label="Status" icon={<Filter size={14} />} value={selectedStatus} options={statuses}
-            isOpen={openDropdown === "status"} onToggle={() => toggleDropdown("status")}
-            onSelect={(val) => { setSelectedStatus(val); setOpenDropdown(null); }} />
+          <FilterDropdown
+            label="Status"
+            icon={<Filter size={14} />}
+            value={selectedStatus}
+            options={statuses}
+            isOpen={openDropdown === "status"}
+            onToggle={() => toggleDropdown("status")}
+            onSelect={(val) => {
+              setSelectedStatus(val);
+              setOpenDropdown(null);
+            }}
+          />
 
-          <FilterDropdown label="Priority" icon={<ArrowUpDown size={14} />} value={selectedPriority} options={priorities}
-            isOpen={openDropdown === "priority"} onToggle={() => toggleDropdown("priority")}
-            onSelect={(val) => { setSelectedPriority(val); setOpenDropdown(null); }} />
+          <FilterDropdown
+            label="Priority"
+            icon={<ArrowUpDown size={14} />}
+            value={selectedPriority}
+            options={priorities}
+            isOpen={openDropdown === "priority"}
+            onToggle={() => toggleDropdown("priority")}
+            onSelect={(val) => {
+              setSelectedPriority(val);
+              setOpenDropdown(null);
+            }}
+          />
 
           {hasActiveFilters && (
             <button

@@ -1,6 +1,6 @@
-import { auth, currentUser } from "@clerk/nextjs/server";
 import { db } from "@/lib/db";
 import { users } from "@/lib/db/schema";
+import { auth, currentUser } from "@clerk/nextjs/server";
 import { eq } from "drizzle-orm";
 
 /**
@@ -78,4 +78,29 @@ export async function syncUser() {
     console.error("[syncUser] Error syncing user to database:", error);
     throw error;
   }
+}
+
+/**
+ * Permission check for workspace-level management (settings, invitations across all projects).
+ * Only workspace owners and admins can manage the workspace.
+ */
+export function canManageWorkspace(workspaceRole?: string | null): boolean {
+  if (!workspaceRole) return false;
+  const role = workspaceRole.toLowerCase();
+  return role === "owner" || role === "admin";
+}
+
+/**
+ * Permission check for project-level member management.
+ * Workspace owners have an implicit override to manage all projects in their workspace.
+ * Otherwise, project managers / owners can manage their specific project.
+ */
+export function canManageProjectMembers(
+  projectRole?: string | null,
+  workspaceRole?: string | null,
+): boolean {
+  if (workspaceRole && workspaceRole.toLowerCase() === "owner") return true;
+  if (!projectRole) return false;
+  const pRole = projectRole.toLowerCase();
+  return pRole === "owner" || pRole === "pm" || pRole === "project manager" || pRole === "admin";
 }

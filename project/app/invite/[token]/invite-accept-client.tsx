@@ -1,11 +1,19 @@
 "use client";
 
-import { useState, useTransition } from "react";
-import { useRouter } from "next/navigation";
-import { SignInButton, SignUpButton, SignOutButton } from "@clerk/nextjs";
 import { acceptInvite } from "@/actions/invite-actions";
 import { sileo } from "@/utils/alerts";
-import { CheckCircle2, AlertTriangle, LogIn, UserPlus, ArrowRight, Loader2, Home } from "lucide-react";
+import { SignInButton, SignOutButton, SignUpButton } from "@clerk/nextjs";
+import {
+  AlertTriangle,
+  ArrowRight,
+  CheckCircle2,
+  Home,
+  Loader2,
+  LogIn,
+  UserPlus,
+} from "lucide-react";
+import { useRouter } from "next/navigation";
+import { useState, useTransition } from "react";
 
 interface InviteAcceptClientProps {
   invite: {
@@ -78,7 +86,9 @@ export function InviteAcceptClient({
             Join {project?.name ?? "Project"}
           </h1>
           <p className="text-sm text-slate-500 dark:text-slate-400">
-            You've been invited to collaborate. Please sign in or register with your email address (<span className="font-semibold text-slate-700 dark:text-slate-200">{invite.email}</span>) to accept the invite.
+            You've been invited to collaborate. Please sign in or register with your email address (
+            <span className="font-semibold text-slate-700 dark:text-slate-200">{invite.email}</span>
+            ) to accept the invite.
           </p>
         </div>
 
@@ -112,7 +122,8 @@ export function InviteAcceptClient({
             Invite Link Status
           </h1>
           <p className="text-sm text-slate-500 dark:text-slate-400">
-            This invitation link is no longer active. It has already been <span className="font-bold">{invite.status}</span>.
+            This invitation link is no longer active. It has already been{" "}
+            <span className="font-bold">{invite.status}</span>.
           </p>
         </div>
         <button
@@ -135,15 +146,18 @@ export function InviteAcceptClient({
           <AlertTriangle size={24} />
         </div>
         <div className="space-y-2">
-          <h1 className="text-xl font-extrabold text-[#142843] dark:text-white">
-            Email Mismatch
-          </h1>
+          <h1 className="text-xl font-extrabold text-[#142843] dark:text-white">Email Mismatch</h1>
           <div className="text-sm text-slate-500 dark:text-slate-400 space-y-3">
             <p>
-              This invitation was sent to <span className="font-semibold text-rose-500">{invite.email}</span>.
+              This invitation was sent to{" "}
+              <span className="font-semibold text-rose-500">{invite.email}</span>.
             </p>
             <p>
-              However, you are currently logged in as <span className="font-semibold text-slate-700 dark:text-slate-200">{currentUser.email}</span>.
+              However, you are currently logged in as{" "}
+              <span className="font-semibold text-slate-700 dark:text-slate-200">
+                {currentUser.email}
+              </span>
+              .
             </p>
           </div>
         </div>
@@ -180,7 +194,10 @@ export function InviteAcceptClient({
           Join {project?.name}
         </h1>
         <p className="text-sm text-slate-500 dark:text-slate-400">
-          <span className="font-semibold text-slate-700 dark:text-slate-200">{inviter?.name ?? "A colleague"}</span> ({inviter?.email}) has invited you to collaborate as a project member.
+          <span className="font-semibold text-slate-700 dark:text-slate-200">
+            {inviter?.name ?? "A colleague"}
+          </span>{" "}
+          ({inviter?.email}) has invited you to collaborate as a project member.
         </p>
       </div>
 

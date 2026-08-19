@@ -1,25 +1,22 @@
 "use server";
 
-import { eq, and } from "drizzle-orm";
-import { db } from "@/lib/db";
-import { invites, projects, projectMembers, users } from "@/lib/db/schema";
-import { syncUser } from "@/lib/auth";
-import { sendInviteEmail } from "@/lib/mailer";
-import { revalidatePath } from "next/cache";
 import crypto from "crypto";
+import { createNotification } from "@/actions/notification-actions";
+import { db } from "@/lib/db";
+import { syncUser } from "@/lib/db/auth";
+import { invites, projectMembers, projects, users, workspaceMembers } from "@/lib/db/schema";
+import { sendInviteEmail } from "@/lib/mailer";
+import { and, eq } from "drizzle-orm";
+import { revalidatePath } from "next/cache";
 
 const INVITE_EXPIRY_DAYS = 7;
 
-
-export async function inviteTeamMember(projectId: string, email: string, role: string = "member") {
+export async function inviteTeamMember(projectId: string, email: string, role = "member") {
   try {
     const user = await syncUser();
     if (!user) return { success: false, error: "Unauthorized. Please sign in." };
 
-    const [project] = await db
-      .select()
-      .from(projects)
-      .where(eq(projects.id, projectId));
+    const [project] = await db.select().from(projects).where(eq(projects.id, projectId));
 
     if (!project) {
       return { success: false, error: "Project not found." };
@@ -32,8 +29,8 @@ export async function inviteTeamMember(projectId: string, email: string, role: s
         and(
           eq(invites.projectId, projectId),
           eq(invites.email, email),
-          eq(invites.status, "pending")
-        )
+          eq(invites.status, "pending"),
+        ),
       );
 
     if (existingInvite) {
@@ -74,16 +71,12 @@ export async function inviteTeamMember(projectId: string, email: string, role: s
   }
 }
 
-
 export async function acceptInvite(token: string) {
   try {
     const user = await syncUser();
     if (!user) return { success: false, error: "Unauthorized. Please sign in." };
 
-    const [invite] = await db
-      .select()
-      .from(invites)
-      .where(eq(invites.token, token));
+    const [invite] = await db.select().from(invites).where(eq(invites.token, token));
 
     if (!invite) {
       return { success: false, error: "Invite not found." };
@@ -99,29 +92,70 @@ export async function acceptInvite(token: string) {
       return { success: false, error: "This invite was sent to a different email address." };
     }
 
-    const [existingMember] = await db
-      .select()
-      .from(projectMembers)
-      .where(
-        and(
-          eq(projectMembers.projectId, invite.projectId),
-          eq(projectMembers.userId, user.id)
-        )
-      );
+    await db.transaction(async (tx) => {
+      // 1. Fetch project to get its linked workspaceId
+      const [project] = await tx
+        .select({ workspaceId: projects.workspaceId })
+        .from(projects)
+        .where(eq(projects.id, invite.projectId));
 
-    if (!existingMember) {
-      await db.insert(projectMembers).values({
-        projectId: invite.projectId,
-        userId: user.id,
-        name: user.name,
-        role: invite.role,
+      // 2. Add to project members if not already added
+      const [existingMember] = await tx
+        .select()
+        .from(projectMembers)
+        .where(
+          and(eq(projectMembers.projectId, invite.projectId), eq(projectMembers.userId, user.id)),
+        );
+
+      if (!existingMember) {
+        await tx.insert(projectMembers).values({
+          projectId: invite.projectId,
+          userId: user.id,
+          name: user.name,
+          role: invite.role,
+        });
+      }
+
+      // 3. Auto workspace-membership: ensure user is a workspace member
+      if (project?.workspaceId) {
+        const [existingWsMember] = await tx
+          .select({ id: workspaceMembers.id })
+          .from(workspaceMembers)
+          .where(
+            and(
+              eq(workspaceMembers.workspaceId, project.workspaceId),
+              eq(workspaceMembers.userId, user.id),
+            ),
+          );
+
+        if (!existingWsMember) {
+          await tx.insert(workspaceMembers).values({
+            workspaceId: project.workspaceId,
+            userId: user.id,
+            role: "member",
+          });
+        }
+      }
+
+      // 4. Mark invite as accepted
+      await tx
+        .update(invites)
+        .set({ status: "accepted", acceptedAt: new Date() })
+        .where(eq(invites.id, invite.id));
+    });
+
+    // Notify the person who sent the invite
+    if (invite.invitedBy) {
+      await createNotification({
+        recipientId: invite.invitedBy,
+        actorId: user.id,
+        type: "invite_accepted",
+        title: "Invitation Accepted",
+        message: `${user.name} accepted your invitation to join the project.`,
+        href: `/projects/${invite.projectId}`,
+        metadata: { projectId: invite.projectId },
       });
     }
-
-    await db
-      .update(invites)
-      .set({ status: "accepted", acceptedAt: new Date() })
-      .where(eq(invites.id, invite.id));
 
     revalidatePath(`/projects`);
     revalidatePath(`/team`);
@@ -134,7 +168,6 @@ export async function acceptInvite(token: string) {
   }
 }
 
-
 export interface PendingInvite {
   id: string;
   email: string;
@@ -144,9 +177,7 @@ export interface PendingInvite {
   expiresAt: Date;
 }
 
-export async function getPendingInvitesAction(
-  projectId: string
-): Promise<PendingInvite[]> {
+export async function getPendingInvitesAction(projectId: string): Promise<PendingInvite[]> {
   try {
     const user = await syncUser();
     if (!user) return [];
@@ -154,9 +185,7 @@ export async function getPendingInvitesAction(
     const rows = await db
       .select()
       .from(invites)
-      .where(
-        and(eq(invites.projectId, projectId), eq(invites.status, "pending"))
-      );
+      .where(and(eq(invites.projectId, projectId), eq(invites.status, "pending")));
 
     return rows;
   } catch (error) {
@@ -164,7 +193,6 @@ export async function getPendingInvitesAction(
     return [];
   }
 }
-
 
 export async function cancelInviteAction(inviteId: string, projectId: string) {
   try {
@@ -181,10 +209,7 @@ export async function cancelInviteAction(inviteId: string, projectId: string) {
       return { success: false, error: "Project not found or access denied." };
     }
 
-    await db
-      .update(invites)
-      .set({ status: "revoked" })
-      .where(eq(invites.id, inviteId));
+    await db.update(invites).set({ status: "revoked" }).where(eq(invites.id, inviteId));
 
     revalidatePath(`/team`);
 
@@ -209,10 +234,7 @@ export async function resendInviteAction(inviteId: string, projectId: string) {
       return { success: false, error: "Project not found or access denied." };
     }
 
-    const [invite] = await db
-      .select()
-      .from(invites)
-      .where(eq(invites.id, inviteId));
+    const [invite] = await db.select().from(invites).where(eq(invites.id, inviteId));
 
     if (!invite) {
       return { success: false, error: "Invite not found." };

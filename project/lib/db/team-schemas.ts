@@ -1,16 +1,10 @@
-import { z } from "zod"
-
-export const createTeamSchema = z.object({
-  name: z
-    .string()
-    .min(1, "Team name is required")
-    .min(2, "Team name must be at least 2 characters")
-    .max(60, "Team name must be under 60 characters"),
-  description: z
-    .string()
-    .max(300, "Description must be under 300 characters")
-    .optional()
-    .or(z.literal("")),
-})
-
-export type CreateTeamFormValues = z.infer<typeof createTeamSchema>
+/**
+ * lib/db/team-schemas.ts
+ *
+ * Canonical definitions have moved to lib/validations/workspace.ts
+ * (team schemas are co-located with workspace since teams are a
+ * workspace-scoped resource).
+ * This file is kept as a compatibility shim so existing imports
+ * from "@/lib/db/team-schemas" continue to resolve without change.
+ */
+export * from "@/lib/validations/workspace";

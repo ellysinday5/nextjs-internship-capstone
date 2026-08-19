@@ -1,18 +1,18 @@
-"use client"
+"use client";
 
-import type { TeamMember } from "@/lib/team-data"
+import type { TeamMember } from "@/lib/team-data";
 
 interface PeopleGridProps {
-  members: TeamMember[]
-  selectedId?: string
-  onSelectMember: (member: TeamMember) => void
+  members: TeamMember[];
+  selectedId?: string;
+  onSelectMember: (member: TeamMember) => void;
 }
 
 const STATUS_DOT: Record<TeamMember["status"], string> = {
   Online: "bg-green-500",
   Away: "bg-amber-500",
   Offline: "bg-slate-300",
-}
+};
 
 function initials(name: string) {
   return name
@@ -20,12 +20,12 @@ function initials(name: string) {
     .map((n) => n[0])
     .join("")
     .slice(0, 2)
-    .toUpperCase()
+    .toUpperCase();
 }
 
 export function PeopleGrid({ members, selectedId, onSelectMember }: PeopleGridProps) {
   if (members.length === 0) {
-    return <p className="py-8 text-center text-slate-400">No members found.</p>
+    return <p className="py-8 text-center text-slate-400">No members found.</p>;
   }
 
   return (
@@ -64,5 +64,5 @@ export function PeopleGrid({ members, selectedId, onSelectMember }: PeopleGridPr
         </button>
       ))}
     </div>
-  )
+  );
 }

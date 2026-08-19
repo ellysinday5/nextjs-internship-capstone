@@ -1,18 +1,27 @@
 "use server";
 
-import { revalidatePath } from "next/cache";
-import { eq, and, asc, inArray, sql } from "drizzle-orm";
+import { createNotification } from "@/actions/notification-actions";
 import { db } from "@/lib/db";
-import { tasks, lists, projects, users, comments } from "@/lib/db/schema";
-import { syncUser } from "@/lib/auth";
+import { syncUser } from "@/lib/db/auth";
 import {
+  comments,
+  lists,
+  projectMembers,
+  projects,
+  tasks,
+  users,
+  workspaces,
+} from "@/lib/db/schema";
+import {
+  type CreateTaskFormValues,
+  type MoveTaskFormValues,
+  type UpdateTaskFormValues,
   createTaskSchema,
-  updateTaskSchema,
   moveTaskSchema,
-  CreateTaskFormValues,
-  UpdateTaskFormValues,
-  MoveTaskFormValues,
-} from "@/lib/task-schemas";
+  updateTaskSchema,
+} from "@/lib/db/task-schemas";
+import { and, asc, eq, inArray, sql } from "drizzle-orm";
+import { revalidatePath } from "next/cache";
 
 export interface TaskAssignee {
   id: string;
@@ -37,16 +46,38 @@ export interface TaskRecord {
 }
 
 async function getProjectIdForList(listId: string): Promise<string | null> {
-  const [list] = await db.select({ projectId: lists.projectId }).from(lists).where(eq(lists.id, listId));
+  const [list] = await db
+    .select({ projectId: lists.projectId })
+    .from(lists)
+    .where(eq(lists.id, listId));
   return list?.projectId ?? null;
 }
 
-async function assertProjectOwnership(projectId: string, userId: string) {
+async function assertProjectAccess(projectId: string, userId: string): Promise<boolean> {
   const [project] = await db
-    .select({ id: projects.id })
+    .select({ id: projects.id, ownerId: projects.ownerId, workspaceId: projects.workspaceId })
     .from(projects)
-    .where(and(eq(projects.id, projectId), eq(projects.ownerId, userId)));
-  return !!project;
+    .where(eq(projects.id, projectId));
+
+  if (!project) return false;
+  if (project.ownerId === userId) return true;
+
+  const [member] = await db
+    .select({ id: projectMembers.id })
+    .from(projectMembers)
+    .where(and(eq(projectMembers.projectId, projectId), eq(projectMembers.userId, userId)));
+
+  if (member) return true;
+
+  if (project.workspaceId) {
+    const [ws] = await db
+      .select({ id: workspaces.id })
+      .from(workspaces)
+      .where(and(eq(workspaces.id, project.workspaceId), eq(workspaces.ownerId, userId)));
+    if (ws) return true;
+  }
+
+  return false;
 }
 
 /* Get all tasks for a project — joined with assignee + comment counts */
@@ -55,10 +86,13 @@ export async function getProjectTasksAction(projectId: string): Promise<TaskReco
     const user = await syncUser();
     if (!user) return [];
 
-    const ownsProject = await assertProjectOwnership(projectId, user.id);
-    if (!ownsProject) return [];
+    const hasAccess = await assertProjectAccess(projectId, user.id);
+    if (!hasAccess) return [];
 
-    const projectLists = await db.select({ id: lists.id }).from(lists).where(eq(lists.projectId, projectId));
+    const projectLists = await db
+      .select({ id: lists.id })
+      .from(lists)
+      .where(eq(lists.projectId, projectId));
     if (projectLists.length === 0) return [];
 
     const listIds = projectLists.map((l) => l.id);
@@ -127,8 +161,8 @@ export async function createTaskAction(data: CreateTaskFormValues) {
     const projectId = await getProjectIdForList(listId);
     if (!projectId) return { success: false, error: "List not found." };
 
-    const ownsProject = await assertProjectOwnership(projectId, user.id);
-    if (!ownsProject) return { success: false, error: "Access denied." };
+    const hasAccess = await assertProjectAccess(projectId, user.id);
+    if (!hasAccess) return { success: false, error: "Access denied." };
 
     const [{ maxPosition }] = await db
       .select({ maxPosition: sql<number>`coalesce(max(${tasks.position}), -1)::int` })
@@ -148,6 +182,18 @@ export async function createTaskAction(data: CreateTaskFormValues) {
         position: maxPosition + 1,
       })
       .returning();
+
+    if (assigneeId && assigneeId !== user.id) {
+      await createNotification({
+        recipientId: assigneeId,
+        actorId: user.id,
+        type: "task_assigned",
+        title: "Task Assigned",
+        message: `${user.name} assigned you to "${title}".`,
+        href: `/projects/${projectId}`,
+        metadata: { taskId: newTask.id, projectId },
+      });
+    }
 
     revalidatePath(`/projects/${projectId}`);
     return { success: true, task: newTask };
@@ -170,14 +216,17 @@ export async function updateTaskAction(data: UpdateTaskFormValues) {
 
     const { id, dueDate, ...rest } = validated.data;
 
-    const [existing] = await db.select({ listId: tasks.listId }).from(tasks).where(eq(tasks.id, id));
+    const [existing] = await db
+      .select({ listId: tasks.listId })
+      .from(tasks)
+      .where(eq(tasks.id, id));
     if (!existing) return { success: false, error: "Task not found." };
 
     const projectId = await getProjectIdForList(existing.listId);
     if (!projectId) return { success: false, error: "Project not found." };
 
-    const ownsProject = await assertProjectOwnership(projectId, user.id);
-    if (!ownsProject) return { success: false, error: "Access denied." };
+    const hasAccess = await assertProjectAccess(projectId, user.id);
+    if (!hasAccess) return { success: false, error: "Access denied." };
 
     const [updatedTask] = await db
       .update(tasks)
@@ -219,8 +268,8 @@ export async function moveTaskAction(data: MoveTaskFormValues) {
     const destProjectId = await getProjectIdForList(toListId);
     if (!destProjectId) return { success: false, error: "Destination list not found." };
 
-    const ownsProject = await assertProjectOwnership(destProjectId, user.id);
-    if (!ownsProject) return { success: false, error: "Access denied." };
+    const hasAccess = await assertProjectAccess(destProjectId, user.id);
+    if (!hasAccess) return { success: false, error: "Access denied." };
 
     await db.transaction(async (tx) => {
       const fromListId = task.listId;
@@ -264,8 +313,8 @@ export async function deleteTaskAction(taskId: string) {
     const projectId = await getProjectIdForList(task.listId);
     if (!projectId) return { success: false, error: "Project not found." };
 
-    const ownsProject = await assertProjectOwnership(projectId, user.id);
-    if (!ownsProject) return { success: false, error: "Access denied." };
+    const hasAccess = await assertProjectAccess(projectId, user.id);
+    if (!hasAccess) return { success: false, error: "Access denied." };
 
     await db.delete(tasks).where(eq(tasks.id, taskId));
 

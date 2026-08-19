@@ -1,10 +1,11 @@
 "use client";
 
-import React, { useState } from "react";
-import { Bell, Menu, Search } from "lucide-react";
 import { UserMenu } from "@/components/auth/user-menu";
-import { ThemeToggle } from "@/components/ui/theme-toggle";
 import { HeaderSearchModal } from "@/components/layout/header-search-modal";
+import { NotificationBell } from "@/components/notifications/notification-bell";
+import { ThemeToggle } from "@/components/ui/theme-toggle";
+import { Menu, Search } from "lucide-react";
+import React, { useState } from "react";
 
 interface HeaderProps {
   onMenuClick?: () => void;
@@ -63,17 +64,13 @@ export function Header({ onMenuClick, pageTitle = "Dashboard" }: HeaderProps) {
               >
                 <Search size={15} className="shrink-0" />
                 <span className="hidden sm:inline flex-1 text-left">Search anything...</span>
-                <span className="hidden sm:inline text-white/30 text-[10px] font-mono ml-auto">⌘K</span>
+                <span className="hidden sm:inline text-white/30 text-[10px] font-mono ml-auto">
+                  ⌘K
+                </span>
               </button>
 
               {/* Notification bell */}
-              <button
-                aria-label="Notifications"
-                className="p-2 text-white/80 hover:text-white rounded-full hover:bg-white/15 hover:shadow-[0_0_12px_2px_rgba(255,255,255,0.12)] transition-all duration-200 relative"
-                suppressHydrationWarning
-              >
-                <Bell size={20} />
-              </button>
+              <NotificationBell />
 
               {/* Theme toggle — icon only, no box */}
               <ThemeToggle />

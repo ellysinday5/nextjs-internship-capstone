@@ -1,24 +1,25 @@
 "use client";
 
-import React, { useState } from "react";
-import { useRouter } from "next/navigation";
+import { Modal } from "@/components/modals/BaseModal";
+import { BackButton } from "@/components/ui/back-button";
+import { PROJECT_ICON_LIST } from "@/lib/project-meta";
+import { sileo } from "@/utils/alerts";
 import {
-  ChevronDown,
-  Star,
-  Share2,
   Check,
-  ListTodo,
+  ChevronDown,
   Circle,
   Copy,
-  Pencil,
+  ListTodo,
   MessageSquare,
+  Pencil,
+  Share2,
+  Star,
   User,
 } from "lucide-react";
-import { sileo } from "@/utils/alerts";
-import { Modal } from "@/components/modals/BaseModal";
-import { ProjectStatusType, STATUS_OPTIONS, COLOR_SWATCHES } from "./types";
-import { PROJECT_ICON_LIST } from "@/lib/project-meta";
-import { BackButton } from "@/components/ui/back-button";
+import { useRouter } from "next/navigation";
+import type React from "react";
+import { useState } from "react";
+import { COLOR_SWATCHES, type ProjectStatusType, STATUS_OPTIONS } from "./types";
 
 const iconList = PROJECT_ICON_LIST;
 
@@ -78,8 +79,7 @@ function MemberAvatarPopoverItem({
   const [isHovered, setIsHovered] = useState(false);
   const initials = getInitials(member.name);
   const email =
-    member.email ||
-    `${member.name.toLowerCase().replace(/[^a-z0-9]/g, ".")}@company.com`;
+    member.email || `${member.name.toLowerCase().replace(/[^a-z0-9]/g, ".")}@company.com`;
 
   return (
     <div
@@ -105,9 +105,7 @@ function MemberAvatarPopoverItem({
               <p className="text-xs font-bold text-slate-900 dark:text-white truncate">
                 {member.name}
               </p>
-              <p className="text-[11px] text-slate-500 dark:text-slate-400 truncate">
-                {email}
-              </p>
+              <p className="text-[11px] text-slate-500 dark:text-slate-400 truncate">{email}</p>
               <span className="inline-block mt-0.5 px-2 py-0.5 text-[10px] font-bold rounded-md bg-blue-50 text-blue-600 dark:bg-blue-950/40 dark:text-blue-400">
                 {member.role}
               </span>
@@ -263,7 +261,10 @@ export function ProjectHeader({
                 onBlur={handleTitleSubmit}
                 onKeyDown={(e) => {
                   if (e.key === "Enter") handleTitleSubmit();
-                  if (e.key === "Escape") { setTitleInput(projectTitle); setIsEditingTitle(false); }
+                  if (e.key === "Escape") {
+                    setTitleInput(projectTitle);
+                    setIsEditingTitle(false);
+                  }
                 }}
                 className="text-xl font-bold bg-slate-100 dark:bg-slate-800 border-b-2 border-blue-500 px-2 py-0.5 rounded outline-none text-slate-900 dark:text-white"
                 autoFocus
@@ -277,10 +278,11 @@ export function ProjectHeader({
                 className="group flex items-center gap-1.5 cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-800 px-2 py-1 rounded-lg transition-colors"
                 title="Click to edit project title"
               >
-                <h1 className="text-xl font-bold text-slate-900 dark:text-white">
-                  {projectTitle}
-                </h1>
-                <Pencil size={13} className="text-slate-400 opacity-0 group-hover:opacity-100 transition-opacity" />
+                <h1 className="text-xl font-bold text-slate-900 dark:text-white">{projectTitle}</h1>
+                <Pencil
+                  size={13}
+                  className="text-slate-400 opacity-0 group-hover:opacity-100 transition-opacity"
+                />
               </div>
             )}
 
@@ -289,10 +291,7 @@ export function ProjectHeader({
               className="p-1.5 rounded-lg text-slate-400 hover:text-amber-400 transition-colors"
               title={isFavorite ? "Remove from favorites" : "Add to favorites"}
             >
-              <Star
-                size={18}
-                className={isFavorite ? "fill-amber-400 text-amber-400" : ""}
-              />
+              <Star size={18} className={isFavorite ? "fill-amber-400 text-amber-400" : ""} />
             </button>
 
             <div className="relative">

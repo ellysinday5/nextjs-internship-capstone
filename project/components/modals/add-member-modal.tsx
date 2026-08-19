@@ -1,11 +1,12 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
-import { UserPlus, Shield, Users, Mail, FolderKanban } from "lucide-react";
-import { sileo } from "@/utils/alerts";
+import { inviteTeamMember } from "@/actions/invite-member";
 import { Modal } from "@/components/modals/BaseModal";
 import { ConfirmationModal } from "@/components/modals/ConfirmationModal";
-import { inviteTeamMember } from "@/actions/invite-actions";
+import { sileo } from "@/utils/alerts";
+import { FolderKanban, Mail, Shield, UserPlus, Users } from "lucide-react";
+import type React from "react";
+import { useEffect, useState } from "react";
 
 interface ProjectOption {
   id: string;
@@ -23,8 +24,7 @@ const ROLE_OPTIONS = [
   {
     value: "Project Manager",
     label: "Project Manager",
-    description:
-      "Full access — can add/remove members, manage tasks, and configure the project",
+    description: "Full access — can add/remove members, manage tasks, and configure the project",
     Icon: Shield,
     color: "text-blue-600 dark:text-blue-400",
     bg: "bg-blue-50 dark:bg-blue-950/40",
@@ -111,7 +111,7 @@ export function AddMemberModal({
     if (res.success) {
       sileo.success(
         `Invitation sent to ${trimmedEmail} as ${role}. They'll appear in the team list once they accept.`,
-        "Invitation Sent"
+        "Invitation Sent",
       );
       onSuccess?.();
       resetAndClose();
@@ -158,7 +158,6 @@ export function AddMemberModal({
         )}
 
         <form id="add-member-form" onSubmit={handleSubmit} className="space-y-5" noValidate>
-
           {/* Email Address */}
           <div>
             <label className="mb-1.5 flex items-center justify-between text-sm font-medium text-slate-700 dark:text-slate-200">
@@ -182,9 +181,7 @@ export function AddMemberModal({
                   : "border-slate-200 focus:border-[#0033a0] dark:border-slate-700"
               }`}
             />
-            {emailError && (
-              <p className="mt-1 text-xs font-semibold text-red-500">{emailError}</p>
-            )}
+            {emailError && <p className="mt-1 text-xs font-semibold text-red-500">{emailError}</p>}
           </div>
 
           {/* Role selection */}
@@ -211,17 +208,12 @@ export function AddMemberModal({
                         isSelected ? opt.bg : "bg-slate-100 dark:bg-slate-800"
                       }`}
                     >
-                      <opt.Icon
-                        size={15}
-                        className={isSelected ? opt.color : "text-slate-400"}
-                      />
+                      <opt.Icon size={15} className={isSelected ? opt.color : "text-slate-400"} />
                     </div>
                     <div className="min-w-0">
                       <div
                         className={`text-sm font-bold ${
-                          isSelected
-                            ? opt.color
-                            : "text-slate-800 dark:text-slate-100"
+                          isSelected ? opt.color : "text-slate-800 dark:text-slate-100"
                         }`}
                       >
                         {opt.label}
@@ -235,10 +227,7 @@ export function AddMemberModal({
                         className={`ml-auto mt-0.5 h-4 w-4 shrink-0 rounded-full flex items-center justify-center ${opt.bg} ${opt.border} border`}
                       >
                         <div
-                          className={`h-2 w-2 rounded-full ${opt.color.replace(
-                            "text-",
-                            "bg-"
-                          )}`}
+                          className={`h-2 w-2 rounded-full ${opt.color.replace("text-", "bg-")}`}
                         />
                       </div>
                     )}

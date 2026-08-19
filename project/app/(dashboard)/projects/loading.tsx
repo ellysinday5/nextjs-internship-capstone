@@ -1,4 +1,4 @@
-import React from "react";
+import type React from "react";
 
 function Bone({ className = "", style }: { className?: string; style?: React.CSSProperties }) {
   return (
@@ -55,7 +55,6 @@ export default function ProjectsLoading() {
   return (
     <div className="overflow-y-auto h-full p-4 sm:p-6 lg:p-8 bg-[#f0f4f8] dark:bg-[#0b1728]">
       <div className="relative min-h-0 space-y-6">
-
         {/* ── Page Header ── */}
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
           <div className="space-y-2.5">
@@ -65,7 +64,6 @@ export default function ProjectsLoading() {
         </div>
 
         <div className="space-y-5">
-
           {/* ── Filter bar + New Project button ── */}
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
             <div className="flex flex-wrap items-center gap-2.5">
@@ -91,7 +89,6 @@ export default function ProjectsLoading() {
               <CardSkeleton key={i} />
             ))}
           </div>
-
         </div>
       </div>
     </div>

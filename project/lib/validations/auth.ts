@@ -46,3 +46,13 @@ export const signUpSchema = z
   });
 
 export type SignUpFormValues = z.infer<typeof signUpSchema>;
+
+/* ─────────────────────────────────────────────────────────────
+   User Profile Update Schema
+───────────────────────────────────────────────────────────── */
+export const updateProfileSchema = z.object({
+  name: z.string().min(1, "Name is required").max(100, "Name must be under 100 characters"),
+  email: z.string().min(1, "Email address is required").email("Please enter a valid email address"),
+});
+
+export type UpdateProfileFormValues = z.infer<typeof updateProfileSchema>;

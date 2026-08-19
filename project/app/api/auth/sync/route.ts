@@ -1,5 +1,5 @@
+import { syncUser } from "@/lib/db/auth";
 import { NextResponse } from "next/server";
-import { syncUser } from "@/lib/auth";
 
 export async function GET() {
   try {
