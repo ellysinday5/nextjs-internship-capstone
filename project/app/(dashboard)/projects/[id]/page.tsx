@@ -1,37 +1,33 @@
 "use client";
 
-import React, { use, useState, useRef, useEffect, useMemo, useCallback } from "react";
-import { TaskDetailsPane, TaskItem } from "@/components/tasks/task-details";
+import { type ProjectMember, getProjectMembersAction } from "@/actions/member-actions";
+import { getProjectBySlugAction, updateProjectAction } from "@/actions/project-actions";
+import type { TaskRecord } from "@/actions/task-actions";
+import { AddMemberModal } from "@/components/modals/add-member-modal";
+import { CreateTaskModal } from "@/components/modals/create-task-modal";
+import { CalendarTab } from "@/components/projects/details/calendar-tab";
+import { DashboardTab } from "@/components/projects/details/dashboard-tab";
+import { ListTab } from "@/components/projects/details/list-tab";
+import { OverviewTab } from "@/components/projects/details/overview-tab";
 import { ProjectHeader } from "@/components/projects/details/project-header";
 import { ProjectTabs } from "@/components/projects/details/project-tabs";
 import { ProjectToolbar } from "@/components/projects/details/project-toolbar";
-import { KanbanBoard } from "@/components/tasks/kanban-board";
-import type { TaskRecord } from "@/actions/task-actions";
 import { TimelineTab } from "@/components/projects/details/timeline-tab";
-import { DashboardTab } from "@/components/projects/details/dashboard-tab";
-import { CalendarTab } from "@/components/projects/details/calendar-tab";
-import { ProjectStatusType } from "@/components/projects/details/types";
+import type { ProjectStatusType } from "@/components/projects/details/types";
+import { KanbanBoard } from "@/components/tasks/kanban-board";
+import { TaskDetailsPane, type TaskItem } from "@/components/tasks/task-details";
 import { useProjectTitle } from "@/context/project-title-context";
-import { useBoardStore } from "@/stores/board-store";
-import { buildSectionsFromBoard } from "@/lib/board-to-sections";
-import {
-  ProjectDetailSkeleton,
-  OverviewTabSkeleton,
-  ListTabSkeleton,
-  TimelineTabSkeleton,
-  DashboardTabSkeleton,
-} from "@/components/projects/details/skeleton-loading";
-import { getProjectBySlugAction, updateProjectAction } from "@/actions/project-actions";
-import { getProjectMembersAction, type ProjectMember } from "@/actions/member-actions";
-import { AddMemberModal } from "@/components/modals/add-member-modal";
-import { CreateTaskModal } from "@/components/modals/create-task-modal";
-import { loadProjectMeta, saveProjectMeta } from "@/lib/project-meta";
 import { useTaskFilters } from "@/hooks/use-task-filters";
-import { OverviewTab } from "@/components/projects/details/overview-tab";
-import { ListTab } from "@/components/projects/details/list-tab";
+import { buildSectionsFromBoard } from "@/lib/board-to-sections";
+import { loadProjectMeta, saveProjectMeta } from "@/lib/project-meta";
+import { useBoardStore } from "@/stores/board-store";
+import React, { use, useState, useEffect, useMemo, useCallback } from "react";
 
 function slugToTitle(slug: string): string {
-  return slug.split("-").map((w) => w.charAt(0).toUpperCase() + w.slice(1)).join(" ");
+  return slug
+    .split("-")
+    .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+    .join(" ");
 }
 
 export default function ProjectPage({ params }: { params: Promise<{ id: string }> }) {
@@ -56,10 +52,34 @@ export default function ProjectPage({ params }: { params: Promise<{ id: string }
   const [ownerName, setOwnerName] = useState("");
   const [categories, setCategories] = useState<string[]>([]);
   const [techStack, setTechStack] = useState<string[]>([]);
+  const [projectColor, setProjectColor] = useState("#3b82f6");
+  const [selectedIconIndex, setSelectedIconIndex] = useState(0);
+  const [isFavorite, setIsFavorite] = useState(false);
+  const [status, setStatus] = useState<ProjectStatusType>("On track");
+  const [members, setMembers] = useState<ProjectMember[]>([]);
 
+  const { lists, tasks, loadProject, createTask, updateTask, deleteTask, createList } =
+    useBoardStore();
+
+  const fetchMembers = useCallback(async (pId: string) => {
+    if (!pId) return;
+    const m = await getProjectMembersAction(pId);
+    setMembers(m);
+  }, []);
+
+  // Parallel, high-speed initial resolution
   useEffect(() => {
+    let isMounted = true;
+    setIsResolvingProject(true);
+
     getProjectBySlugAction(slug).then((project) => {
-      if (!project) { setResolveError("Project not found."); setIsResolvingProject(false); return; }
+      if (!isMounted) return;
+      if (!project) {
+        setResolveError("Project not found.");
+        setIsResolvingProject(false);
+        return;
+      }
+
       setResolvedProjectId(project.id);
       setProjectTitle(project.name);
       setProjectDescription(project.description || "");
@@ -68,45 +88,57 @@ export default function ProjectPage({ params }: { params: Promise<{ id: string }
       setCategories(project.categories || []);
       setTechStack(project.techStack || []);
       if (project.status) setStatus(project.status as ProjectStatusType);
+
       const saved = loadProjectMeta(project.id);
-      if (saved) { setProjectColor(saved.color); setSelectedIconIndex(saved.iconIndex); setIsFavorite(saved.isFavorite); }
+      if (saved) {
+        setProjectColor(saved.color);
+        setSelectedIconIndex(saved.iconIndex);
+        setIsFavorite(saved.isFavorite);
+      }
+
       setIsResolvingProject(false);
+
+      // Immediately fetch board tasks/lists and members in parallel
+      loadProject(project.id);
+      fetchMembers(project.id);
     });
-  }, [slug]);
 
-  const { lists, tasks, isLoading, loadProject, createTask, updateTask, deleteTask, createList } = useBoardStore();
-
-  useEffect(() => { if (resolvedProjectId) loadProject(resolvedProjectId); }, [resolvedProjectId, loadProject]);
+    return () => {
+      isMounted = false;
+    };
+  }, [slug, loadProject, fetchMembers]);
 
   const sections = useMemo(() => buildSectionsFromBoard(lists, tasks), [lists, tasks]);
 
-  const [members, setMembers] = useState<ProjectMember[]>([]);
-  const fetchMembers = useCallback(async () => {
-    if (!resolvedProjectId) return;
-    setMembers(await getProjectMembersAction(resolvedProjectId));
-  }, [resolvedProjectId]);
-  useEffect(() => { fetchMembers(); }, [fetchMembers]);
-
-  const [availableTabs, setAvailableTabs] = useState(["Overview", "List", "Board", "Timeline", "Dashboard"]);
+  const [availableTabs, setAvailableTabs] = useState([
+    "Overview",
+    "List",
+    "Board",
+    "Timeline",
+    "Dashboard",
+  ]);
   const [activeTab, setActiveTab] = useState("Overview");
   const [selectedTask, setSelectedTask] = useState<TaskItem | null>(null);
 
   const {
-    searchQuery, setSearchQuery,
-    selectedPriorityFilter, setSelectedPriorityFilter,
-    selectedStatusFilter, setSelectedStatusFilter,
-    sortBy, setSortBy,
+    searchQuery,
+    setSearchQuery,
+    selectedPriorityFilter,
+    setSelectedPriorityFilter,
+    selectedStatusFilter,
+    setSelectedStatusFilter,
+    sortBy,
+    setSortBy,
     filteredSections,
   } = useTaskFilters(resolvedProjectId, sections);
 
-  const [projectColor, setProjectColor] = useState("#3b82f6");
-  const [selectedIconIndex, setSelectedIconIndex] = useState(0);
-  const [isFavorite, setIsFavorite] = useState(false);
-  const [status, setStatus] = useState<ProjectStatusType>("On track");
-
   useEffect(() => {
     if (!resolvedProjectId) return;
-    saveProjectMeta(resolvedProjectId, { color: projectColor, iconIndex: selectedIconIndex, isFavorite });
+    saveProjectMeta(resolvedProjectId, {
+      color: projectColor,
+      iconIndex: selectedIconIndex,
+      isFavorite,
+    });
   }, [resolvedProjectId, projectColor, selectedIconIndex, isFavorite]);
 
   const [inlineAddingSectionId, setInlineAddingSectionId] = useState<string | null>(null);
@@ -122,120 +154,191 @@ export default function ProjectPage({ params }: { params: Promise<{ id: string }
   };
 
   async function handleSaveInlineTask(listId: string) {
-    if (!newTaskTitle.trim()) { setInlineAddingSectionId(null); return; }
+    if (!newTaskTitle.trim()) {
+      setInlineAddingSectionId(null);
+      return;
+    }
     await createTask(listId, { title: newTaskTitle.trim(), listId });
     setNewTaskTitle("");
     setInlineAddingSectionId(null);
   }
 
   async function handleUpdateTask(updatedTask: TaskItem) {
-  const VALID_STATUSES = ["On track", "At risk", "Off track", "On hold", "Complete", "Dropped"] as const;
-  type ValidStatus = typeof VALID_STATUSES[number];
-  const safeStatus = VALID_STATUSES.includes(updatedTask.status as ValidStatus)
-    ? (updatedTask.status as ValidStatus)
-    : undefined;
+    const VALID_STATUSES = [
+      "On track",
+      "At risk",
+      "Off track",
+      "On hold",
+      "Complete",
+      "Dropped",
+    ] as const;
+    type ValidStatus = (typeof VALID_STATUSES)[number];
+    const safeStatus = VALID_STATUSES.includes(updatedTask.status as ValidStatus)
+      ? (updatedTask.status as ValidStatus)
+      : undefined;
 
-  await updateTask(updatedTask.id, {
-    title: updatedTask.title,
-    description: updatedTask.description ?? null,
-    priority: updatedTask.priority,
-    status: safeStatus,
-    assigneeId: updatedTask.assignee?.id || null,
-    dueDate: updatedTask.dueDateISO || null,
-  });
+    await updateTask(updatedTask.id, {
+      title: updatedTask.title,
+      description: updatedTask.description ?? null,
+      priority: updatedTask.priority,
+      status: safeStatus,
+      assigneeId: updatedTask.assignee?.id || null,
+      dueDate: updatedTask.dueDateISO || null,
+    });
 
-  const freshRecord = useBoardStore.getState().tasks.find((t) => t.id === updatedTask.id);
-  setSelectedTask(freshRecord ? taskRecordToItem(freshRecord) : updatedTask);
-}
+    const freshRecord = useBoardStore.getState().tasks.find((t) => t.id === updatedTask.id);
+    setSelectedTask(freshRecord ? taskRecordToItem(freshRecord) : updatedTask);
+  }
 
-  async function handleDeleteTask(taskId: string) { await deleteTask(taskId); }
+  async function handleDeleteTask(taskId: string) {
+    await deleteTask(taskId);
+  }
 
   function taskRecordToItem(task: TaskRecord): TaskItem {
-  const getInitials = (name: string) => name.split(" ").map((p) => p[0]).slice(0, 2).join("").toUpperCase();
-  const listName = lists.find((l) => l.id === task.listId)?.name ?? task.listId;
-  const dueDateISO = task.dueDate ? new Date(task.dueDate).toISOString().slice(0, 10) : undefined;
+    const getInitials = (name: string) =>
+      name
+        .split(" ")
+        .map((p) => p[0])
+        .slice(0, 2)
+        .join("")
+        .toUpperCase();
+    const listName = lists.find((l) => l.id === task.listId)?.name ?? task.listId;
+    const dueDateISO = task.dueDate ? new Date(task.dueDate).toISOString().slice(0, 10) : undefined;
 
-  return {
-    id: task.id,
-    title: task.title,
-    description: task.description ?? undefined,
-    assignee: task.assignee
-      ? { id: task.assigneeId ?? "", name: task.assignee.name, initials: getInitials(task.assignee.name) }
-      : undefined,
-    dueDate: task.dueDate
-      ? new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric" }).format(new Date(task.dueDate))
-      : undefined,
-    dueDateISO,
-    priority: (task.priority as TaskItem["priority"]) ?? undefined,
-    status: (task.status as TaskItem["status"]) ?? undefined,
-    subtasks: [],
-    sectionId: listName,
-  };
-}
+    return {
+      id: task.id,
+      title: task.title,
+      description: task.description ?? undefined,
+      assignee: task.assignee
+        ? {
+            id: task.assigneeId ?? "",
+            name: task.assignee.name,
+            initials: getInitials(task.assignee.name),
+          }
+        : undefined,
+      dueDate: task.dueDate
+        ? new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric" }).format(
+            new Date(task.dueDate),
+          )
+        : undefined,
+      dueDateISO,
+      priority: (task.priority as TaskItem["priority"]) ?? undefined,
+      status: (task.status as TaskItem["status"]) ?? undefined,
+      subtasks: [],
+      sectionId: listName,
+    };
+  }
 
   const handleSaveDescription = async (newDesc: string) => {
     setProjectDescription(newDesc);
     if (!resolvedProjectId) return;
-    const schemaStatus = (status === "Complete" || status === "Dropped") ? "Completed" : status === "On hold" ? "On Hold" : "In Progress";
-    await updateProjectAction({ id: resolvedProjectId, name: projectTitle, description: newDesc, status: schemaStatus as "Not Started" | "In Progress" | "Completed" | "On Hold", priority: "Medium", categories, techStack, members: members.map((m) => ({ name: m.name, role: m.role })) });
+    const schemaStatus =
+      status === "Complete" || status === "Dropped"
+        ? "Completed"
+        : status === "On hold"
+          ? "On Hold"
+          : "In Progress";
+    await updateProjectAction({
+      id: resolvedProjectId,
+      name: projectTitle,
+      description: newDesc,
+      status: schemaStatus as "Not Started" | "In Progress" | "Completed" | "On Hold",
+      priority: "Medium",
+      categories,
+      techStack,
+      members: members.map((m) => ({ name: m.name, role: m.role })),
+    });
   };
 
   const handleSaveTitle = async (newTitle: string) => {
-  if (!resolvedProjectId) return;
-  const schemaStatus = (status === "Complete" || status === "Dropped") ? "Completed" : status === "On hold" ? "On Hold" : "In Progress";
-  await updateProjectAction({
-    id: resolvedProjectId,
-    name: newTitle,
-    description: projectDescription,
-    status: schemaStatus as "Not Started" | "In Progress" | "Completed" | "On Hold",
-    priority: "Medium",
-    categories,
-    techStack,
-    members: members.map((m) => ({ name: m.name, role: m.role })),
-  });
-};
+    if (!resolvedProjectId) return;
+    const schemaStatus =
+      status === "Complete" || status === "Dropped"
+        ? "Completed"
+        : status === "On hold"
+          ? "On Hold"
+          : "In Progress";
+    await updateProjectAction({
+      id: resolvedProjectId,
+      name: newTitle,
+      description: projectDescription,
+      status: schemaStatus as "Not Started" | "In Progress" | "Completed" | "On Hold",
+      priority: "Medium",
+      categories,
+      techStack,
+      members: members.map((m) => ({ name: m.name, role: m.role })),
+    });
+  };
 
-const handleSaveStatus = async (newStatus: ProjectStatusType) => {
-  if (!resolvedProjectId) return;
-  const schemaStatus = (newStatus === "Complete" || newStatus === "Dropped") ? "Completed" : newStatus === "On hold" ? "On Hold" : "In Progress";
-  await updateProjectAction({
-    id: resolvedProjectId,
-    name: projectTitle,
-    description: projectDescription,
-    status: schemaStatus as "Not Started" | "In Progress" | "Completed" | "On Hold",
-    priority: "Medium",
-    categories,
-    techStack,
-    members: members.map((m) => ({ name: m.name, role: m.role })),
-  });
-};
+  const handleSaveStatus = async (newStatus: ProjectStatusType) => {
+    if (!resolvedProjectId) return;
+    const schemaStatus =
+      newStatus === "Complete" || newStatus === "Dropped"
+        ? "Completed"
+        : newStatus === "On hold"
+          ? "On Hold"
+          : "In Progress";
+    await updateProjectAction({
+      id: resolvedProjectId,
+      name: projectTitle,
+      description: projectDescription,
+      status: schemaStatus as "Not Started" | "In Progress" | "Completed" | "On Hold",
+      priority: "Medium",
+      categories,
+      techStack,
+      members: members.map((m) => ({ name: m.name, role: m.role })),
+    });
+  };
 
-  if (resolveError) return <div className="flex h-full items-center justify-center text-sm text-red-500">{resolveError}</div>;
-  if (isResolvingProject || !resolvedProjectId) return <ProjectDetailSkeleton />;
+  if (resolveError) {
+    return (
+      <div className="flex h-full items-center justify-center text-sm text-red-500 font-medium">
+        {resolveError}
+      </div>
+    );
+  }
 
   return (
-    <div className="flex h-full bg-white dark:bg-[#0f1d31] text-slate-800 dark:text-slate-100 overflow-hidden font-sans">
+    <div className="flex h-full bg-white dark:bg-[#0f1d31] text-slate-800 dark:text-slate-100 overflow-hidden font-sans relative">
+      {/* Top subtle progress bar during background loading */}
+      {isResolvingProject && (
+        <div className="absolute top-0 left-0 right-0 z-50 h-0.5 bg-blue-100 dark:bg-slate-800 overflow-hidden">
+          <div className="h-full bg-gradient-to-r from-blue-500 via-indigo-500 to-sky-400 animate-pulse w-full" />
+        </div>
+      )}
+
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
-       <ProjectHeader
-          projectTitle={projectTitle} setProjectTitle={setProjectTitle}
+        <ProjectHeader
+          projectTitle={projectTitle}
+          setProjectTitle={setProjectTitle}
           onTitleSave={handleSaveTitle}
-          projectColor={projectColor} setProjectColor={setProjectColor}
-          selectedIconIndex={selectedIconIndex} setSelectedIconIndex={setSelectedIconIndex}
-          isFavorite={isFavorite} setIsFavorite={setIsFavorite}
-          status={status} setStatus={setStatus}
+          projectColor={projectColor}
+          setProjectColor={setProjectColor}
+          selectedIconIndex={selectedIconIndex}
+          setSelectedIconIndex={setSelectedIconIndex}
+          isFavorite={isFavorite}
+          setIsFavorite={setIsFavorite}
+          status={status}
+          setStatus={setStatus}
           onStatusSave={handleSaveStatus}
-          members={members} onAddMember={() => setIsAddMemberOpen(true)}
+          members={members}
+          onAddMember={() => setIsAddMemberOpen(true)}
         />
 
         <ProjectTabs
-          activeTab={activeTab} setActiveTab={setActiveTab}
+          activeTab={activeTab}
+          setActiveTab={setActiveTab}
           availableTabs={availableTabs}
-          onAddTab={(tabName) => { if (!availableTabs.includes(tabName)) setAvailableTabs((prev) => [...prev, tabName]); setActiveTab(tabName); }}
+          onAddTab={(tabName) => {
+            if (!availableTabs.includes(tabName)) {
+              setAvailableTabs((prev) => [...prev, tabName]);
+            }
+            setActiveTab(tabName);
+          }}
         />
 
         <div className="flex-1 overflow-auto flex flex-col">
           {activeTab === "Overview" ? (
-            isLoading ? <OverviewTabSkeleton noShell={true} /> :
             <OverviewTab
               projectDescription={projectDescription}
               tempDescription={tempDescription}
@@ -243,7 +346,11 @@ const handleSaveStatus = async (newStatus: ProjectStatusType) => {
               isEditingDescription={isEditingDescription}
               setIsEditingDescription={setIsEditingDescription}
               isSavingDescription={isSavingDescription}
-              onSaveDescription={async (d) => { setIsSavingDescription(true); await handleSaveDescription(d); setIsSavingDescription(false); }}
+              onSaveDescription={async (d) => {
+                setIsSavingDescription(true);
+                await handleSaveDescription(d);
+                setIsSavingDescription(false);
+              }}
               ownerName={ownerName}
               status={status as string}
               taskCount={tasks.length}
@@ -254,31 +361,60 @@ const handleSaveStatus = async (newStatus: ProjectStatusType) => {
           ) : activeTab === "Board" ? (
             <div className="flex flex-col h-full">
               <ProjectToolbar
-                onAddTask={triggerAddTask} searchQuery={searchQuery} setSearchQuery={setSearchQuery}
-                selectedPriorityFilter={selectedPriorityFilter} setSelectedPriorityFilter={setSelectedPriorityFilter}
-                selectedStatusFilter={selectedStatusFilter} setSelectedStatusFilter={setSelectedStatusFilter}
-                sortBy={sortBy} setSortBy={setSortBy} onAddSection={async () => { const t = prompt("Enter section name:"); if (t) await createList(t); }} hideClosed={true}
+                onAddTask={triggerAddTask}
+                searchQuery={searchQuery}
+                setSearchQuery={setSearchQuery}
+                selectedPriorityFilter={selectedPriorityFilter}
+                setSelectedPriorityFilter={setSelectedPriorityFilter}
+                selectedStatusFilter={selectedStatusFilter}
+                setSelectedStatusFilter={setSelectedStatusFilter}
+                sortBy={sortBy}
+                setSortBy={setSortBy}
+                onAddSection={async () => {
+                  const t = prompt("Enter section name:");
+                  if (t) await createList(t);
+                }}
+                hideClosed={true}
               />
               <div className="flex-1 min-h-0 flex flex-col">
-                <KanbanBoard projectId={resolvedProjectId} onSelectTask={(t) => setSelectedTask(taskRecordToItem(t))} />
+                <KanbanBoard
+                  projectId={resolvedProjectId ?? ""}
+                  onSelectTask={(t) => setSelectedTask(taskRecordToItem(t))}
+                />
               </div>
             </div>
           ) : activeTab === "Timeline" || activeTab === "Gantt" ? (
-            isLoading ? <TimelineTabSkeleton noShell={true} /> :
-            <TimelineTab sections={filteredSections} onSelectTask={setSelectedTask} onAddTask={triggerAddTask} onDeleteTask={handleDeleteTask} />
+            <TimelineTab
+              sections={filteredSections}
+              onSelectTask={setSelectedTask}
+              onAddTask={triggerAddTask}
+              onDeleteTask={handleDeleteTask}
+            />
           ) : activeTab === "Dashboard" ? (
-            isLoading ? <DashboardTabSkeleton noShell={true} /> :
             <DashboardTab sections={filteredSections} />
           ) : activeTab === "Calendar" ? (
-            <CalendarTab sections={filteredSections} onSelectTask={setSelectedTask} onAddTask={triggerAddTask} />
+            <CalendarTab
+              sections={filteredSections}
+              onSelectTask={setSelectedTask}
+              onAddTask={triggerAddTask}
+            />
           ) : (
-            isLoading ? <ListTabSkeleton noShell={true} /> :
             <div className="flex flex-col h-full">
               <ProjectToolbar
-                onAddTask={triggerAddTask} searchQuery={searchQuery} setSearchQuery={setSearchQuery}
-                selectedPriorityFilter={selectedPriorityFilter} setSelectedPriorityFilter={setSelectedPriorityFilter}
-                selectedStatusFilter={selectedStatusFilter} setSelectedStatusFilter={setSelectedStatusFilter}
-                sortBy={sortBy} setSortBy={setSortBy} onAddSection={async () => { const t = prompt("Enter section name:"); if (t) await createList(t); }} hideClosed={true}
+                onAddTask={triggerAddTask}
+                searchQuery={searchQuery}
+                setSearchQuery={setSearchQuery}
+                selectedPriorityFilter={selectedPriorityFilter}
+                setSelectedPriorityFilter={setSelectedPriorityFilter}
+                selectedStatusFilter={selectedStatusFilter}
+                setSelectedStatusFilter={setSelectedStatusFilter}
+                sortBy={sortBy}
+                setSortBy={setSortBy}
+                onAddSection={async () => {
+                  const t = prompt("Enter section name:");
+                  if (t) await createList(t);
+                }}
+                hideClosed={true}
               />
               <ListTab
                 filteredSections={filteredSections}
@@ -296,11 +432,31 @@ const handleSaveStatus = async (newStatus: ProjectStatusType) => {
       </div>
 
       {selectedTask && (
-        <TaskDetailsPane task={selectedTask} projectName={projectTitle} onClose={() => setSelectedTask(null)} onUpdateTask={handleUpdateTask} onDeleteTask={handleDeleteTask} members={members} />
+        <TaskDetailsPane
+          task={selectedTask}
+          projectName={projectTitle}
+          onClose={() => setSelectedTask(null)}
+          onUpdateTask={handleUpdateTask}
+          onDeleteTask={handleDeleteTask}
+          members={members}
+        />
       )}
 
-      <CreateTaskModal isOpen={isCreateTaskOpen} onClose={() => setIsCreateTaskOpen(false)} lists={lists.map((l) => ({ id: l.id, name: l.name }))} defaultListId={defaultTaskListId} onSuccess={() => setIsCreateTaskOpen(false)} />
-      <AddMemberModal isOpen={isAddMemberOpen} projectOptions={resolvedProjectId ? [{ id: resolvedProjectId, name: projectTitle }] : []} onClose={() => setIsAddMemberOpen(false)} onSuccess={fetchMembers} />
+      <CreateTaskModal
+        isOpen={isCreateTaskOpen}
+        onClose={() => setIsCreateTaskOpen(false)}
+        lists={lists.map((l) => ({ id: l.id, name: l.name }))}
+        defaultListId={defaultTaskListId}
+        onSuccess={() => setIsCreateTaskOpen(false)}
+      />
+      <AddMemberModal
+        isOpen={isAddMemberOpen}
+        projectOptions={resolvedProjectId ? [{ id: resolvedProjectId, name: projectTitle }] : []}
+        onClose={() => setIsAddMemberOpen(false)}
+        onSuccess={() => {
+          if (resolvedProjectId) fetchMembers(resolvedProjectId);
+        }}
+      />
     </div>
   );
 }

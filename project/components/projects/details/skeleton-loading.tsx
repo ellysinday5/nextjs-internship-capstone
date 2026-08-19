@@ -1,4 +1,4 @@
-import React from "react";
+import type React from "react";
 
 function Bone({ className, style }: { className: string; style?: React.CSSProperties }) {
   return <div className={`rounded-lg bg-slate-200 dark:bg-slate-800 ${className}`} style={style} />;
@@ -22,7 +22,6 @@ function SkeletonShell({
 
   return (
     <div className="flex h-screen flex-col overflow-hidden bg-white dark:bg-[#0f1d31] animate-pulse">
-
       {/* ── Project Header ── */}
       <header className="border-b border-slate-200 dark:border-slate-800 bg-white dark:bg-[#0f1d31] px-6 pt-4 pb-2">
         <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
@@ -70,7 +69,6 @@ export function OverviewTabSkeleton({ noShell = false }: { noShell?: boolean } =
   return (
     <SkeletonShell activeTabIndex={0} noShell={noShell}>
       <div className="grid grid-cols-1 lg:grid-cols-12 flex-1 overflow-hidden">
-
         {/* Left column */}
         <div className="lg:col-span-8 p-6 space-y-8 overflow-y-auto">
           {/* Description */}
@@ -91,7 +89,10 @@ export function OverviewTabSkeleton({ noShell = false }: { noShell?: boolean } =
             </div>
             <div className="flex flex-wrap gap-3">
               {[0, 1, 2].map((i) => (
-                <div key={i} className="flex items-center gap-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-3 min-w-[180px]">
+                <div
+                  key={i}
+                  className="flex items-center gap-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-3 min-w-[180px]"
+                >
                   <Bone className="h-9 w-9 rounded-full shrink-0" />
                   <div className="space-y-1.5 flex-1">
                     <Bone className="h-3 w-24" />
@@ -126,7 +127,9 @@ export function OverviewTabSkeleton({ noShell = false }: { noShell?: boolean } =
           <div className="space-y-3">
             <Bone className="h-4 w-36" />
             <div className="flex gap-2 flex-wrap">
-              {[80, 72, 80].map((w, i) => <Bone key={i} className="h-7 rounded-full" style={{ width: w }} />)}
+              {[80, 72, 80].map((w, i) => (
+                <Bone key={i} className="h-7 rounded-full" style={{ width: w }} />
+              ))}
             </div>
           </div>
           <Bone className="h-3.5 w-28" />
@@ -194,7 +197,10 @@ export function ListTabSkeleton({ noShell = false }: { noShell?: boolean } = {})
               </div>
               {/* Rows */}
               {Array.from({ length: rowCount }).map((_, ri) => (
-                <div key={ri} className="grid grid-cols-[1fr_180px_140px_120px_120px_40px] items-center px-6 py-2 gap-2">
+                <div
+                  key={ri}
+                  className="grid grid-cols-[1fr_180px_140px_120px_120px_40px] items-center px-6 py-2 gap-2"
+                >
                   <div className="flex items-center gap-2.5">
                     <Bone className="h-4 w-4 rounded-full shrink-0" />
                     <Bone className="h-3.5 flex-1" style={{ width: `${60 + ri * 10}%` }} />
@@ -225,12 +231,7 @@ export function ListTabSkeleton({ noShell = false }: { noShell?: boolean } = {})
 ══════════════════════════════════════════════════════════════════════════ */
 export function BoardTabSkeleton({ noShell = false }: { noShell?: boolean } = {}) {
   // Column definitions: [columnName-width, card widths[]]
-  const COLUMNS = [
-    { cards: [100, 80, 90, 75] },
-    { cards: [90] },
-    { cards: [] },
-    { cards: [] },
-  ];
+  const COLUMNS = [{ cards: [100, 80, 90, 75] }, { cards: [90] }, { cards: [] }, { cards: [] }];
 
   const inner = (
     <div className="flex flex-1 flex-col overflow-hidden bg-white dark:bg-[#0f1d31]">
@@ -306,7 +307,6 @@ export function BoardTabSkeleton({ noShell = false }: { noShell?: boolean } = {}
   );
 }
 
-
 /* ══════════════════════════════════════════════════════════════════════════
    Timeline skeleton  (index 3)
 ══════════════════════════════════════════════════════════════════════════ */
@@ -325,12 +325,22 @@ export function TimelineTabSkeleton({ noShell = false }: { noShell?: boolean } =
           <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 space-y-5">
             {/* Day headers */}
             <div className="grid grid-cols-12 gap-2 border-b border-slate-100 dark:border-slate-800 pb-3">
-              {Array.from({ length: 12 }).map((_, i) => <Bone key={i} className="h-3 w-full" />)}
+              {Array.from({ length: 12 }).map((_, i) => (
+                <Bone key={i} className="h-3 w-full" />
+              ))}
             </div>
             {/* Task bars */}
-            {[{ left: "0%", w: "35%" }, { left: "15%", w: "30%" }, { left: "30%", w: "25%" }, { left: "5%", w: "40%" }].map((bar, i) => (
+            {[
+              { left: "0%", w: "35%" },
+              { left: "15%", w: "30%" },
+              { left: "30%", w: "25%" },
+              { left: "5%", w: "40%" },
+            ].map((bar, i) => (
               <div key={i} className="relative h-9">
-                <Bone className="absolute h-9 rounded-xl" style={{ left: bar.left, width: bar.w }} />
+                <Bone
+                  className="absolute h-9 rounded-xl"
+                  style={{ left: bar.left, width: bar.w }}
+                />
               </div>
             ))}
           </div>
@@ -352,7 +362,10 @@ export function DashboardTabSkeleton({ noShell = false }: { noShell?: boolean } 
         {/* 4 stat cards */}
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
           {[0, 1, 2, 3].map((i) => (
-            <div key={i} className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 space-y-3">
+            <div
+              key={i}
+              className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 space-y-3"
+            >
               <Bone className="h-3 w-32" />
               <Bone className="h-9 w-16" />
               <Bone className="h-3 w-16" />
@@ -362,7 +375,10 @@ export function DashboardTabSkeleton({ noShell = false }: { noShell?: boolean } 
         {/* 2 chart cards */}
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
           {[0, 1].map((i) => (
-            <div key={i} className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 space-y-4">
+            <div
+              key={i}
+              className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 space-y-4"
+            >
               <Bone className="h-4 w-48" />
               <div className="h-44 flex items-end justify-around border-b border-slate-200 dark:border-slate-800 pb-2 gap-3">
                 {[80, 20, 20].map((h, j) => (
@@ -401,7 +417,9 @@ export function CalendarTabSkeleton({ noShell = false }: { noShell?: boolean } =
           <div className="min-w-[700px] rounded-2xl border border-slate-200 dark:border-slate-800 overflow-hidden">
             {/* Day headers */}
             <div className="grid grid-cols-7 bg-slate-50 dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 px-3 py-2 gap-2">
-              {Array.from({ length: 7 }).map((_, i) => <Bone key={i} className="h-3 w-8" />)}
+              {Array.from({ length: 7 }).map((_, i) => (
+                <Bone key={i} className="h-3 w-8" />
+              ))}
             </div>
             {/* Calendar cells — 5 rows × 7 cols */}
             <div className="grid grid-cols-7 divide-x divide-y divide-slate-200 dark:divide-slate-800">
@@ -409,9 +427,7 @@ export function CalendarTabSkeleton({ noShell = false }: { noShell?: boolean } =
                 <div key={i} className="p-2.5 min-h-[90px] flex flex-col justify-between">
                   <Bone className="h-5 w-5 rounded-full" />
                   {/* Occasionally show a task bar */}
-                  {[2, 8, 15, 22].includes(i) && (
-                    <Bone className="h-6 w-full rounded-lg mt-1" />
-                  )}
+                  {[2, 8, 15, 22].includes(i) && <Bone className="h-6 w-full rounded-lg mt-1" />}
                 </div>
               ))}
             </div>

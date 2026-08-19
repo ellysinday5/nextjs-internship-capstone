@@ -1,4 +1,5 @@
-export const VALID_STATUSES = [  "On track",
+export const VALID_STATUSES = [
+  "On track",
   "At risk",
   "Off track",
   "On hold",

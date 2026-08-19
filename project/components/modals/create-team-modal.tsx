@@ -1,14 +1,14 @@
-"use client"
+"use client";
 
-import { useForm } from "react-hook-form"
-import { zodResolver } from "@hookform/resolvers/zod"
-import { Modal } from "@/components/modals/BaseModal"
-import { createTeamSchema, CreateTeamFormValues } from "@/lib/db/team-schemas"
+import { Modal } from "@/components/modals/BaseModal";
+import { type CreateTeamFormValues, createTeamSchema } from "@/lib/db/team-schemas";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useForm } from "react-hook-form";
 
 interface CreateTeamModalProps {
-  isOpen: boolean
-  onClose: () => void
-  onCreate: (data: CreateTeamFormValues) => void
+  isOpen: boolean;
+  onClose: () => void;
+  onCreate: (data: CreateTeamFormValues) => void;
 }
 
 export function CreateTeamModal({ isOpen, onClose, onCreate }: CreateTeamModalProps) {
@@ -20,17 +20,17 @@ export function CreateTeamModal({ isOpen, onClose, onCreate }: CreateTeamModalPr
   } = useForm<CreateTeamFormValues>({
     resolver: zodResolver(createTeamSchema),
     defaultValues: { name: "", description: "" },
-  })
+  });
 
   const onSubmit = (data: CreateTeamFormValues) => {
-    onCreate(data)
-    reset()
-  }
+    onCreate(data);
+    reset();
+  };
 
   const handleClose = () => {
-    reset()
-    onClose()
-  }
+    reset();
+    onClose();
+  };
 
   return (
     <Modal
@@ -59,7 +59,12 @@ export function CreateTeamModal({ isOpen, onClose, onCreate }: CreateTeamModalPr
         </>
       }
     >
-      <form id="create-team-form" onSubmit={handleSubmit(onSubmit)} className="space-y-5" noValidate>
+      <form
+        id="create-team-form"
+        onSubmit={handleSubmit(onSubmit)}
+        className="space-y-5"
+        noValidate
+      >
         <div>
           <label className="mb-1.5 block text-sm font-medium text-slate-700 dark:text-slate-200">
             Team Name <span className="text-red-500">*</span>
@@ -91,5 +96,5 @@ export function CreateTeamModal({ isOpen, onClose, onCreate }: CreateTeamModalPr
         </div>
       </form>
     </Modal>
-  )
+  );
 }

@@ -1,11 +1,11 @@
 "use client";
 
-import Link from "next/link";
-import Image from "next/image";
-import { useUser } from "@clerk/nextjs";
 import { UserMenu } from "@/components/auth/user-menu";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
-import { LayoutDashboard, ArrowRight } from "lucide-react";
+import { useUser } from "@clerk/nextjs";
+import { ArrowRight, LayoutDashboard } from "lucide-react";
+import Image from "next/image";
+import Link from "next/link";
 
 export function Navbar() {
   const { isSignedIn } = useUser();
@@ -14,7 +14,10 @@ export function Navbar() {
     <header className="bg-[#142843] w-full text-white z-30 shadow-md shrink-0 border-b border-white/10">
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16 sm:h-20">
-          <Link href="/" className="flex items-center gap-2 group transition-opacity hover:opacity-90">
+          <Link
+            href="/"
+            className="flex items-center gap-2 group transition-opacity hover:opacity-90"
+          >
             <Image
               src="/syntraflow-full-dark.svg"
               alt="SyntraFlow Logo"

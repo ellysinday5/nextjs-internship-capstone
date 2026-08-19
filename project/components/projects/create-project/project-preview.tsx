@@ -1,8 +1,13 @@
 "use client";
 
+import { CheckCircle2, Folder, User } from "lucide-react";
 import React from "react";
-import { CheckCircle2, User, Folder } from "lucide-react";
-import { CreateProjectFormValues, ViewId, RECOMMENDED_VIEWS, POPULAR_VIEWS } from "./types";
+import {
+  type CreateProjectFormValues,
+  POPULAR_VIEWS,
+  RECOMMENDED_VIEWS,
+  type ViewId,
+} from "./types";
 
 interface ProjectPreviewProps {
   formData: CreateProjectFormValues;

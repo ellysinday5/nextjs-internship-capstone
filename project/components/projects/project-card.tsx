@@ -1,13 +1,13 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
-import { ProjectCardItem } from "./project-card-item";
-import { ConfirmationModal } from "@/components/modals/ConfirmationModal";
-import type { ProjectItem } from "@/lib/project-data";
-import type { ProjectCardData, ProjectCardStatus } from "@/lib/project-card-types";
 import { deleteProjectAction } from "@/actions/project-actions";
+import { ConfirmationModal } from "@/components/modals/ConfirmationModal";
+import type { ProjectCardData, ProjectCardStatus } from "@/lib/project-card-types";
+import type { ProjectItem } from "@/lib/project-data";
 import { loadProjectMeta } from "@/lib/project-meta";
+import { useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
+import { ProjectCardItem } from "./project-card-item";
 
 interface ProjectCardProps {
   project: ProjectItem;
@@ -95,9 +95,7 @@ export function ProjectCard({ project, onEditLocal, onProjectDeleted }: ProjectC
         isLoading={isDeleting}
       />
 
-      {deleteError && (
-        <p className="mt-2 text-xs font-medium text-red-500">{deleteError}</p>
-      )}
+      {deleteError && <p className="mt-2 text-xs font-medium text-red-500">{deleteError}</p>}
     </>
   );
 }

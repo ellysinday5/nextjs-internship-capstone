@@ -1,8 +1,13 @@
 "use client";
 
+import {
+  type SwalModalOptions,
+  type ToastItem,
+  subscribeToSwal,
+  subscribeToToasts,
+} from "@/utils/alerts";
+import { AlertTriangle, Check, HelpCircle, Info, X } from "lucide-react";
 import React, { useEffect, useState } from "react";
-import { subscribeToToasts, subscribeToSwal, ToastItem, SwalModalOptions } from "@/utils/alerts";
-import { Check, X, AlertTriangle, Info, HelpCircle } from "lucide-react";
 
 // Color scheme per variant (Red for error, Green for success)
 const variantStyles = {

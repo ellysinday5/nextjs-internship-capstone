@@ -29,6 +29,20 @@
       "when": 1786350132421,
       "tag": "0003_moaning_bromley",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1786734576428,
+      "tag": "0004_add_workspaces",
+      "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1787115073887,
+      "tag": "0005_chilly_tony_stark",
+      "breakpoints": true
     }
   ]
 }

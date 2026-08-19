@@ -5,7 +5,7 @@ export interface TeamMember {
   initials: string;
   role: MemberRole;
   email: string;
-  assignedTasks: string[]; // task titles
+  assignedTasks: string[];
 }
 
 export type MemberRole =
@@ -53,13 +53,7 @@ export const ALL_CATEGORIES = [
   "Full Stack",
 ];
 
-export const ALL_STATUSES = [
-  "Planning",
-  "In Progress",
-  "Review",
-  "On Hold",
-  "Completed",
-];
+export const ALL_STATUSES = ["Planning", "In Progress", "Review", "On Hold", "Completed"];
 
 export const ALL_PRIORITIES = ["High", "Medium", "Low"];
 
@@ -73,10 +67,35 @@ export const SUGGESTED_DEVS: Omit<TeamMember, "role" | "assignedTasks">[] = [
 ];
 
 export const SUGGESTED_TECH = [
-  "Next.js", "React", "TypeScript", "JavaScript", "TailwindCSS",
-  "Node.js", "Express", "FastAPI", "Python", "Django",
-  "PostgreSQL", "MySQL", "MongoDB", "Redis", "Prisma", "Drizzle",
-  "Docker", "Kubernetes", "AWS", "GCP", "Azure",
-  "GraphQL", "REST", "tRPC", "Clerk", "Supabase",
-  "OpenAI", "VectorDB", "TensorFlow", "Vue.js", "Svelte",
+  "Next.js",
+  "React",
+  "TypeScript",
+  "JavaScript",
+  "TailwindCSS",
+  "Node.js",
+  "Express",
+  "FastAPI",
+  "Python",
+  "Django",
+  "PostgreSQL",
+  "MySQL",
+  "MongoDB",
+  "Redis",
+  "Prisma",
+  "Drizzle",
+  "Docker",
+  "Kubernetes",
+  "AWS",
+  "GCP",
+  "Azure",
+  "GraphQL",
+  "REST",
+  "tRPC",
+  "Clerk",
+  "Supabase",
+  "OpenAI",
+  "VectorDB",
+  "TensorFlow",
+  "Vue.js",
+  "Svelte",
 ];

@@ -1,9 +1,9 @@
 "use client";
 
-import React, { useState } from "react";
-import { sileo } from "@/utils/alerts";
-import { deleteProjectAction, ProjectWithStats } from "@/actions/project-actions";
+import { type ProjectWithStats, deleteProjectAction } from "@/actions/project-actions";
 import { ConfirmationModal } from "@/components/modals/ConfirmationModal";
+import { sileo } from "@/utils/alerts";
+import React, { useState } from "react";
 
 interface DeleteProjectModalProps {
   isOpen: boolean;

@@ -1,15 +1,14 @@
 "use client";
 
+import { AuthIllustration } from "@/components/auth/auth-illustration";
+import { type SignInFormValues, signInSchema } from "@/lib/db/auth-schemas";
+import { useSignIn } from "@clerk/nextjs/legacy";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { AlertCircle, Eye, EyeOff } from "lucide-react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { useSignIn } from "@clerk/nextjs/legacy";
-import { useRouter } from "next/navigation";
-import Link from "next/link";
-import { Eye, EyeOff, AlertCircle } from "lucide-react";
-import { signInSchema, SignInFormValues } from "@/lib/auth-schemas";
-import { AuthIllustration } from "@/components/auth/auth-illustration";
-
 
 function RequiredLabel({ htmlFor, children }: { htmlFor: string; children: React.ReactNode }) {
   return (
@@ -31,7 +30,6 @@ function FieldError({ message }: { message?: string }) {
     </div>
   );
 }
-
 
 export default function SignInPage() {
   const { isLoaded, signIn, setActive } = useSignIn();
@@ -191,8 +189,9 @@ export default function SignInPage() {
                 placeholder="Enter your email address"
                 suppressHydrationWarning
                 {...register("email")}
-                className={`w-full bg-slate-100 border text-[#1e293b] placeholder:text-[#94a3b8] rounded-full px-4 py-2.5 text-sm font-medium outline-none transition-all focus:ring-2 focus:ring-[#00b4d8] focus:border-transparent ${errors.email ? "border-red-400 bg-red-50 focus:ring-red-400" : "border-slate-200"
-                  }`}
+                className={`w-full bg-slate-100 border text-[#1e293b] placeholder:text-[#94a3b8] rounded-full px-4 py-2.5 text-sm font-medium outline-none transition-all focus:ring-2 focus:ring-[#00b4d8] focus:border-transparent ${
+                  errors.email ? "border-red-400 bg-red-50 focus:ring-red-400" : "border-slate-200"
+                }`}
               />
               <FieldError message={errors.email?.message} />
             </div>
@@ -207,10 +206,11 @@ export default function SignInPage() {
                   placeholder="Enter your password"
                   suppressHydrationWarning
                   {...register("password")}
-                  className={`w-full bg-slate-100 border text-[#1e293b] placeholder:text-[#94a3b8] rounded-full px-4 py-2.5 pr-11 text-sm font-medium outline-none transition-all focus:ring-2 focus:ring-[#00b4d8] focus:border-transparent ${errors.password
-                    ? "border-red-400 bg-red-50 focus:ring-red-400"
-                    : "border-slate-200"
-                    }`}
+                  className={`w-full bg-slate-100 border text-[#1e293b] placeholder:text-[#94a3b8] rounded-full px-4 py-2.5 pr-11 text-sm font-medium outline-none transition-all focus:ring-2 focus:ring-[#00b4d8] focus:border-transparent ${
+                    errors.password
+                      ? "border-red-400 bg-red-50 focus:ring-red-400"
+                      : "border-slate-200"
+                  }`}
                 />
                 <button
                   type="button"

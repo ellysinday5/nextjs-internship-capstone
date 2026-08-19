@@ -1,19 +1,19 @@
 export interface TeamMember {
-  id: string
-  name: string
-  email: string
-  role: string
-  status: "Online" | "Away" | "Offline"
-  accountType: "Admin" | "Member"
-  avatarUrl?: string
-  projectCount: number
+  id: string;
+  name: string;
+  email: string;
+  role: string;
+  status: "Online" | "Away" | "Offline";
+  accountType: "Admin" | "Member";
+  avatarUrl?: string;
+  projectCount: number;
 }
 
 export interface Team {
-  id: string
-  name: string
-  description?: string
-  members: TeamMember[]
+  id: string;
+  name: string;
+  description?: string;
+  members: TeamMember[];
 }
 
 // export const MOCK_PEOPLE: TeamMember[] = [
@@ -38,13 +38,13 @@ export interface Team {
 // ]
 
 export interface TeamMember {
-  id: string         
-  userId: string | null 
-  name: string
-  email: string
-  role: string
-  status: "Online" | "Away" | "Offline"
-  accountType: "Admin" | "Member"
-  avatarUrl?: string
-  projectCount: number
+  id: string;
+  userId: string | null;
+  name: string;
+  email: string;
+  role: string;
+  status: "Online" | "Away" | "Offline";
+  accountType: "Admin" | "Member";
+  avatarUrl?: string;
+  projectCount: number;
 }

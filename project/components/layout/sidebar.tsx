@@ -2,21 +2,21 @@
 
 import type React from "react";
 
-import { useState } from "react";
-import Link from "next/link";
 import { useTheme } from "@/components/ui/theme-provider";
 import {
-  Home,
-  FolderOpen,
-  Users,
-  Settings,
-  Moon,
-  Sun,
-  Menu,
-  X,
   BarChart3,
   Calendar,
+  FolderOpen,
+  Home,
+  Menu,
+  Moon,
+  Settings,
+  Sun,
+  Users,
+  X,
 } from "lucide-react";
+import Link from "next/link";
+import { useState } from "react";
 
 const navigation = [
   { name: "Dashboard", href: "/dashboard", icon: Home },

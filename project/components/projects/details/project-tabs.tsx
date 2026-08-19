@@ -1,18 +1,18 @@
 "use client";
 
-import React, { useState } from "react";
 import {
-  Plus,
-  LayoutList,
-  FileText,
-  Kanban,
+  BarChart3,
   Calendar,
   Clock,
-  BarChart3,
-  Users,
-  Paperclip,
+  FileText,
+  Kanban,
+  LayoutList,
   MessageSquare,
+  Paperclip,
+  Plus,
+  Users,
 } from "lucide-react";
+import React, { useState } from "react";
 
 interface ProjectTabsProps {
   activeTab: string;
@@ -60,7 +60,6 @@ export function ProjectTabs({
           {tab}
         </button>
       ))}
-
     </div>
   );
 }

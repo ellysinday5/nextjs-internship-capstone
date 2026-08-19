@@ -1,8 +1,8 @@
 "use client";
 
-import React, { useState } from "react";
-import { Plus, X, Tag } from "lucide-react";
 import { SUGGESTED_TECH } from "@/lib/project-edit-types";
+import { Plus, Tag, X } from "lucide-react";
+import React, { useState } from "react";
 
 interface TechStackEditorProps {
   techStack: string[];
@@ -14,9 +14,7 @@ export function TechStackEditor({ techStack, setTechStack }: TechStackEditorProp
   const [showSuggestions, setShowSuggestions] = useState(false);
 
   const filteredSuggestions = SUGGESTED_TECH.filter(
-    (tech) =>
-      tech.toLowerCase().includes(inputValue.toLowerCase()) &&
-      !techStack.includes(tech)
+    (tech) => tech.toLowerCase().includes(inputValue.toLowerCase()) && !techStack.includes(tech),
   );
 
   const addTech = (tech: string) => {

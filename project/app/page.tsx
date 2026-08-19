@@ -1,26 +1,26 @@
 "use client";
 
-import { useEffect, useState, useRef, useCallback } from "react";
-import Link from "next/link";
+import { Footer } from "@/components/layout/footer";
+import { Navbar } from "@/components/layout/navbar";
 import {
-  Hand,
-  Users,
-  CheckCircle2,
-  LayoutDashboard,
   BarChart3,
-  ShieldCheck,
-  ChevronRight,
+  Calendar,
+  CheckCircle2,
   ChevronLeft,
-  Sparkles,
+  ChevronRight,
+  Clock,
+  Hand,
+  Layers,
+  LayoutDashboard,
   Mail,
   Plus,
-  Calendar,
+  ShieldCheck,
+  Sparkles,
   UserPlus,
-  Layers,
-  Clock,
+  Users,
 } from "lucide-react";
-import { Navbar } from "@/components/layout/navbar";
-import { Footer } from "@/components/layout/footer";
+import Link from "next/link";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 /* ─── Scroll-reveal hook ─────────────────────────────────────── */
 function useReveal(threshold = 0.1) {
@@ -30,8 +30,13 @@ function useReveal(threshold = 0.1) {
     const el = ref.current;
     if (!el) return;
     const obs = new IntersectionObserver(
-      ([e]) => { if (e.isIntersecting) { setVisible(true); obs.disconnect(); } },
-      { threshold }
+      ([e]) => {
+        if (e.isIntersecting) {
+          setVisible(true);
+          obs.disconnect();
+        }
+      },
+      { threshold },
     );
     obs.observe(el);
     return () => obs.disconnect();
@@ -47,40 +52,92 @@ function KanbanSlide() {
         <span className="w-3 h-3 rounded-full bg-red-400" />
         <span className="w-3 h-3 rounded-full bg-amber-400" />
         <span className="w-3 h-3 rounded-full bg-emerald-400" />
-        <span className="ml-3 text-[11px] font-semibold text-slate-400">SyntraFlow · Sprint Board</span>
+        <span className="ml-3 text-[11px] font-semibold text-slate-400">
+          SyntraFlow · Sprint Board
+        </span>
       </div>
       <div className="p-4 flex gap-3">
         {[
-          { col: "To Do", color: "text-slate-500 dark:text-slate-400", dot: "bg-slate-400",
+          {
+            col: "To Do",
+            color: "text-slate-500 dark:text-slate-400",
+            dot: "bg-slate-400",
             cards: [
-              { title: "Design system tokens", tag: "Design",  tagColor: "bg-violet-100 text-violet-600 dark:bg-violet-950/60 dark:text-violet-300" },
-              { title: "Auth middleware",      tag: "Backend", tagColor: "bg-blue-100 text-blue-600 dark:bg-blue-950/60 dark:text-blue-300" },
+              {
+                title: "Design system tokens",
+                tag: "Design",
+                tagColor:
+                  "bg-violet-100 text-violet-600 dark:bg-violet-950/60 dark:text-violet-300",
+              },
+              {
+                title: "Auth middleware",
+                tag: "Backend",
+                tagColor: "bg-blue-100 text-blue-600 dark:bg-blue-950/60 dark:text-blue-300",
+              },
             ],
           },
-          { col: "In Progress", color: "text-blue-600 dark:text-blue-400", dot: "bg-blue-500",
+          {
+            col: "In Progress",
+            color: "text-blue-600 dark:text-blue-400",
+            dot: "bg-blue-500",
             cards: [
-              { title: "Kanban drag & drop",  tag: "Frontend", tagColor: "bg-sky-100 text-sky-600 dark:bg-sky-950/60 dark:text-sky-300" },
-              { title: "Analytics dashboard", tag: "Frontend", tagColor: "bg-sky-100 text-sky-600 dark:bg-sky-950/60 dark:text-sky-300" },
+              {
+                title: "Kanban drag & drop",
+                tag: "Frontend",
+                tagColor: "bg-sky-100 text-sky-600 dark:bg-sky-950/60 dark:text-sky-300",
+              },
+              {
+                title: "Analytics dashboard",
+                tag: "Frontend",
+                tagColor: "bg-sky-100 text-sky-600 dark:bg-sky-950/60 dark:text-sky-300",
+              },
             ],
           },
-          { col: "Done", color: "text-emerald-600 dark:text-emerald-400", dot: "bg-emerald-500",
+          {
+            col: "Done",
+            color: "text-emerald-600 dark:text-emerald-400",
+            dot: "bg-emerald-500",
             cards: [
-              { title: "DB schema + ORM",  tag: "Backend", tagColor: "bg-emerald-100 text-emerald-600 dark:bg-emerald-950/60 dark:text-emerald-300" },
-              { title: "Clerk auth setup", tag: "Auth",    tagColor: "bg-amber-100 text-amber-600 dark:bg-amber-950/60 dark:text-amber-300" },
+              {
+                title: "DB schema + ORM",
+                tag: "Backend",
+                tagColor:
+                  "bg-emerald-100 text-emerald-600 dark:bg-emerald-950/60 dark:text-emerald-300",
+              },
+              {
+                title: "Clerk auth setup",
+                tag: "Auth",
+                tagColor: "bg-amber-100 text-amber-600 dark:bg-amber-950/60 dark:text-amber-300",
+              },
             ],
           },
         ].map((col) => (
           <div key={col.col} className="flex-1 min-w-0">
             <div className="flex items-center gap-1.5 mb-3">
               <span className={`w-2 h-2 rounded-full shrink-0 ${col.dot}`} />
-              <span className={`text-[10px] font-bold uppercase tracking-wider truncate ${col.color}`}>{col.col}</span>
-              <span className="ml-auto text-[9px] font-bold text-slate-400 bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 rounded-full shrink-0">{col.cards.length}</span>
+              <span
+                className={`text-[10px] font-bold uppercase tracking-wider truncate ${col.color}`}
+              >
+                {col.col}
+              </span>
+              <span className="ml-auto text-[9px] font-bold text-slate-400 bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 rounded-full shrink-0">
+                {col.cards.length}
+              </span>
             </div>
             <div className="flex flex-col gap-2">
               {col.cards.map((card, ci) => (
-                <div key={ci} className="p-2.5 rounded-xl border border-slate-100 dark:border-slate-700 bg-slate-50 dark:bg-[#14263e]">
-                  <p className="text-[11px] font-semibold text-slate-800 dark:text-slate-100 leading-snug mb-2">{card.title}</p>
-                  <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded-md ${card.tagColor}`}>{card.tag}</span>
+                <div
+                  key={ci}
+                  className="p-2.5 rounded-xl border border-slate-100 dark:border-slate-700 bg-slate-50 dark:bg-[#14263e]"
+                >
+                  <p className="text-[11px] font-semibold text-slate-800 dark:text-slate-100 leading-snug mb-2">
+                    {card.title}
+                  </p>
+                  <span
+                    className={`text-[9px] font-bold px-1.5 py-0.5 rounded-md ${card.tagColor}`}
+                  >
+                    {card.tag}
+                  </span>
                 </div>
               ))}
             </div>
@@ -89,8 +146,18 @@ function KanbanSlide() {
       </div>
       <div className="flex items-center justify-between px-4 py-2.5 border-t border-slate-100 dark:border-slate-800 bg-slate-50/60 dark:bg-[#0a1a2f]/60">
         <div className="flex -space-x-1.5">
-          {[["#0052cc","E"],["#7c3aed","J"],["#059669","M"]].map(([c,l]) => (
-            <span key={c} className="w-5 h-5 rounded-full border-2 border-white dark:border-[#0e1e35] flex items-center justify-center text-white text-[8px] font-black" style={{ backgroundColor: c }}>{l}</span>
+          {[
+            ["#0052cc", "E"],
+            ["#7c3aed", "J"],
+            ["#059669", "M"],
+          ].map(([c, l]) => (
+            <span
+              key={c}
+              className="w-5 h-5 rounded-full border-2 border-white dark:border-[#0e1e35] flex items-center justify-center text-white text-[8px] font-black"
+              style={{ backgroundColor: c }}
+            >
+              {l}
+            </span>
           ))}
         </div>
         <span className="text-[10px] text-slate-400 font-medium">3 members active</span>
@@ -112,9 +179,13 @@ function TeamSlide() {
       <div className="p-5 space-y-4">
         {/* create team */}
         <div className="p-4 rounded-xl border border-slate-100 dark:border-slate-700 bg-slate-50 dark:bg-[#14263e]">
-          <p className="text-[11px] font-extrabold text-slate-500 dark:text-slate-400 uppercase tracking-widest mb-3">Create a Team</p>
+          <p className="text-[11px] font-extrabold text-slate-500 dark:text-slate-400 uppercase tracking-widest mb-3">
+            Create a Team
+          </p>
           <div className="flex items-center gap-2 mb-2">
-            <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-blue-500 to-violet-600 flex items-center justify-center text-white text-xs font-black shrink-0">SF</div>
+            <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-blue-500 to-violet-600 flex items-center justify-center text-white text-xs font-black shrink-0">
+              SF
+            </div>
             <div className="flex-1 h-7 rounded-lg bg-white dark:bg-[#0e1e35] border border-slate-200 dark:border-slate-600 px-2.5 flex items-center">
               <span className="text-[11px] text-slate-400">Team name…</span>
             </div>
@@ -127,7 +198,9 @@ function TeamSlide() {
 
         {/* invite members */}
         <div className="p-4 rounded-xl border border-slate-100 dark:border-slate-700 bg-slate-50 dark:bg-[#14263e]">
-          <p className="text-[11px] font-extrabold text-slate-500 dark:text-slate-400 uppercase tracking-widest mb-3">Invite Members</p>
+          <p className="text-[11px] font-extrabold text-slate-500 dark:text-slate-400 uppercase tracking-widest mb-3">
+            Invite Members
+          </p>
           <div className="flex gap-2 mb-3">
             <div className="flex-1 h-7 rounded-lg bg-white dark:bg-[#0e1e35] border border-slate-200 dark:border-slate-600 px-2.5 flex items-center">
               <span className="text-[11px] text-slate-400">member@email.com</span>
@@ -139,16 +212,42 @@ function TeamSlide() {
           {/* pending invites */}
           <div className="space-y-1.5">
             {[
-              { name: "James R.", role: "Developer", color: "#7c3aed", initial: "J", status: "Pending" },
-              { name: "Maria T.", role: "Designer",  color: "#059669", initial: "M", status: "Accepted" },
+              {
+                name: "James R.",
+                role: "Developer",
+                color: "#7c3aed",
+                initial: "J",
+                status: "Pending",
+              },
+              {
+                name: "Maria T.",
+                role: "Designer",
+                color: "#059669",
+                initial: "M",
+                status: "Accepted",
+              },
             ].map((m) => (
-              <div key={m.name} className="flex items-center gap-2.5 p-2 rounded-lg bg-white dark:bg-[#0e1e35] border border-slate-100 dark:border-slate-700">
-                <span className="w-6 h-6 rounded-full flex items-center justify-center text-white text-[9px] font-black shrink-0" style={{ backgroundColor: m.color }}>{m.initial}</span>
+              <div
+                key={m.name}
+                className="flex items-center gap-2.5 p-2 rounded-lg bg-white dark:bg-[#0e1e35] border border-slate-100 dark:border-slate-700"
+              >
+                <span
+                  className="w-6 h-6 rounded-full flex items-center justify-center text-white text-[9px] font-black shrink-0"
+                  style={{ backgroundColor: m.color }}
+                >
+                  {m.initial}
+                </span>
                 <div className="flex-1 min-w-0">
-                  <p className="text-[10px] font-bold text-slate-800 dark:text-white truncate">{m.name}</p>
+                  <p className="text-[10px] font-bold text-slate-800 dark:text-white truncate">
+                    {m.name}
+                  </p>
                   <p className="text-[9px] text-slate-400">{m.role}</p>
                 </div>
-                <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded-full ${m.status === "Accepted" ? "bg-emerald-100 text-emerald-600 dark:bg-emerald-950/50 dark:text-emerald-400" : "bg-amber-100 text-amber-600 dark:bg-amber-950/50 dark:text-amber-400"}`}>{m.status}</span>
+                <span
+                  className={`text-[9px] font-bold px-1.5 py-0.5 rounded-full ${m.status === "Accepted" ? "bg-emerald-100 text-emerald-600 dark:bg-emerald-950/50 dark:text-emerald-400" : "bg-amber-100 text-amber-600 dark:bg-amber-950/50 dark:text-amber-400"}`}
+                >
+                  {m.status}
+                </span>
               </div>
             ))}
           </div>
@@ -160,15 +259,50 @@ function TeamSlide() {
 
 /* ─── Slide 3: Calendar + Add Event ─────────────────────────── */
 function CalendarSlide() {
-  const days = ["Su","Mo","Tu","We","Th","Fr","Sa"];
+  const days = ["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"];
   const cells = [
-    null,null,1,2,3,4,5,
-    6,7,8,9,10,11,12,
-    13,14,15,16,17,18,19,
-    20,21,22,23,24,25,26,
-    27,28,29,30,31,null,null,
+    null,
+    null,
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9,
+    10,
+    11,
+    12,
+    13,
+    14,
+    15,
+    16,
+    17,
+    18,
+    19,
+    20,
+    21,
+    22,
+    23,
+    24,
+    25,
+    26,
+    27,
+    28,
+    29,
+    30,
+    31,
+    null,
+    null,
   ];
-  const events: Record<number, string> = { 8: "bg-blue-500", 15: "bg-violet-500", 22: "bg-emerald-500", 28: "bg-amber-500" };
+  const events: Record<number, string> = {
+    8: "bg-blue-500",
+    15: "bg-violet-500",
+    22: "bg-emerald-500",
+    28: "bg-amber-500",
+  };
 
   return (
     <div className="rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-[#0e1e35] shadow-xl overflow-hidden">
@@ -184,22 +318,39 @@ function CalendarSlide() {
           <div className="flex items-center justify-between mb-3">
             <span className="text-xs font-bold text-slate-800 dark:text-white">August 2026</span>
             <div className="flex gap-1">
-              <button className="w-5 h-5 rounded bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-400 hover:text-slate-600"><ChevronLeft size={10} /></button>
-              <button className="w-5 h-5 rounded bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-400 hover:text-slate-600"><ChevronRight size={10} /></button>
+              <button className="w-5 h-5 rounded bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-400 hover:text-slate-600">
+                <ChevronLeft size={10} />
+              </button>
+              <button className="w-5 h-5 rounded bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-400 hover:text-slate-600">
+                <ChevronRight size={10} />
+              </button>
             </div>
           </div>
           <div className="grid grid-cols-7 gap-0.5 mb-1">
-            {days.map(d => <div key={d} className="text-[8px] font-bold text-slate-400 text-center py-0.5">{d}</div>)}
+            {days.map((d) => (
+              <div key={d} className="text-[8px] font-bold text-slate-400 text-center py-0.5">
+                {d}
+              </div>
+            ))}
           </div>
           <div className="grid grid-cols-7 gap-0.5">
             {cells.map((d, i) => (
-              <div key={i} className={`relative h-6 flex items-center justify-center rounded text-[9px] font-semibold transition-colors ${
-                d === 12 ? "bg-[#0f2d5a] text-white rounded-lg" :
-                d ? "text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer" :
-                ""
-              }`}>
+              <div
+                key={i}
+                className={`relative h-6 flex items-center justify-center rounded text-[9px] font-semibold transition-colors ${
+                  d === 12
+                    ? "bg-[#0f2d5a] text-white rounded-lg"
+                    : d
+                      ? "text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer"
+                      : ""
+                }`}
+              >
                 {d}
-                {d && events[d] && <span className={`absolute bottom-0.5 left-1/2 -translate-x-1/2 w-1 h-1 rounded-full ${events[d]}`} />}
+                {d && events[d] && (
+                  <span
+                    className={`absolute bottom-0.5 left-1/2 -translate-x-1/2 w-1 h-1 rounded-full ${events[d]}`}
+                  />
+                )}
               </div>
             ))}
           </div>
@@ -207,7 +358,9 @@ function CalendarSlide() {
 
         {/* add event panel */}
         <div className="w-[160px] p-4 flex flex-col gap-3">
-          <p className="text-[10px] font-extrabold text-slate-500 dark:text-slate-400 uppercase tracking-widest">New Event</p>
+          <p className="text-[10px] font-extrabold text-slate-500 dark:text-slate-400 uppercase tracking-widest">
+            New Event
+          </p>
           <div className="space-y-2">
             <div className="h-7 rounded-lg bg-slate-50 dark:bg-[#14263e] border border-slate-200 dark:border-slate-600 px-2.5 flex items-center">
               <span className="text-[10px] text-slate-400">Event title…</span>
@@ -224,11 +377,28 @@ function CalendarSlide() {
           {/* event type */}
           <div className="flex flex-wrap gap-1">
             {[
-              { label: "Meeting",  color: "bg-sky-100 text-sky-600 dark:bg-sky-950/60 dark:text-sky-300",          active: true },
-              { label: "Task",     color: "bg-indigo-100 text-indigo-600 dark:bg-indigo-950/60 dark:text-indigo-300", active: false },
-              { label: "Deadline", color: "bg-rose-100 text-rose-600 dark:bg-rose-950/60 dark:text-rose-300",        active: false },
+              {
+                label: "Meeting",
+                color: "bg-sky-100 text-sky-600 dark:bg-sky-950/60 dark:text-sky-300",
+                active: true,
+              },
+              {
+                label: "Task",
+                color: "bg-indigo-100 text-indigo-600 dark:bg-indigo-950/60 dark:text-indigo-300",
+                active: false,
+              },
+              {
+                label: "Deadline",
+                color: "bg-rose-100 text-rose-600 dark:bg-rose-950/60 dark:text-rose-300",
+                active: false,
+              },
             ].map(({ label, color, active }) => (
-              <span key={label} className={`text-[9px] font-bold px-1.5 py-0.5 rounded-md cursor-pointer ${active ? color : "bg-slate-100 dark:bg-slate-800 text-slate-400"}`}>{label}</span>
+              <span
+                key={label}
+                className={`text-[9px] font-bold px-1.5 py-0.5 rounded-md cursor-pointer ${active ? color : "bg-slate-100 dark:bg-slate-800 text-slate-400"}`}
+              >
+                {label}
+              </span>
             ))}
           </div>
           <div className="h-7 rounded-lg bg-[#0f2d5a] flex items-center justify-center gap-1.5 mt-auto">
@@ -243,20 +413,26 @@ function CalendarSlide() {
 
 /* ─── Carousel wrapper ───────────────────────────────────────── */
 const slides = [
-  { label: "Kanban Board",  icon: Layers,    component: KanbanSlide   },
-  { label: "Team & Invite", icon: Users,     component: TeamSlide     },
-  { label: "Calendar",      icon: Calendar,  component: CalendarSlide },
+  { label: "Kanban Board", icon: Layers, component: KanbanSlide },
+  { label: "Team & Invite", icon: Users, component: TeamSlide },
+  { label: "Calendar", icon: Calendar, component: CalendarSlide },
 ];
 
 function FeatureCarousel({ visible }: { visible: boolean }) {
   const [active, setActive] = useState(0);
   const [animating, setAnimating] = useState(false);
 
-  const goTo = useCallback((idx: number) => {
-    if (animating) return;
-    setAnimating(true);
-    setTimeout(() => { setActive(idx); setAnimating(false); }, 200);
-  }, [animating]);
+  const goTo = useCallback(
+    (idx: number) => {
+      if (animating) return;
+      setAnimating(true);
+      setTimeout(() => {
+        setActive(idx);
+        setAnimating(false);
+      }, 200);
+    },
+    [animating],
+  );
 
   // Auto-advance every 4 s
   useEffect(() => {
@@ -269,7 +445,9 @@ function FeatureCarousel({ visible }: { visible: boolean }) {
   const Slide = slides[active].component;
 
   return (
-    <div className={`transition-all duration-1000 delay-300 ${visible ? "opacity-100 translate-x-0" : "opacity-0 translate-x-8"}`}>
+    <div
+      className={`transition-all duration-1000 delay-300 ${visible ? "opacity-100 translate-x-0" : "opacity-0 translate-x-8"}`}
+    >
       {/* tab pills */}
 
       {/* slide */}
@@ -280,7 +458,11 @@ function FeatureCarousel({ visible }: { visible: boolean }) {
       {/* dot indicators */}
       <div className="flex items-center justify-center gap-1.5 mt-3">
         {slides.map((_, i) => (
-          <button key={i} onClick={() => goTo(i)} className={`rounded-full transition-all duration-300 ${i === active ? "w-5 h-1.5 bg-[#0f2d5a] dark:bg-blue-400" : "w-1.5 h-1.5 bg-slate-300 dark:bg-slate-600 hover:bg-slate-400"}`} />
+          <button
+            key={i}
+            onClick={() => goTo(i)}
+            className={`rounded-full transition-all duration-300 ${i === active ? "w-5 h-1.5 bg-[#0f2d5a] dark:bg-blue-400" : "w-1.5 h-1.5 bg-slate-300 dark:bg-slate-600 hover:bg-slate-400"}`}
+          />
         ))}
       </div>
     </div>
@@ -301,10 +483,20 @@ export default function HomePage() {
   }, []);
 
   const formattedTime = now
-    ? now.toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit", second: "2-digit", hour12: true })
+    ? now.toLocaleTimeString("en-US", {
+        hour: "2-digit",
+        minute: "2-digit",
+        second: "2-digit",
+        hour12: true,
+      })
     : "";
   const formattedDate = now
-    ? now.toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric", year: "numeric" })
+    ? now.toLocaleDateString("en-US", {
+        weekday: "short",
+        month: "short",
+        day: "numeric",
+        year: "numeric",
+      })
     : "";
 
   const features = [
@@ -368,7 +560,9 @@ export default function HomePage() {
           <div className="flex items-center justify-end">
             <div className="flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400 font-medium">
               <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse shrink-0" />
-              <span className="font-mono text-slate-800 dark:text-slate-200 font-semibold">{formattedTime}</span>
+              <span className="font-mono text-slate-800 dark:text-slate-200 font-semibold">
+                {formattedTime}
+              </span>
               <span className="text-slate-300 dark:text-slate-600">•</span>
               <span>{formattedDate}</span>
             </div>
@@ -377,10 +571,8 @@ export default function HomePage() {
       )}
 
       <main className="flex-1 flex flex-col">
-
         {/* ── HERO ── */}
         <section className="relative px-4 sm:px-6 lg:px-10 pt-14 sm:pt-22 pb-18 overflow-hidden bg-white dark:bg-[#070f1c]">
-
           {/* background orbs */}
           <div aria-hidden className="absolute inset-0 pointer-events-none overflow-hidden">
             <div className="absolute -top-40 -left-40 w-[500px] h-[500px] rounded-full bg-blue-400/8 dark:bg-blue-500/8 blur-3xl" />
@@ -427,7 +619,10 @@ export default function HomePage() {
                   >
                     <LayoutDashboard size={17} />
                     Start managing projects
-                    <ChevronRight size={16} className="group-hover:translate-x-0.5 transition-transform" />
+                    <ChevronRight
+                      size={16}
+                      className="group-hover:translate-x-0.5 transition-transform"
+                    />
                   </Link>
                   <Link
                     href="/sign-up"
@@ -460,12 +655,18 @@ export default function HomePage() {
                     className={`group flex items-start gap-4 p-5 rounded-2xl border border-slate-100 dark:border-slate-800 bg-white dark:bg-[#0e1e35] hover:shadow-md hover:-translate-y-1 transition-all duration-300 ${feat.border}`}
                     style={{ transitionDelay: `${idx * 50}ms` }}
                   >
-                    <div className={`w-10 h-10 rounded-xl ${feat.color} flex items-center justify-center shrink-0 ${feat.iconColor} group-hover:scale-110 transition-transform duration-200`}>
+                    <div
+                      className={`w-10 h-10 rounded-xl ${feat.color} flex items-center justify-center shrink-0 ${feat.iconColor} group-hover:scale-110 transition-transform duration-200`}
+                    >
                       <feat.icon size={18} />
                     </div>
                     <div>
-                      <h3 className="text-sm font-bold text-slate-900 dark:text-white mb-1">{feat.title}</h3>
-                      <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">{feat.description}</p>
+                      <h3 className="text-sm font-bold text-slate-900 dark:text-white mb-1">
+                        {feat.title}
+                      </h3>
+                      <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
+                        {feat.description}
+                      </p>
                     </div>
                   </div>
                 ))}
@@ -473,7 +674,6 @@ export default function HomePage() {
             </div>
           </div>
         </section>
-
       </main>
       <Footer />
     </div>

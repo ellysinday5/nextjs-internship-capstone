@@ -1,11 +1,12 @@
 "use client";
 
-import React, { useState } from "react";
-import { CheckCircle2, Calendar, Flag, Layers, Paperclip } from "lucide-react";
-import { sileo } from "@/utils/alerts";
-import { ConfirmationModal } from "@/components/modals/ConfirmationModal";
 import { Modal } from "@/components/modals/BaseModal";
+import { ConfirmationModal } from "@/components/modals/ConfirmationModal";
 import { useBoardStore } from "@/stores/board-store";
+import { sileo } from "@/utils/alerts";
+import { Calendar, CheckCircle2, Flag, Layers, Paperclip } from "lucide-react";
+import type React from "react";
+import { useState } from "react";
 
 interface ListOption {
   id: string;
@@ -157,7 +158,9 @@ export function CreateTaskModal({
                 className="text-xs font-semibold text-[#0033a0] dark:text-blue-400 bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800 rounded-full px-3 py-1 outline-none focus:ring-2 focus:ring-[#0033a0] cursor-pointer"
               >
                 {lists.map((l) => (
-                  <option key={l.id} value={l.id}>{l.name}</option>
+                  <option key={l.id} value={l.id}>
+                    {l.name}
+                  </option>
                 ))}
               </select>
             </div>
@@ -169,7 +172,10 @@ export function CreateTaskModal({
               required
               autoFocus
               value={title}
-              onChange={(e) => { setTitle(e.target.value); setTitleError(null); }}
+              onChange={(e) => {
+                setTitle(e.target.value);
+                setTitleError(null);
+              }}
               placeholder="What needs to be done?"
               className={`w-full text-lg font-bold text-slate-900 dark:text-slate-100 placeholder-slate-400 bg-slate-50 dark:bg-slate-800/50 border rounded-xl px-3.5 py-2.5 outline-none transition-colors ${
                 titleError
@@ -220,7 +226,9 @@ export function CreateTaskModal({
                 className="pl-7 pr-3 py-1.5 text-xs font-semibold border border-slate-200 dark:border-slate-700 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 bg-transparent outline-none cursor-pointer appearance-none transition-colors"
               >
                 {PRIORITY_OPTIONS.map((opt) => (
-                  <option key={opt.value} value={opt.value}>{opt.label}</option>
+                  <option key={opt.value} value={opt.value}>
+                    {opt.label}
+                  </option>
                 ))}
               </select>
             </div>

@@ -1,12 +1,12 @@
 "use client";
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
-import { MoreVertical, Users, Calendar, Pencil, Trash2, Star } from "lucide-react";
-import { ListTodo } from "lucide-react";
-import { toSlug } from "@/lib/project-data";
 import type { ProjectCardData } from "@/lib/project-card-types";
+import { toSlug } from "@/lib/project-data";
 import { PROJECT_ICON_LIST } from "@/lib/project-meta";
+import { Calendar, MoreVertical, Pencil, Star, Trash2, Users } from "lucide-react";
+import { ListTodo } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { useState } from "react";
 
 interface ProjectCardItemProps {
   project: ProjectCardData;
@@ -52,10 +52,7 @@ export function ProjectCardItem({ project, onEdit, onDelete, isLoading }: Projec
       className="group relative flex cursor-pointer select-none flex-col justify-between rounded-2xl border border-french_gray bg-white overflow-hidden transition-all duration-200 hover:border-blue_munsell/50 hover:shadow-xl dark:bg-outer_space dark:border-payne's_gray"
     >
       {/* Colored top accent strip */}
-      <div
-        className="h-1.5 w-full shrink-0"
-        style={{ backgroundColor: accentColor }}
-      />
+      <div className="h-1.5 w-full shrink-0" style={{ backgroundColor: accentColor }} />
 
       <div className="p-6 flex flex-col flex-1 gap-0">
         {/* Header: icon + title + favorite + actions menu */}
@@ -86,10 +83,7 @@ export function ProjectCardItem({ project, onEdit, onDelete, isLoading }: Projec
             {/* Favorite star badge */}
             {isFav && (
               <span title="Favorite">
-                <Star
-                  size={14}
-                  className="fill-amber-400 text-amber-400 shrink-0"
-                />
+                <Star size={14} className="fill-amber-400 text-amber-400 shrink-0" />
               </span>
             )}
 

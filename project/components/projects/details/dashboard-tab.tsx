@@ -1,10 +1,10 @@
 "use client";
 
-import React, { useState } from "react";
-import { Plus, BarChart2, CheckCircle2, Clock, AlertTriangle, X } from "lucide-react";
 import { Modal } from "@/components/modals/BaseModal";
 import { sileo } from "@/utils/alerts";
-import { Section } from "./types";
+import { AlertTriangle, BarChart2, CheckCircle2, Clock, Plus, X } from "lucide-react";
+import React, { useState } from "react";
+import type { Section } from "./types";
 
 interface DashboardTabProps {
   sections: Section[];
@@ -24,7 +24,9 @@ export function DashboardTab({ sections }: DashboardTabProps) {
   const totalTasks = allTasks.length;
   const completedTasks = allTasks.filter((t) => t.status === "On track" && false).length;
   const incompleteTasks = totalTasks - completedTasks;
-  const overdueTasks = allTasks.filter((t) => t.status === "Off track" || t.priority === "High").length;
+  const overdueTasks = allTasks.filter(
+    (t) => t.status === "Off track" || t.priority === "High",
+  ).length;
 
   const handleAddWidget = (widget: CustomWidget) => {
     if (customWidgets.some((w) => w.id === widget.id)) {
@@ -50,9 +52,7 @@ export function DashboardTab({ sections }: DashboardTabProps) {
         >
           <Plus size={14} /> Add widget
         </button>
-        <span className="text-xs text-slate-400 hover:underline cursor-pointer">
-          Send feedback
-        </span>
+        <span className="text-xs text-slate-400 hover:underline cursor-pointer">Send feedback</span>
       </div>
 
       {/* Top 4 Stat Cards Grid */}
@@ -88,12 +88,8 @@ export function DashboardTab({ sections }: DashboardTabProps) {
         </div>
 
         <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-2xs dark:border-slate-800 dark:bg-slate-900 space-y-2">
-          <h4 className="text-xs font-bold text-slate-500 dark:text-slate-400">
-            Total tasks
-          </h4>
-          <div className="text-3xl font-extrabold text-slate-900 dark:text-white">
-            {totalTasks}
-          </div>
+          <h4 className="text-xs font-bold text-slate-500 dark:text-slate-400">Total tasks</h4>
+          <div className="text-3xl font-extrabold text-slate-900 dark:text-white">{totalTasks}</div>
           <div className="text-[11px] text-slate-400">≡ No Filters</div>
         </div>
       </div>
@@ -120,12 +116,18 @@ export function DashboardTab({ sections }: DashboardTabProps) {
             </div>
 
             <div className="flex flex-col items-center gap-2">
-              <div className="w-12 rounded-t-lg bg-purple-200 transition-all" style={{ height: "8px" }} />
+              <div
+                className="w-12 rounded-t-lg bg-purple-200 transition-all"
+                style={{ height: "8px" }}
+              />
               <span className="text-[11px] text-slate-500 font-semibold">Doing</span>
             </div>
 
             <div className="flex flex-col items-center gap-2">
-              <div className="w-12 rounded-t-lg bg-purple-200 transition-all" style={{ height: "8px" }} />
+              <div
+                className="w-12 rounded-t-lg bg-purple-200 transition-all"
+                style={{ height: "8px" }}
+              />
               <span className="text-[11px] text-slate-500 font-semibold">Done</span>
             </div>
           </div>

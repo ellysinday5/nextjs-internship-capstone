@@ -1,6 +1,6 @@
 "use client";
 
-import { AnimatedBrandIntro, AnimatedBrandIntroProps } from "./animated-brand-intro";
+import { AnimatedBrandIntro, type AnimatedBrandIntroProps } from "./animated-brand-intro";
 
 /* ─────────────────────────────────────────────────────────────
    Auth Illustration

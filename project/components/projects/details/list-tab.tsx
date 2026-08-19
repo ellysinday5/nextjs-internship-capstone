@@ -1,8 +1,8 @@
 "use client";
 
-import { useRef, useEffect } from "react";
-import { CheckCircle2, ChevronDown } from "lucide-react";
 import type { TaskItem } from "@/components/tasks/task-details";
+import { CheckCircle2, ChevronDown } from "lucide-react";
+import { useEffect, useRef } from "react";
 
 export interface Section {
   id: string;
@@ -56,7 +56,9 @@ export function ListTab({
           <div key={section.id} className="py-2">
             <div className="flex items-center gap-2 px-6 py-2">
               <ChevronDown size={14} className="text-slate-400" />
-              <span className="font-bold text-sm text-slate-800 dark:text-slate-100">{section.title}</span>
+              <span className="font-bold text-sm text-slate-800 dark:text-slate-100">
+                {section.title}
+              </span>
             </div>
 
             <div className="divide-y divide-slate-100 dark:divide-slate-800/40">
@@ -69,8 +71,13 @@ export function ListTab({
                   }`}
                 >
                   <div className="flex items-center gap-2.5 pr-2">
-                    <CheckCircle2 size={16} className="text-slate-300 dark:text-slate-600 hover:text-emerald-500 shrink-0" />
-                    <span className="font-medium text-slate-800 dark:text-slate-200 truncate">{task.title}</span>
+                    <CheckCircle2
+                      size={16}
+                      className="text-slate-300 dark:text-slate-600 hover:text-emerald-500 shrink-0"
+                    />
+                    <span className="font-medium text-slate-800 dark:text-slate-200 truncate">
+                      {task.title}
+                    </span>
                   </div>
                   <div>
                     {task.assignee ? (
@@ -78,14 +85,20 @@ export function ListTab({
                         <span className="w-5 h-5 rounded-full bg-amber-400 text-amber-900 font-bold text-[10px] flex items-center justify-center shrink-0">
                           {task.assignee.initials}
                         </span>
-                        <span className="text-slate-600 dark:text-slate-400 truncate text-[11px]">{task.assignee.name}</span>
+                        <span className="text-slate-600 dark:text-slate-400 truncate text-[11px]">
+                          {task.assignee.name}
+                        </span>
                       </div>
                     ) : (
-                      <span className="w-5 h-5 rounded-full border border-dashed border-slate-300 flex items-center justify-center text-slate-400 text-[10px]">+</span>
+                      <span className="w-5 h-5 rounded-full border border-dashed border-slate-300 flex items-center justify-center text-slate-400 text-[10px]">
+                        +
+                      </span>
                     )}
                   </div>
                   <div>
-                    {task.dueDate && <span className="text-rose-500 font-medium text-[11px]">{task.dueDate}</span>}
+                    {task.dueDate && (
+                      <span className="text-rose-500 font-medium text-[11px]">{task.dueDate}</span>
+                    )}
                   </div>
                   <div>
                     {task.priority && (

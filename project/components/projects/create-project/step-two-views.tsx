@@ -1,8 +1,25 @@
 "use client";
 
-import React, { useState } from "react";
-import { Check, LayoutList, Kanban, Clock, BarChart3, Calendar, FileText, Users, ChevronDown, Activity } from "lucide-react";
-import { CreateProjectFormValues, RECOMMENDED_VIEWS, POPULAR_VIEWS, ViewId } from "./types";
+import {
+  Activity,
+  BarChart3,
+  Calendar,
+  Check,
+  ChevronDown,
+  Clock,
+  FileText,
+  Kanban,
+  LayoutList,
+  Users,
+} from "lucide-react";
+import type React from "react";
+import { useState } from "react";
+import {
+  type CreateProjectFormValues,
+  POPULAR_VIEWS,
+  RECOMMENDED_VIEWS,
+  type ViewId,
+} from "./types";
 
 interface StepTwoViewsProps {
   formData: CreateProjectFormValues;

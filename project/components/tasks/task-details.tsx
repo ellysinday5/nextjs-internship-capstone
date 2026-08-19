@@ -1,22 +1,41 @@
 "use client";
 
-import React, { useState, useRef, useEffect } from "react";
-import {
-  CheckCircle2, X, ThumbsUp, Link2, Maximize2, Minimize2,
-  MoreHorizontal, ChevronRight, User, Calendar, Layers,
-  Send, Lock, CircleAlert, Paperclip, Flag,
-  CheckSquare, Trash2, FileText, ImageIcon, Film, Archive,
-} from "lucide-react";
-import { createPortal } from "react-dom";
-import { ConfirmationModal } from "@/components/modals/ConfirmationModal";
 import type { ProjectMember } from "@/actions/member-actions";
+import { ConfirmationModal } from "@/components/modals/ConfirmationModal";
+import {
+  Archive,
+  Calendar,
+  CheckCircle2,
+  CheckSquare,
+  ChevronRight,
+  CircleAlert,
+  FileText,
+  Film,
+  Flag,
+  ImageIcon,
+  Layers,
+  Link2,
+  Lock,
+  Maximize2,
+  Minimize2,
+  MoreHorizontal,
+  Paperclip,
+  Send,
+  ThumbsUp,
+  Trash2,
+  User,
+  X,
+} from "lucide-react";
+import type React from "react";
+import { useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 
 export interface TaskItem {
   id: string;
   title: string;
   assignee?: { id: string; name: string; initials: string; avatarColor?: string };
-  dueDate?: string;       // formatted display string, e.g. "Aug 20" — for list/timeline views
-  dueDateISO?: string;    // "yyyy-MM-dd" — source of truth for the date input in this panel
+  dueDate?: string; // formatted display string, e.g. "Aug 20" — for list/timeline views
+  dueDateISO?: string; // "yyyy-MM-dd" — source of truth for the date input in this panel
   priority?: "Low" | "Medium" | "High";
   status?: "On track" | "At risk" | "Off track" | "On hold" | "Complete" | "Dropped";
   description?: string;
@@ -38,15 +57,22 @@ const PRIORITY_OPTIONS = ["Low", "Medium", "High"] as const;
 // Must match task-schemas.ts STATUS_VALUES exactly — this was previously mismatched
 // ("Completed" instead of "Complete", missing "On hold" / "Dropped"), which silently
 // dropped the status whenever someone picked one of the broken options.
-const STATUS_OPTIONS = ["On track", "At risk", "Off track", "On hold", "Complete", "Dropped"] as const;
+const STATUS_OPTIONS = [
+  "On track",
+  "At risk",
+  "Off track",
+  "On hold",
+  "Complete",
+  "Dropped",
+] as const;
 
 const STATUS_STYLE: Record<string, string> = {
   "On track": "bg-emerald-100 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300",
   "At risk": "bg-amber-100 text-amber-700 dark:bg-amber-950/40 dark:text-amber-300",
   "Off track": "bg-rose-100 text-rose-700 dark:bg-rose-950/40 dark:text-rose-300",
   "On hold": "bg-slate-200 text-slate-700 dark:bg-slate-800 dark:text-slate-300",
-  "Complete": "bg-emerald-600 text-white dark:bg-emerald-600 dark:text-white",
-  "Dropped": "bg-slate-300 text-slate-600 dark:bg-slate-700 dark:text-slate-400",
+  Complete: "bg-emerald-600 text-white dark:bg-emerald-600 dark:text-white",
+  Dropped: "bg-slate-300 text-slate-600 dark:bg-slate-700 dark:text-slate-400",
 };
 
 const PRIORITY_STYLE: Record<string, string> = {
@@ -55,13 +81,26 @@ const PRIORITY_STYLE: Record<string, string> = {
   Low: "bg-emerald-100 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300",
 };
 
-interface Comment { id: string; text: string; author: string; initials: string; time: string; }
-interface AttachedFile { id: string; file: File; url: string; }
+interface Comment {
+  id: string;
+  text: string;
+  author: string;
+  initials: string;
+  time: string;
+}
+interface AttachedFile {
+  id: string;
+  file: File;
+  url: string;
+}
 
 function getFileIcon(file: File) {
-  if (file.type.startsWith("image/")) return <ImageIcon size={14} className="text-sky-500 shrink-0" />;
-  if (file.type.startsWith("video/")) return <Film size={14} className="text-purple-500 shrink-0" />;
-  if (file.type === "application/pdf") return <FileText size={14} className="text-rose-500 shrink-0" />;
+  if (file.type.startsWith("image/"))
+    return <ImageIcon size={14} className="text-sky-500 shrink-0" />;
+  if (file.type.startsWith("video/"))
+    return <Film size={14} className="text-purple-500 shrink-0" />;
+  if (file.type === "application/pdf")
+    return <FileText size={14} className="text-rose-500 shrink-0" />;
   return <Archive size={14} className="text-slate-400 shrink-0" />;
 }
 
@@ -72,7 +111,12 @@ function formatBytes(bytes: number) {
 }
 
 function getInitials(name: string) {
-  return name.split(" ").map((p) => p[0]).slice(0, 2).join("").toUpperCase();
+  return name
+    .split(" ")
+    .map((p) => p[0])
+    .slice(0, 2)
+    .join("")
+    .toUpperCase();
 }
 
 export function TaskDetailsPane({
@@ -249,9 +293,17 @@ export function TaskDetailsPane({
     : "w-[560px] border-l border-slate-200 dark:border-slate-800 bg-white dark:bg-[#0f1d31] flex flex-col h-full shadow-2xl z-20";
 
   const pane = (
-    <div className={paneClass} onClick={isExpanded ? (e) => { if (e.target === e.currentTarget) handleAttemptClose(); } : undefined}>
+    <div
+      className={paneClass}
+      onClick={
+        isExpanded
+          ? (e) => {
+              if (e.target === e.currentTarget) handleAttemptClose();
+            }
+          : undefined
+      }
+    >
       <div ref={paneRef} className={innerClass}>
-
         {/* ── Top bar ── */}
         <div className="flex items-center justify-between px-4 py-3 border-b border-slate-200 dark:border-slate-800 shrink-0">
           <button
@@ -288,12 +340,13 @@ export function TaskDetailsPane({
             <Lock size={12} className="text-amber-500 shrink-0" />
             This task is private to members of this project.
           </span>
-          <button className="text-blue-600 dark:text-blue-400 hover:underline text-[11px] font-semibold">Make public</button>
+          <button className="text-blue-600 dark:text-blue-400 hover:underline text-[11px] font-semibold">
+            Make public
+          </button>
         </div>
 
         {/* ── Scrollable content ── */}
         <div className="flex-1 overflow-y-auto p-6 space-y-5">
-
           {/* Title */}
           <input
             type="text"
@@ -305,10 +358,11 @@ export function TaskDetailsPane({
 
           {/* Properties grid */}
           <div className="rounded-xl border border-slate-200 dark:border-slate-700 divide-y divide-slate-100 dark:divide-slate-800 text-sm overflow-hidden">
-
             {/* Assignee */}
             <div className="grid grid-cols-[140px_1fr] items-center px-3 py-2.5">
-              <span className="flex items-center gap-2 text-xs font-medium text-slate-500 dark:text-slate-400"><User size={13} /> Assignee</span>
+              <span className="flex items-center gap-2 text-xs font-medium text-slate-500 dark:text-slate-400">
+                <User size={13} /> Assignee
+              </span>
               <div>
                 {isEditingAssignee ? (
                   <select
@@ -323,7 +377,11 @@ export function TaskDetailsPane({
                       }
                       const found = members.find((m) => m.id === val);
                       if (found) {
-                        setAssignee({ id: found.id, name: found.name, initials: getInitials(found.name) });
+                        setAssignee({
+                          id: found.id,
+                          name: found.name,
+                          initials: getInitials(found.name),
+                        });
                       }
                     }}
                     onBlur={() => setIsEditingAssignee(false)}
@@ -331,13 +389,23 @@ export function TaskDetailsPane({
                   >
                     <option value="unassigned">Unassigned</option>
                     {members.map((m) => (
-                      <option key={m.id} value={m.id}>{m.name}</option>
+                      <option key={m.id} value={m.id}>
+                        {m.name}
+                      </option>
                     ))}
                   </select>
                 ) : (
-                  <button onClick={() => setIsEditingAssignee(true)} className="flex items-center gap-2 text-xs font-medium text-slate-700 dark:text-slate-200 hover:text-[#00b4d8] transition-colors">
+                  <button
+                    onClick={() => setIsEditingAssignee(true)}
+                    className="flex items-center gap-2 text-xs font-medium text-slate-700 dark:text-slate-200 hover:text-[#00b4d8] transition-colors"
+                  >
                     {assignee ? (
-                      <><span className="flex h-5 w-5 items-center justify-center rounded-full bg-amber-400 text-[9px] font-bold text-amber-950">{assignee.initials}</span>{assignee.name}</>
+                      <>
+                        <span className="flex h-5 w-5 items-center justify-center rounded-full bg-amber-400 text-[9px] font-bold text-amber-950">
+                          {assignee.initials}
+                        </span>
+                        {assignee.name}
+                      </>
                     ) : (
                       <span className="text-slate-400">No assignee</span>
                     )}
@@ -348,7 +416,9 @@ export function TaskDetailsPane({
 
             {/* Due date */}
             <div className="grid grid-cols-[140px_1fr] items-center px-3 py-2.5">
-              <span className="flex items-center gap-2 text-xs font-medium text-slate-500 dark:text-slate-400"><Calendar size={13} /> Due date</span>
+              <span className="flex items-center gap-2 text-xs font-medium text-slate-500 dark:text-slate-400">
+                <Calendar size={13} /> Due date
+              </span>
               <div>
                 {isEditingDueDate ? (
                   <input
@@ -367,7 +437,10 @@ export function TaskDetailsPane({
                   <button onClick={() => setIsEditingDueDate(true)} className="text-xs font-medium">
                     {dueDateISO ? (
                       <span className="text-rose-500 bg-rose-50 dark:bg-rose-950/30 px-2 py-0.5 rounded-md font-bold">
-                        {new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric" }).format(new Date(dueDateISO))}
+                        {new Intl.DateTimeFormat("en-US", {
+                          month: "short",
+                          day: "numeric",
+                        }).format(new Date(dueDateISO))}
                       </span>
                     ) : (
                       <span className="text-slate-400">No due date</span>
@@ -379,7 +452,9 @@ export function TaskDetailsPane({
 
             {/* Projects */}
             <div className="grid grid-cols-[140px_1fr] items-center px-3 py-2.5">
-              <span className="flex items-center gap-2 text-xs font-medium text-slate-500 dark:text-slate-400"><Layers size={13} /> Projects</span>
+              <span className="flex items-center gap-2 text-xs font-medium text-slate-500 dark:text-slate-400">
+                <Layers size={13} /> Projects
+              </span>
               <div className="flex items-center gap-1.5 text-xs">
                 <span className="font-bold text-slate-800 dark:text-slate-200">{projectName}</span>
                 <ChevronRight size={12} className="text-slate-400" />
@@ -389,30 +464,46 @@ export function TaskDetailsPane({
 
             {/* Priority */}
             <div className="grid grid-cols-[140px_1fr] items-center px-3 py-2.5">
-              <span className="flex items-center gap-2 text-xs font-medium text-slate-500 dark:text-slate-400"><Flag size={13} /> Priority</span>
+              <span className="flex items-center gap-2 text-xs font-medium text-slate-500 dark:text-slate-400">
+                <Flag size={13} /> Priority
+              </span>
               <div>
                 {isEditingPriority ? (
-                  <select autoFocus value={priority || "Medium"}
-                    onChange={(e) => { setIsEditingPriority(false); setPriority(e.target.value as TaskItem["priority"]); }}
+                  <select
+                    autoFocus
+                    value={priority || "Medium"}
+                    onChange={(e) => {
+                      setIsEditingPriority(false);
+                      setPriority(e.target.value as TaskItem["priority"]);
+                    }}
                     onBlur={() => setIsEditingPriority(false)}
                     className="text-xs rounded-lg border border-[#00b4d8] bg-white dark:bg-slate-900 px-2 py-1 outline-none dark:text-slate-100"
                   >
-                    {PRIORITY_OPTIONS.map((p) => <option key={p}>{p}</option>)}
+                    {PRIORITY_OPTIONS.map((p) => (
+                      <option key={p}>{p}</option>
+                    ))}
                   </select>
                 ) : (
-                  <button onClick={() => setIsEditingPriority(true)}
+                  <button
+                    onClick={() => setIsEditingPriority(true)}
                     className={`px-2.5 py-0.5 rounded-md text-[11px] font-bold ${PRIORITY_STYLE[priority || "Medium"]}`}
-                  >{priority || "Medium"}</button>
+                  >
+                    {priority || "Medium"}
+                  </button>
                 )}
               </div>
             </div>
 
             {/* Status */}
             <div className="grid grid-cols-[140px_1fr] items-center px-3 py-2.5">
-              <span className="flex items-center gap-2 text-xs font-medium text-slate-500 dark:text-slate-400"><CircleAlert size={13} /> Status</span>
+              <span className="flex items-center gap-2 text-xs font-medium text-slate-500 dark:text-slate-400">
+                <CircleAlert size={13} /> Status
+              </span>
               <div>
                 {isEditingStatus ? (
-                  <select autoFocus value={status || "On track"}
+                  <select
+                    autoFocus
+                    value={status || "On track"}
                     onChange={(e) => {
                       const s = e.target.value as TaskItem["status"];
                       setIsEditingStatus(false);
@@ -422,12 +513,17 @@ export function TaskDetailsPane({
                     onBlur={() => setIsEditingStatus(false)}
                     className="text-xs rounded-lg border border-[#00b4d8] bg-white dark:bg-slate-900 px-2 py-1 outline-none dark:text-slate-100"
                   >
-                    {STATUS_OPTIONS.map((s) => <option key={s}>{s}</option>)}
+                    {STATUS_OPTIONS.map((s) => (
+                      <option key={s}>{s}</option>
+                    ))}
                   </select>
                 ) : (
-                  <button onClick={() => setIsEditingStatus(true)}
+                  <button
+                    onClick={() => setIsEditingStatus(true)}
                     className={`px-2.5 py-0.5 rounded-md text-[11px] font-bold ${STATUS_STYLE[status || "On track"]}`}
-                  >{status || "On track"}</button>
+                  >
+                    {status || "On track"}
+                  </button>
                 )}
               </div>
             </div>
@@ -435,7 +531,9 @@ export function TaskDetailsPane({
 
           {/* Description */}
           <div className="space-y-2">
-            <h4 className="text-xs font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider">Description</h4>
+            <h4 className="text-xs font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider">
+              Description
+            </h4>
             <textarea
               value={description}
               onChange={(e) => setDescription(e.target.value)}
@@ -450,7 +548,12 @@ export function TaskDetailsPane({
             <div className="flex items-center justify-between">
               <h4 className="text-xs font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
                 <Paperclip size={12} />
-                Attachments {attachedFiles.length > 0 && <span className="text-[10px] font-bold bg-slate-100 dark:bg-slate-800 text-slate-500 px-1.5 py-0.5 rounded-full">{attachedFiles.length}</span>}
+                Attachments{" "}
+                {attachedFiles.length > 0 && (
+                  <span className="text-[10px] font-bold bg-slate-100 dark:bg-slate-800 text-slate-500 px-1.5 py-0.5 rounded-full">
+                    {attachedFiles.length}
+                  </span>
+                )}
               </h4>
               <button
                 type="button"
@@ -475,7 +578,9 @@ export function TaskDetailsPane({
                 className="w-full flex flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed border-slate-200 dark:border-slate-700 py-6 text-xs text-slate-400 hover:border-[#00b4d8] hover:text-[#00b4d8] transition-colors"
               >
                 <Paperclip size={20} className="opacity-40" />
-                <span>Drop files here or <span className="font-semibold text-[#00b4d8]">browse</span></span>
+                <span>
+                  Drop files here or <span className="font-semibold text-[#00b4d8]">browse</span>
+                </span>
               </button>
             ) : (
               <div className="space-y-1.5">
@@ -486,13 +591,24 @@ export function TaskDetailsPane({
                   >
                     {getFileIcon(af.file)}
                     <div className="flex-1 min-w-0">
-                      <p className="text-xs font-semibold text-slate-700 dark:text-slate-200 truncate">{af.file.name}</p>
+                      <p className="text-xs font-semibold text-slate-700 dark:text-slate-200 truncate">
+                        {af.file.name}
+                      </p>
                       <p className="text-[10px] text-slate-400">{formatBytes(af.file.size)}</p>
                     </div>
                     {af.file.type.startsWith("image/") && (
-                      <a href={af.url} target="_blank" rel="noopener noreferrer" className="shrink-0">
+                      <a
+                        href={af.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="shrink-0"
+                      >
                         {/* eslint-disable-next-line @next/next/no-img-element */}
-                        <img src={af.url} alt={af.file.name} className="h-9 w-9 rounded-lg object-cover border border-slate-200 dark:border-slate-700" />
+                        <img
+                          src={af.url}
+                          alt={af.file.name}
+                          className="h-9 w-9 rounded-lg object-cover border border-slate-200 dark:border-slate-700"
+                        />
                       </a>
                     )}
                     <button
@@ -518,13 +634,19 @@ export function TaskDetailsPane({
           {/* Comments */}
           {comments.length > 0 && (
             <div className="space-y-2">
-              <h4 className="text-xs font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider">Comments</h4>
+              <h4 className="text-xs font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider">
+                Comments
+              </h4>
               <div className="space-y-3">
                 {comments.map((c) => (
                   <div key={c.id} className="flex items-start gap-2.5">
-                    <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-amber-400 text-[9px] font-bold text-amber-950">{c.initials}</span>
+                    <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-amber-400 text-[9px] font-bold text-amber-950">
+                      {c.initials}
+                    </span>
                     <div>
-                      <span className="text-[11px] font-bold text-slate-700 dark:text-slate-300">{c.author}</span>
+                      <span className="text-[11px] font-bold text-slate-700 dark:text-slate-300">
+                        {c.author}
+                      </span>
                       <span className="ml-1.5 text-[10px] text-slate-400">{c.time}</span>
                       <p className="text-xs text-slate-600 dark:text-slate-400 mt-0.5">{c.text}</p>
                     </div>
@@ -538,7 +660,9 @@ export function TaskDetailsPane({
         {/* ── Comment input ── */}
         <div className="border-t border-slate-200 dark:border-slate-800 bg-slate-50/60 dark:bg-[#14263e] shrink-0">
           <form onSubmit={handleSendComment} className="flex items-center gap-2.5 px-4 py-3">
-            <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-amber-400 text-[10px] font-bold text-amber-950">ES</span>
+            <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-amber-400 text-[10px] font-bold text-amber-950">
+              ES
+            </span>
             <div className="flex-1 relative">
               <input
                 type="text"
@@ -547,7 +671,10 @@ export function TaskDetailsPane({
                 placeholder="Write a comment…"
                 className="w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-[#0f1d31] px-3 py-2 pr-9 text-xs outline-none text-slate-700 dark:text-slate-200 focus:border-[#00b4d8]"
               />
-              <button type="submit" className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-[#00b4d8] transition-colors">
+              <button
+                type="submit"
+                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-[#00b4d8] transition-colors"
+              >
                 <Send size={13} />
               </button>
             </div>
@@ -565,7 +692,9 @@ export function TaskDetailsPane({
           </button>
           <div className="flex items-center gap-2">
             {isDirty && (
-              <span className="text-[10px] text-amber-600 dark:text-amber-400 font-semibold">Unsaved changes</span>
+              <span className="text-[10px] text-amber-600 dark:text-amber-400 font-semibold">
+                Unsaved changes
+              </span>
             )}
             <button
               type="button"

@@ -1,14 +1,14 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
-import { useSortable } from "@dnd-kit/sortable";
-import { CSS } from "@dnd-kit/utilities";
-import { MoreHorizontal, Trash2, Pencil, GripVertical } from "lucide-react";
-import { SortableTaskCard } from "./task-card";
-import { useBoardStore } from "@/stores/board-store";
-import { ConfirmationModal } from "@/components/modals/ConfirmationModal";
 import type { ListWithTasks } from "@/actions/list-actions";
 import type { TaskRecord } from "@/actions/task-actions";
+import { ConfirmationModal } from "@/components/modals/ConfirmationModal";
+import { useBoardStore } from "@/stores/board-store";
+import { useSortable } from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
+import { GripVertical, MoreHorizontal, Pencil, Trash2 } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
+import { SortableTaskCard } from "./task-card";
 
 interface KanbanColumnProps {
   list: ListWithTasks;
@@ -25,14 +25,7 @@ export function KanbanColumn({ list, tasks, onSelectTask }: KanbanColumnProps) {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  const {
-    attributes,
-    listeners,
-    setNodeRef,
-    transform,
-    transition,
-    isDragging,
-  } = useSortable({
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: list.id,
     data: { type: "column", listId: list.id },
   });
@@ -160,11 +153,7 @@ export function KanbanColumn({ list, tasks, onSelectTask }: KanbanColumnProps) {
         {/* ── Task cards ── */}
         <div className="flex flex-col gap-2 px-2.5 pb-2.5 min-h-[48px]">
           {tasks.map((task) => (
-            <SortableTaskCard
-              key={task.id}
-              task={task}
-              onSelect={onSelectTask}
-            />
+            <SortableTaskCard key={task.id} task={task} onSelect={onSelectTask} />
           ))}
         </div>
       </div>

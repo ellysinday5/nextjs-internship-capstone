@@ -1,20 +1,28 @@
 "use client";
 
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
-  getListsAction,
   createListAction,
-  updateListAction,
-  reorderListsAction,
   deleteListAction,
+  getListsAction,
+  reorderListsAction,
+  updateListAction,
 } from "@/actions/list-actions";
-import type { CreateListFormValues, UpdateListFormValues, ReorderListsFormValues } from "@/lib/list-schemas";
+import type {
+  CreateListFormValues,
+  ReorderListsFormValues,
+  UpdateListFormValues,
+} from "@/lib/db/list-schemas";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 export function useLists(projectId: string) {
   const queryClient = useQueryClient();
   const queryKey = ["lists", projectId];
 
-  const listsQuery = useQuery({ queryKey, queryFn: () => getListsAction(projectId), enabled: !!projectId });
+  const listsQuery = useQuery({
+    queryKey,
+    queryFn: () => getListsAction(projectId),
+    enabled: !!projectId,
+  });
 
   const createMutation = useMutation({
     mutationFn: (data: CreateListFormValues) => createListAction(data),

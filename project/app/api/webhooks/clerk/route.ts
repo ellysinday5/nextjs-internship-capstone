@@ -1,10 +1,10 @@
-import { Webhook } from "svix";
-import { headers } from "next/headers";
-import { WebhookEvent } from "@clerk/nextjs/server";
-import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
-import { users, projectMembers } from "@/lib/db/schema";
-import { eq, and } from "drizzle-orm";
+import { projectMembers, projects, users, workspaceMembers } from "@/lib/db/schema";
+import type { WebhookEvent } from "@clerk/nextjs/server";
+import { and, eq } from "drizzle-orm";
+import { headers } from "next/headers";
+import { NextResponse } from "next/server";
+import { Webhook } from "svix";
 
 export async function POST(req: Request) {
   const WEBHOOK_SECRET = process.env.CLERK_WEBHOOK_SECRET || process.env.WEBHOOK_SECRET;
@@ -95,36 +95,77 @@ export async function POST(req: Request) {
     console.log(JSON.stringify(evt, null, 2));
 
     if (eventType === "user.created") {
-      const { projectId, role } = (public_metadata ?? {}) as {
+      const { projectId, role, workspaceId } = (public_metadata ?? {}) as {
         projectId?: string;
         role?: string;
+        workspaceId?: string;
       };
 
       if (projectId) {
         try {
-          const [existingMember] = await db
-            .select()
-            .from(projectMembers)
-            .where(
-              and(
-                eq(projectMembers.projectId, projectId),
-                eq(projectMembers.userId, internalUserId)
-              )
-            );
+          await db.transaction(async (tx) => {
+            // 1. Idempotent project membership insert
+            const [existingMember] = await tx
+              .select({ id: projectMembers.id })
+              .from(projectMembers)
+              .where(
+                and(
+                  eq(projectMembers.projectId, projectId),
+                  eq(projectMembers.userId, internalUserId),
+                ),
+              );
 
-          if (!existingMember) {
-            await db.insert(projectMembers).values({
-              projectId,
-              userId: internalUserId,
-              name,
-              role: role ?? "member",
-            });
-            console.log(
-              `[Webhook] Added user ${internalUserId} to project ${projectId} via invite`
-            );
-          }
+            if (!existingMember) {
+              await tx.insert(projectMembers).values({
+                projectId,
+                userId: internalUserId,
+                name,
+                role: role ?? "member",
+              });
+              console.log(
+                `[Webhook] Added user ${internalUserId} to project ${projectId} via invite`,
+              );
+            }
+
+            // 2. Idempotent workspace membership insert
+            // Use workspaceId from metadata; fall back to looking it up from the project row
+            let targetWorkspaceId = workspaceId;
+            if (!targetWorkspaceId) {
+              const [proj] = await tx
+                .select({ workspaceId: projects.workspaceId })
+                .from(projects)
+                .where(eq(projects.id, projectId));
+              targetWorkspaceId = proj?.workspaceId ?? undefined;
+            }
+
+            if (targetWorkspaceId) {
+              const [existingWsMember] = await tx
+                .select({ id: workspaceMembers.id })
+                .from(workspaceMembers)
+                .where(
+                  and(
+                    eq(workspaceMembers.workspaceId, targetWorkspaceId),
+                    eq(workspaceMembers.userId, internalUserId),
+                  ),
+                );
+
+              if (!existingWsMember) {
+                await tx.insert(workspaceMembers).values({
+                  workspaceId: targetWorkspaceId,
+                  userId: internalUserId,
+                  role: "member",
+                });
+                console.log(
+                  `[Webhook] Added user ${internalUserId} to workspace ${targetWorkspaceId} as member`,
+                );
+              }
+            }
+          });
         } catch (err) {
-          console.error("[Webhook] Failed to insert projectMember from invite:", err);
+          console.error(
+            "[Webhook] Failed to insert projectMember/workspaceMember from invite:",
+            err,
+          );
         }
       }
     }

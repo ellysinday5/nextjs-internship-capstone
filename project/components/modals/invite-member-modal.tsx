@@ -1,22 +1,22 @@
-"use client"
+"use client";
 
-import { useState } from "react"
-import { UserPlus, Mail } from "lucide-react"
-import { sileo } from "@/utils/alerts"
-import { Modal } from "@/components/modals/BaseModal"
-import { ConfirmationModal } from "@/components/modals/ConfirmationModal"
+import { Modal } from "@/components/modals/BaseModal";
+import { ConfirmationModal } from "@/components/modals/ConfirmationModal";
+import { sileo } from "@/utils/alerts";
+import { Mail, UserPlus } from "lucide-react";
+import { useState } from "react";
 
 export interface InviteMemberData {
-  email: string
-  role: "Admin" | "Member"
+  email: string;
+  role: "Admin" | "Member";
 }
 
 interface InviteMemberModalProps {
-  isOpen: boolean
-  onClose: () => void
-  onInvite: (data: InviteMemberData) => void
-  projectName?: string
-  projectDescription?: string | null
+  isOpen: boolean;
+  onClose: () => void;
+  onInvite: (data: InviteMemberData) => void;
+  projectName?: string;
+  projectDescription?: string | null;
 }
 
 const ROLE_OPTIONS: { value: InviteMemberData["role"]; label: string; description: string }[] = [
@@ -30,50 +30,56 @@ const ROLE_OPTIONS: { value: InviteMemberData["role"]; label: string; descriptio
     label: "Member",
     description: "Can collaborate on projects, tasks, and team discussions.",
   },
-]
+];
 
-export function InviteMemberModal({ isOpen, onClose, onInvite, projectName, projectDescription }: InviteMemberModalProps) {
-  const [email, setEmail] = useState("")
-  const [role, setRole] = useState<InviteMemberData["role"]>("Member")
-  const [emailError, setEmailError] = useState<string | null>(null)
-  const [isSubmitting, setIsSubmitting] = useState(false)
-  const [showDiscardConfirm, setShowDiscardConfirm] = useState(false)
+export function InviteMemberModal({
+  isOpen,
+  onClose,
+  onInvite,
+  projectName,
+  projectDescription,
+}: InviteMemberModalProps) {
+  const [email, setEmail] = useState("");
+  const [role, setRole] = useState<InviteMemberData["role"]>("Member");
+  const [emailError, setEmailError] = useState<string | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showDiscardConfirm, setShowDiscardConfirm] = useState(false);
 
-  const isDirty = Boolean(email.trim())
+  const isDirty = Boolean(email.trim());
 
   const resetAndClose = () => {
-    setEmail("")
-    setRole("Member")
-    setEmailError(null)
-    setShowDiscardConfirm(false)
-    onClose()
-  }
+    setEmail("");
+    setRole("Member");
+    setEmailError(null);
+    setShowDiscardConfirm(false);
+    onClose();
+  };
 
   const handleCloseAttempt = () => {
     if (isDirty) {
-      setShowDiscardConfirm(true)
-      return
+      setShowDiscardConfirm(true);
+      return;
     }
-    resetAndClose()
-  }
+    resetAndClose();
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setEmailError(null)
+    e.preventDefault();
+    setEmailError(null);
 
-    const trimmedEmail = email.trim()
+    const trimmedEmail = email.trim();
     if (!trimmedEmail || !trimmedEmail.includes("@")) {
-      setEmailError("Please enter a valid email address.")
-      return
+      setEmailError("Please enter a valid email address.");
+      return;
     }
 
-    setIsSubmitting(true)
-    await new Promise((resolve) => setTimeout(resolve, 400))
-    onInvite({ email: trimmedEmail, role })
-    sileo.success(`Invitation sent to ${trimmedEmail}!`, "Member Invited")
-    setIsSubmitting(false)
-    resetAndClose()
-  }
+    setIsSubmitting(true);
+    await new Promise((resolve) => setTimeout(resolve, 400));
+    onInvite({ email: trimmedEmail, role });
+    sileo.success(`Invitation sent to ${trimmedEmail}!`, "Member Invited");
+    setIsSubmitting(false);
+    resetAndClose();
+  };
 
   return (
     <>
@@ -109,10 +115,14 @@ export function InviteMemberModal({ isOpen, onClose, onInvite, projectName, proj
           {/* Project info banner */}
           {projectName && (
             <div className="rounded-xl border border-[#142843]/20 bg-[#142843]/5 dark:border-blue-800/30 dark:bg-blue-950/20 p-3.5">
-              <p className="text-[10px] font-extrabold uppercase tracking-widest text-[#142843]/60 dark:text-blue-400/60 mb-1">Inviting to project</p>
+              <p className="text-[10px] font-extrabold uppercase tracking-widest text-[#142843]/60 dark:text-blue-400/60 mb-1">
+                Inviting to project
+              </p>
               <p className="text-sm font-bold text-[#142843] dark:text-blue-300">{projectName}</p>
               {projectDescription && (
-                <p className="mt-1 text-xs leading-relaxed text-slate-500 dark:text-slate-400 line-clamp-3">{projectDescription}</p>
+                <p className="mt-1 text-xs leading-relaxed text-slate-500 dark:text-slate-400 line-clamp-3">
+                  {projectDescription}
+                </p>
               )}
             </div>
           )}
@@ -126,8 +136,8 @@ export function InviteMemberModal({ isOpen, onClose, onInvite, projectName, proj
               type="email"
               value={email}
               onChange={(e) => {
-                setEmail(e.target.value)
-                setEmailError(null)
+                setEmail(e.target.value);
+                setEmailError(null);
               }}
               placeholder="e.g. teammate@company.com"
               className={`w-full rounded-xl border-2 px-4 py-3 text-sm text-slate-900 outline-none transition-colors placeholder:text-slate-400 dark:bg-slate-900 dark:text-slate-100 ${
@@ -136,9 +146,7 @@ export function InviteMemberModal({ isOpen, onClose, onInvite, projectName, proj
                   : "border-slate-200 focus:border-[#142843] dark:border-slate-700"
               }`}
             />
-            {emailError && (
-              <p className="mt-1 text-xs font-semibold text-red-500">{emailError}</p>
-            )}
+            {emailError && <p className="mt-1 text-xs font-semibold text-red-500">{emailError}</p>}
           </div>
 
           <div>
@@ -147,7 +155,7 @@ export function InviteMemberModal({ isOpen, onClose, onInvite, projectName, proj
             </label>
             <div className="space-y-2.5">
               {ROLE_OPTIONS.map((opt) => {
-                const isSelected = role === opt.value
+                const isSelected = role === opt.value;
                 return (
                   <button
                     key={opt.value}
@@ -166,7 +174,7 @@ export function InviteMemberModal({ isOpen, onClose, onInvite, projectName, proj
                       {opt.description}
                     </div>
                   </button>
-                )
+                );
               })}
             </div>
           </div>
@@ -183,5 +191,5 @@ export function InviteMemberModal({ isOpen, onClose, onInvite, projectName, proj
         description="You have entered an email address. Are you sure you want to close?"
       />
     </>
-  )
+  );
 }

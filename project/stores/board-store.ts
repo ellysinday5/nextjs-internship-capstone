@@ -1,25 +1,25 @@
 "use client";
 
-import { create } from "zustand";
-import { subscribeWithSelector } from "zustand/middleware";
 import {
-  getListsAction,
-  createListAction,
-  updateListAction,
-  reorderListsAction,
-  deleteListAction,
   type ListWithTasks,
+  createListAction,
+  deleteListAction,
+  getListsAction,
+  reorderListsAction,
+  updateListAction,
 } from "@/actions/list-actions";
 import {
-  getProjectTasksAction,
-  createTaskAction,
-  updateTaskAction,
-  moveTaskAction,
-  deleteTaskAction,
   type TaskRecord,
+  createTaskAction,
+  deleteTaskAction,
+  getProjectTasksAction,
+  moveTaskAction,
+  updateTaskAction,
 } from "@/actions/task-actions";
-import type { CreateTaskFormValues, UpdateTaskFormValues } from "@/lib/task-schemas";
+import type { CreateTaskFormValues, UpdateTaskFormValues } from "@/lib/db/task-schemas";
 import { deriveStatusForList } from "@/lib/task-status";
+import { create } from "zustand";
+import { subscribeWithSelector } from "zustand/middleware";
 
 interface BoardState {
   currentProjectId: string | null;
@@ -32,7 +32,10 @@ interface BoardState {
   error: string | null;
 
   loadProject: (projectId: string) => Promise<void>;
-  createTask: (listId: string, task: Partial<CreateTaskFormValues> & { title: string }) => Promise<void>;
+  createTask: (
+    listId: string,
+    task: Partial<CreateTaskFormValues> & { title: string },
+  ) => Promise<void>;
   updateTask: (taskId: string, updates: Omit<UpdateTaskFormValues, "id">) => Promise<void>;
   moveTask: (taskId: string, newListId: string, newPosition: number) => Promise<void>;
   deleteTask: (taskId: string) => Promise<void>;
@@ -57,7 +60,10 @@ export const useBoardStore = create<BoardState>()(
     error: null,
 
     loadProject: async (projectId) => {
-      if (get().currentProjectId === projectId && (get().lists.length > 0 || get().tasks.length > 0)) {
+      if (
+        get().currentProjectId === projectId &&
+        (get().lists.length > 0 || get().tasks.length > 0)
+      ) {
         return;
       }
       set({ isLoading: true, error: null, currentProjectId: projectId });
@@ -122,7 +128,11 @@ export const useBoardStore = create<BoardState>()(
                 ...t,
                 ...updates,
                 dueDate:
-                  updates.dueDate === undefined ? t.dueDate : updates.dueDate ? new Date(updates.dueDate) : null,
+                  updates.dueDate === undefined
+                    ? t.dueDate
+                    : updates.dueDate
+                      ? new Date(updates.dueDate)
+                      : null,
               }
             : t,
         ),
@@ -132,7 +142,11 @@ export const useBoardStore = create<BoardState>()(
       const result = await updateTaskAction({ id: taskId, ...updates });
 
       if (!result.success) {
-        set({ tasks: previousTasks, isSaving: false, error: result.error ?? "Failed to update task." });
+        set({
+          tasks: previousTasks,
+          isSaving: false,
+          error: result.error ?? "Failed to update task.",
+        });
         return;
       }
       set({ isSaving: false });
@@ -162,10 +176,18 @@ export const useBoardStore = create<BoardState>()(
       }));
 
       // Persist the move itself first.
-      const moveResult = await moveTaskAction({ taskId, toListId: newListId, toPosition: newPosition });
+      const moveResult = await moveTaskAction({
+        taskId,
+        toListId: newListId,
+        toPosition: newPosition,
+      });
 
       if (!moveResult.success) {
-        set({ tasks: previousTasks, isSaving: false, error: moveResult.error ?? "Failed to move task." });
+        set({
+          tasks: previousTasks,
+          isSaving: false,
+          error: moveResult.error ?? "Failed to move task.",
+        });
         return;
       }
 
@@ -193,7 +215,11 @@ export const useBoardStore = create<BoardState>()(
       const result = await deleteTaskAction(taskId);
 
       if (!result.success) {
-        set({ tasks: previousTasks, isSaving: false, error: result.error ?? "Failed to delete task." });
+        set({
+          tasks: previousTasks,
+          isSaving: false,
+          error: result.error ?? "Failed to delete task.",
+        });
         return;
       }
       set({ isSaving: false });
@@ -252,7 +278,11 @@ export const useBoardStore = create<BoardState>()(
 
       const result = await deleteListAction(listId);
       if (!result.success) {
-        set({ lists: previousLists, tasks: previousTasks, error: result.error ?? "Failed to delete list." });
+        set({
+          lists: previousLists,
+          tasks: previousTasks,
+          error: result.error ?? "Failed to delete list.",
+        });
       }
     },
 
