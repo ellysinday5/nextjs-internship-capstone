@@ -1,5 +1,6 @@
 import { relations } from "drizzle-orm";
 import {
+  type AnyPgColumn,
   boolean,
   index,
   integer,
@@ -173,13 +174,14 @@ export const tasks = pgTable("tasks", {
 // ============================================
 export const comments = pgTable("comments", {
   id: uuid("id").defaultRandom().primaryKey(),
-  content: text("content").notNull(),
   taskId: uuid("task_id")
     .references(() => tasks.id, { onDelete: "cascade" })
     .notNull(),
-  authorId: uuid("author_id")
-    .references(() => users.id, { onDelete: "cascade" })
-    .notNull(),
+  authorId: text("author_id").notNull(),
+  content: text("content").notNull(),
+  parentCommentId: uuid("parent_comment_id").references((): AnyPgColumn => comments.id, {
+    onDelete: "cascade",
+  }),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });
@@ -304,14 +306,22 @@ export const tasksRelations = relations(tasks, ({ one, many }) => ({
   comments: many(comments),
 }));
 
-export const commentsRelations = relations(comments, ({ one }) => ({
+export const commentsRelations = relations(comments, ({ one, many }) => ({
   task: one(tasks, {
     fields: [comments.taskId],
     references: [tasks.id],
   }),
   author: one(users, {
     fields: [comments.authorId],
-    references: [users.id],
+    references: [users.clerkId],
+  }),
+  parentComment: one(comments, {
+    fields: [comments.parentCommentId],
+    references: [comments.id],
+    relationName: "commentReplies",
+  }),
+  replies: many(comments, {
+    relationName: "commentReplies",
   }),
 }));
 

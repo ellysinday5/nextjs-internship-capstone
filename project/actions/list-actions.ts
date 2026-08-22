@@ -18,7 +18,7 @@ import {
   workspaceMembers,
   workspaces,
 } from "@/lib/db/schema";
-import { and, asc, eq, sql } from "drizzle-orm";
+import { and, asc, eq, inArray, sql } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 
 export interface ListWithTasks {
@@ -122,18 +122,25 @@ export async function getListsAction(projectId: string): Promise<ListWithTasks[]
       .where(eq(lists.projectId, projectId))
       .orderBy(asc(lists.position));
 
-    const results: ListWithTasks[] = await Promise.all(
-      projectLists.map(async (list) => {
-        const [{ count }] = await db
-          .select({ count: sql<number>`count(*)::int` })
-          .from(tasks)
-          .where(eq(tasks.listId, list.id));
+    if (projectLists.length === 0) return [];
 
-        return { ...list, taskCount: count };
-      }),
-    );
+    const listIds = projectLists.map((l) => l.id);
 
-    return results;
+    const taskCountRows = await db
+      .select({
+        listId: tasks.listId,
+        count: sql<number>`count(*)::int`,
+      })
+      .from(tasks)
+      .where(inArray(tasks.listId, listIds))
+      .groupBy(tasks.listId);
+
+    const countMap = new Map(taskCountRows.map((r) => [r.listId, r.count]));
+
+    return projectLists.map((list) => ({
+      ...list,
+      taskCount: countMap.get(list.id) || 0,
+    }));
   } catch (error) {
     console.error("[getListsAction] Error fetching lists:", error);
     return [];

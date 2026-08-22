@@ -1,9 +1,15 @@
 "use server";
 
+import {
+  acceptProjectInviteAction,
+  declineProjectInviteAction,
+} from "@/actions/member-actions";
 import { db } from "@/lib/db";
-import { type notificationTypeEnum, notifications } from "@/lib/db/schema";
+import { syncUser } from "@/lib/db/auth";
+import { invites, type notificationTypeEnum, notifications, projects } from "@/lib/db/schema";
+import { toSlug } from "@/lib/project-data";
 import { auth } from "@clerk/nextjs/server";
-import { type InferSelectModel, and, count, eq } from "drizzle-orm";
+import { type InferSelectModel, and, count, eq, sql } from "drizzle-orm";
 
 export type NotificationType = (typeof notificationTypeEnum.enumValues)[number];
 
@@ -137,6 +143,208 @@ export async function markAllNotificationsAsReadAction() {
     .where(and(eq(notifications.recipientId, dbUser.id), eq(notifications.isRead, false)));
 
   return { success: true, error: null };
+}
+
+// ============================================
+// DELETE — dismiss / remove one notification
+// ============================================
+export async function deleteNotificationAction(notificationId: string) {
+  const { userId: clerkId } = await auth();
+  if (!clerkId) return { success: false, error: "Unauthorized" };
+
+  const dbUser = await db.query.users.findFirst({
+    where: (u, { eq }) => eq(u.clerkId, clerkId),
+  });
+  if (!dbUser) return { success: false, error: "User not found" };
+
+  await db
+    .delete(notifications)
+    .where(and(eq(notifications.id, notificationId), eq(notifications.recipientId, dbUser.id)));
+
+  return { success: true, error: null };
+}
+
+// ============================================
+// INVITATION NOTIFICATION ACTIONS
+// ============================================
+export async function acceptProjectInvitationNotificationAction(notificationId: string) {
+  try {
+    const user = await syncUser();
+    if (!user) return { success: false, error: "Unauthorized. Please sign in." };
+
+    const [notification] = await db
+      .select()
+      .from(notifications)
+      .where(and(eq(notifications.id, notificationId), eq(notifications.recipientId, user.id)));
+
+    if (!notification) {
+      return { success: false, error: "Notification not found." };
+    }
+
+    const metadata = (notification.metadata ?? {}) as {
+      inviteId?: string;
+      projectId?: string;
+      projectName?: string;
+      role?: string;
+    };
+
+    let inviteId = metadata.inviteId;
+
+    if (!inviteId) {
+      const targetProjectId =
+        metadata.projectId ||
+        (notification.href ? notification.href.split("/projects/")[1]?.split("/")[0] : null);
+
+      if (!targetProjectId) {
+        return { success: false, error: "Could not identify project for this invitation." };
+      }
+
+      const [pendingInvite] = await db
+        .select({ id: invites.id })
+        .from(invites)
+        .where(
+          and(
+            eq(invites.projectId, targetProjectId),
+            sql`LOWER(${invites.email}) = ${user.email.toLowerCase()}`,
+            eq(invites.status, "pending"),
+          ),
+        )
+        .orderBy(sql`${invites.createdAt} DESC`)
+        .limit(1);
+
+      if (!pendingInvite) {
+        // Check if already accepted
+        const [anyInvite] = await db
+          .select({ status: invites.status })
+          .from(invites)
+          .where(
+            and(
+              eq(invites.projectId, targetProjectId),
+              sql`LOWER(${invites.email}) = ${user.email.toLowerCase()}`,
+            ),
+          )
+          .limit(1);
+
+        if (anyInvite?.status === "accepted") {
+          await db
+            .update(notifications)
+            .set({ isRead: true })
+            .where(eq(notifications.id, notificationId));
+          // Fetch project name to derive slug for consistent redirect
+          const [proj] = await db
+            .select({ name: projects.name })
+            .from(projects)
+            .where(eq(projects.id, targetProjectId))
+            .limit(1);
+          const projectSlug = proj?.name ? toSlug(proj.name) : targetProjectId;
+          return { success: true, projectId: targetProjectId, projectSlug, alreadyMember: true };
+        }
+
+        return { success: false, error: "Invitation is no longer active or was not found." };
+      }
+
+      inviteId = pendingInvite.id;
+    }
+
+    // Call shared core accept action from member-actions.ts
+    const result = await acceptProjectInviteAction(inviteId);
+    if (!result.success) {
+      return result;
+    }
+
+    // Mark originating notification as read
+    await db
+      .update(notifications)
+      .set({ isRead: true })
+      .where(eq(notifications.id, notificationId));
+
+    // Notify inviter (actor) if present
+    if (notification.actorId) {
+      const projectName = metadata.projectName || "the project";
+      await createNotification({
+        workspaceId: notification.workspaceId ?? undefined,
+        recipientId: notification.actorId,
+        actorId: user.id,
+        type: "invite_accepted",
+        title: "Invitation Accepted",
+        message: `${user.name} accepted your invitation to join "${projectName}".`,
+        href: `/projects/${result.projectSlug ?? result.projectId}`,
+        metadata: {
+          projectId: result.projectId,
+          projectName,
+          acceptedByUserId: user.id,
+        },
+      });
+    }
+
+    return { success: true, projectId: result.projectId, projectSlug: result.projectSlug };
+  } catch (error) {
+    console.error("[acceptProjectInvitationNotificationAction] Error:", error);
+    return { success: false, error: "Failed to accept invitation." };
+  }
+}
+
+export async function declineProjectInvitationNotificationAction(notificationId: string) {
+  try {
+    const user = await syncUser();
+    if (!user) return { success: false, error: "Unauthorized. Please sign in." };
+
+    const [notification] = await db
+      .select()
+      .from(notifications)
+      .where(and(eq(notifications.id, notificationId), eq(notifications.recipientId, user.id)));
+
+    if (!notification) {
+      return { success: false, error: "Notification not found." };
+    }
+
+    const metadata = (notification.metadata ?? {}) as {
+      inviteId?: string;
+      projectId?: string;
+      projectName?: string;
+    };
+
+    let inviteId = metadata.inviteId;
+
+    if (!inviteId) {
+      const targetProjectId =
+        metadata.projectId ||
+        (notification.href ? notification.href.split("/projects/")[1]?.split("/")[0] : null);
+
+      if (targetProjectId) {
+        const [pendingInvite] = await db
+          .select({ id: invites.id })
+          .from(invites)
+          .where(
+            and(
+              eq(invites.projectId, targetProjectId),
+              sql`LOWER(${invites.email}) = ${user.email.toLowerCase()}`,
+              eq(invites.status, "pending"),
+            ),
+          )
+          .limit(1);
+
+        if (pendingInvite) {
+          inviteId = pendingInvite.id;
+        }
+      }
+    }
+
+    if (inviteId) {
+      await declineProjectInviteAction(inviteId);
+    }
+
+    // Mark notification as read
+    await db
+      .update(notifications)
+      .set({ isRead: true })
+      .where(eq(notifications.id, notificationId));
+
+    return { success: true };
+  } catch (error) {
+    console.error("[declineProjectInvitationNotificationAction] Error:", error);
+    return { success: false, error: "Failed to decline invitation." };
+  }
 }
 
 export type NotificationWithActor = InferSelectModel<typeof notifications> & {

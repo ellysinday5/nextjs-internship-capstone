@@ -1,23 +1,105 @@
 "use client";
 
-import { AlertTriangle, Bell, CheckCheck, Info, Star, X } from "lucide-react";
-import React, { useState } from "react";
+import {
+  type NotificationWithActor,
+  deleteNotificationAction,
+  getAllNotificationsAction,
+  markAllNotificationsAsReadAction,
+  markNotificationAsReadAction,
+} from "@/actions/notification-actions";
+import {
+  AlertTriangle,
+  Bell,
+  CheckCheck,
+  Info,
+  Loader2,
+  Star,
+  UserPlus,
+  X,
+} from "lucide-react";
+import React, { useCallback, useEffect, useState } from "react";
 
-type NotifType = "task" | "mention" | "invite" | "system";
-type NotifCategory = "all" | NotifType;
+// ─── Types ───────────────────────────────────────────────────────────────────
 
-interface NotifItem {
-  id: string;
-  type: NotifType;
-  title: string;
-  desc: string;
-  time: string;
-  read: boolean;
+type NotifCategory = "all" | "task" | "mention" | "invite" | "system";
+
+interface NotifPrefs {
+  emailNotifs: boolean;
+  pushNotifs: boolean;
+  taskAlerts: boolean;
+  weeklyDigest: boolean;
 }
 
-function ToggleSwitch({ checked, onChange }: { checked: boolean; onChange: (v: boolean) => void }) {
+const PREFS_STORAGE_KEY = "sf_notif_prefs";
+
+const DEFAULT_PREFS: NotifPrefs = {
+  emailNotifs: true,
+  pushNotifs: true,
+  taskAlerts: true,
+  weeklyDigest: false,
+};
+
+// ─── Helper: map DB notification type → UI category ──────────────────────────
+
+function dbTypeToCategory(type: string): NotifCategory {
+  if (type === "task_assigned" || type === "task_status_changed") return "task";
+  if (type === "mentioned" || type === "comment_added") return "mention";
+  if (
+    type === "project_invite" ||
+    type === "workspace_invite" ||
+    type === "invite_accepted" ||
+    type === "member_added"
+  )
+    return "invite";
+  return "system";
+}
+
+function dbTypeToIcon(type: string) {
+  const cat = dbTypeToCategory(type);
+  if (cat === "task") return <CheckCheck size={14} />;
+  if (cat === "mention") return <Star size={14} />;
+  if (cat === "invite") return <UserPlus size={14} />;
+  return <AlertTriangle size={14} />;
+}
+
+/** Returns false if the user's preferences suppress this notification category */
+function isAllowedByPrefs(type: string, prefs: NotifPrefs): boolean {
+  const cat = dbTypeToCategory(type);
+  if (cat === "task" && !prefs.taskAlerts) return false;
+  if (cat === "system" && !prefs.weeklyDigest) return false;
+  return true;
+}
+
+function formatTime(dateStr: string | Date | null) {
+  if (!dateStr) return "";
+  const date = new Date(dateStr);
+  const now = new Date();
+  const diffMs = now.getTime() - date.getTime();
+  const diffMin = Math.floor(diffMs / 60000);
+  if (diffMin < 1) return "Just now";
+  if (diffMin < 60) return `${diffMin}m ago`;
+  const diffHr = Math.floor(diffMin / 60);
+  if (diffHr < 24) return `${diffHr}h ago`;
+  const diffDay = Math.floor(diffHr / 24);
+  if (diffDay === 1) return "Yesterday";
+  if (diffDay < 7) return `${diffDay}d ago`;
+  return date.toLocaleDateString(undefined, { month: "short", day: "numeric" });
+}
+
+// ─── Toggle Switch ────────────────────────────────────────────────────────────
+
+function ToggleSwitch({
+  id,
+  checked,
+  onChange,
+}: {
+  id: string;
+  checked: boolean;
+  onChange: (v: boolean) => void;
+}) {
   return (
     <button
+      id={id}
       type="button"
       role="switch"
       aria-checked={checked}
@@ -36,128 +118,144 @@ function ToggleSwitch({ checked, onChange }: { checked: boolean; onChange: (v: b
   );
 }
 
+// ─── Main Component ───────────────────────────────────────────────────────────
+
 const NOTIFS_PER_PAGE = 5;
 
-const INITIAL_NOTIFS: NotifItem[] = [
-  {
-    id: "1",
-    type: "task",
-    title: "Task assigned to you",
-    desc: 'You were assigned "Design homepage mockup" in Project Alpha.',
-    time: "2 min ago",
-    read: false,
-  },
-  {
-    id: "2",
-    type: "mention",
-    title: "You were mentioned",
-    desc: 'Sarah mentioned you in a comment on "API Integration" task.',
-    time: "15 min ago",
-    read: false,
-  },
-  {
-    id: "3",
-    type: "invite",
-    title: "Project invitation",
-    desc: 'You were invited to join the "Mobile Redesign" project by James.',
-    time: "1 hr ago",
-    read: false,
-  },
-  {
-    id: "4",
-    type: "task",
-    title: "Task deadline approaching",
-    desc: '"Deploy staging environment" is due in 2 hours.',
-    time: "2 hr ago",
-    read: false,
-  },
-  {
-    id: "5",
-    type: "system",
-    title: "Weekly digest ready",
-    desc: "Your productivity summary for the week is ready.",
-    time: "Yesterday",
-    read: true,
-  },
-  {
-    id: "6",
-    type: "mention",
-    title: "You were mentioned",
-    desc: 'Jake left a comment mentioning you on "Sprint Planning" milestone.',
-    time: "2 days ago",
-    read: true,
-  },
-  {
-    id: "7",
-    type: "task",
-    title: "Task completed",
-    desc: '"Setup CI/CD pipeline" was marked complete by Maria.',
-    time: "3 days ago",
-    read: true,
-  },
+const NOTIF_TABS: { key: NotifCategory; label: string }[] = [
+  { key: "all", label: "All" },
+  { key: "task", label: "Tasks" },
+  { key: "mention", label: "Mentions" },
+  { key: "invite", label: "Invites" },
+  { key: "system", label: "System" },
 ];
 
 export function NotificationsTab() {
-  const [notifications, setNotifications] = useState<NotifItem[]>(INITIAL_NOTIFS);
+  // ── Real notifications from DB ──────────────────────────────────────────
+  const [notifications, setNotifications] = useState<NotificationWithActor[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [page, setPage] = useState(1);
+  const [hasMore, setHasMore] = useState(false);
   const [notifCategory, setNotifCategory] = useState<NotifCategory>("all");
-  const [notifPage, setNotifPage] = useState(1);
+  const [isMarkingAll, setIsMarkingAll] = useState(false);
 
-  const [emailNotifs, setEmailNotifs] = useState(true);
-  const [pushNotifs, setPushNotifs] = useState(true);
-  const [taskAlerts, setTaskAlerts] = useState(true);
-  const [weeklyDigest, setWeeklyDigest] = useState(false);
+  // ── Preferences (persisted in localStorage) ─────────────────────────────
+  const [prefs, setPrefs] = useState<NotifPrefs>(DEFAULT_PREFS);
+  const [prefsLoaded, setPrefsLoaded] = useState(false);
+  const [savingPref, setSavingPref] = useState<string | null>(null);
 
-  const unreadCount = notifications.filter((n) => !n.read).length;
-  const markAllRead = () => setNotifications((n) => n.map((x) => ({ ...x, read: true })));
-  const dismissNotif = (id: string) => setNotifications((n) => n.filter((x) => x.id !== id));
+  // ── Load prefs from localStorage on mount ───────────────────────────────
+  useEffect(() => {
+    try {
+      const stored = localStorage.getItem(PREFS_STORAGE_KEY);
+      if (stored) {
+        setPrefs({ ...DEFAULT_PREFS, ...JSON.parse(stored) });
+      }
+    } catch {
+      // ignore parse errors
+    }
+    setPrefsLoaded(true);
+  }, []);
 
-  const filteredNotifs =
-    notifCategory === "all" ? notifications : notifications.filter((n) => n.type === notifCategory);
+  // ── Persist prefs to localStorage whenever they change (after initial load) ─
+  useEffect(() => {
+    if (!prefsLoaded) return;
+    localStorage.setItem(PREFS_STORAGE_KEY, JSON.stringify(prefs));
+  }, [prefs, prefsLoaded]);
 
-  const totalNotifPages = Math.max(1, Math.ceil(filteredNotifs.length / NOTIFS_PER_PAGE));
-  const pagedNotifs = filteredNotifs.slice(
-    (notifPage - 1) * NOTIFS_PER_PAGE,
-    notifPage * NOTIFS_PER_PAGE,
-  );
+  // ── Fetch notifications ──────────────────────────────────────────────────
+  const fetchNotifications = useCallback(async (pageNum = 1) => {
+    setLoading(true);
+    try {
+      const res = await getAllNotificationsAction(pageNum, NOTIFS_PER_PAGE + 1);
+      if (res.success && res.data) {
+        const fetched = res.data as NotificationWithActor[];
+        setHasMore(fetched.length > NOTIFS_PER_PAGE);
+        setNotifications(fetched.slice(0, NOTIFS_PER_PAGE));
+        setPage(pageNum);
+      }
+    } catch (err) {
+      console.error("Failed to fetch notifications:", err);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
 
-  const NOTIF_TABS: { key: NotifCategory; label: string }[] = [
-    { key: "all", label: "All" },
-    { key: "task", label: "Tasks" },
-    { key: "mention", label: "Mentions" },
-    { key: "invite", label: "Invites" },
-    { key: "system", label: "System" },
-  ];
+  useEffect(() => {
+    fetchNotifications(1);
+  }, [fetchNotifications]);
 
-  const PREFS = [
+  // ── Derived counts & filtered list ──────────────────────────────────────
+  const unreadCount = notifications.filter((n) => !n.isRead).length;
+
+  const filteredNotifs = notifications.filter((n) => {
+    const cat = dbTypeToCategory(n.type);
+    if (notifCategory !== "all" && cat !== notifCategory) return false;
+    if (!isAllowedByPrefs(n.type, prefs)) return false;
+    return true;
+  });
+
+  // ── Actions ──────────────────────────────────────────────────────────────
+  async function handleMarkAllRead() {
+    setIsMarkingAll(true);
+    await markAllNotificationsAsReadAction();
+    await fetchNotifications(page);
+    setIsMarkingAll(false);
+  }
+
+  async function handleMarkRead(id: string) {
+    await markNotificationAsReadAction(id);
+    setNotifications((prev) =>
+      prev.map((n) => (n.id === id ? { ...n, isRead: true } : n)),
+    );
+  }
+
+  async function handleDismiss(id: string) {
+    setNotifications((prev) => prev.filter((n) => n.id !== id));
+    await deleteNotificationAction(id);
+  }
+
+  function updatePref<K extends keyof NotifPrefs>(key: K, value: boolean) {
+    setSavingPref(key);
+    setPrefs((p) => ({ ...p, [key]: value }));
+    setTimeout(() => setSavingPref(null), 700);
+  }
+
+  const PREF_CONFIG: {
+    key: keyof NotifPrefs;
+    label: string;
+    desc: string;
+    note: string | null;
+  }[] = [
     {
+      key: "emailNotifs",
       label: "Email Notifications",
       desc: "Receive updates via email",
-      checked: emailNotifs,
-      onChange: setEmailNotifs,
+      note: null,
     },
     {
+      key: "pushNotifs",
       label: "Push Notifications",
       desc: "Get real-time browser notifications",
-      checked: pushNotifs,
-      onChange: setPushNotifs,
+      note: null,
     },
     {
+      key: "taskAlerts",
       label: "Task Assignment Alerts",
       desc: "Notify instantly when assigned to a task",
-      checked: taskAlerts,
-      onChange: setTaskAlerts,
+      note: "Task notifications are hidden from your list while this is off",
     },
     {
+      key: "weeklyDigest",
       label: "Weekly Summary Digest",
       desc: "Receive productivity report weekly",
-      checked: weeklyDigest,
-      onChange: setWeeklyDigest,
+      note: "System/digest notifications are hidden from your list while this is off",
     },
   ];
 
   return (
     <div className="p-6 sm:p-8 space-y-6">
-      {/* Notifications list */}
+      {/* ── Notifications List ─────────────────────────────────────────────── */}
       <div>
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-2">
@@ -173,30 +271,33 @@ export function NotificationsTab() {
           {unreadCount > 0 && (
             <button
               type="button"
-              onClick={markAllRead}
-              className="text-xs font-semibold text-[#0052cc] hover:underline cursor-pointer"
+              onClick={handleMarkAllRead}
+              disabled={isMarkingAll}
+              className="text-xs font-semibold text-[#0052cc] hover:underline cursor-pointer disabled:opacity-50 flex items-center gap-1"
             >
+              {isMarkingAll && <Loader2 size={11} className="animate-spin" />}
               Mark all as read
             </button>
           )}
         </div>
 
         {/* Category tabs */}
-        <div className="flex items-center gap-1 border-b border-slate-100 dark:border-slate-800 mb-3">
+        <div className="flex items-center gap-1 border-b border-slate-100 dark:border-slate-800 mb-3 overflow-x-auto">
           {NOTIF_TABS.map((tab) => {
             const count =
               tab.key === "all"
-                ? notifications.length
-                : notifications.filter((n) => n.type === tab.key).length;
+                ? notifications.filter((n) => isAllowedByPrefs(n.type, prefs)).length
+                : notifications.filter(
+                    (n) =>
+                      dbTypeToCategory(n.type) === tab.key &&
+                      isAllowedByPrefs(n.type, prefs),
+                  ).length;
             return (
               <button
                 key={tab.key}
                 type="button"
-                onClick={() => {
-                  setNotifCategory(tab.key);
-                  setNotifPage(1);
-                }}
-                className={`flex items-center gap-1.5 px-3 py-2 text-xs font-bold rounded-t-lg border-b-2 transition-all -mb-px cursor-pointer ${
+                onClick={() => setNotifCategory(tab.key)}
+                className={`flex items-center gap-1.5 px-3 py-2 text-xs font-bold rounded-t-lg border-b-2 transition-all -mb-px cursor-pointer whitespace-nowrap ${
                   notifCategory === tab.key
                     ? "border-[#0052cc] text-[#0052cc] bg-blue-50/50 dark:bg-blue-950/20"
                     : "border-transparent text-slate-500 hover:text-slate-800 dark:hover:text-white"
@@ -212,47 +313,81 @@ export function NotificationsTab() {
         </div>
 
         {/* List items */}
-        <div className="space-y-2">
-          {pagedNotifs.length === 0 ? (
+        <div className="space-y-2 min-h-[120px]">
+          {loading ? (
+            <div className="py-12 text-center text-slate-400">
+              <Loader2 size={24} className="mx-auto mb-2 animate-spin opacity-40" />
+              <p className="text-sm font-semibold">Loading notifications…</p>
+            </div>
+          ) : filteredNotifs.length === 0 ? (
             <div className="py-12 text-center text-slate-400">
               <Bell size={28} className="mx-auto mb-2 opacity-40" />
-              <p className="text-sm font-semibold">No notifications in this category.</p>
+              <p className="text-sm font-semibold">
+                {notifCategory === "all"
+                  ? "No notifications yet."
+                  : `No ${notifCategory} notifications.`}
+              </p>
+              {notifCategory === "task" && !prefs.taskAlerts && (
+                <p className="text-xs mt-1 text-amber-500">
+                  Task alerts are disabled in your preferences below.
+                </p>
+              )}
+              {notifCategory === "system" && !prefs.weeklyDigest && (
+                <p className="text-xs mt-1 text-amber-500">
+                  Weekly digest is disabled in your preferences below.
+                </p>
+              )}
             </div>
           ) : (
-            pagedNotifs.map((notif) => (
+            filteredNotifs.map((notif) => (
               <div
                 key={notif.id}
                 className={`p-3.5 rounded-xl border flex items-start gap-3 group transition-all ${
-                  notif.read
+                  notif.isRead
                     ? "border-slate-200 dark:border-slate-700 bg-white dark:bg-[#1c304a] opacity-70"
                     : "border-[#0052cc]/30 bg-blue-50/40 dark:bg-blue-950/10"
                 }`}
               >
                 <div className="w-8 h-8 rounded-full bg-blue-100 dark:bg-blue-950 flex items-center justify-center shrink-0 mt-0.5 text-[#0052cc]">
-                  {notif.type === "task" ? (
-                    <CheckCheck size={14} />
-                  ) : notif.type === "mention" ? (
-                    <Star size={14} />
-                  ) : notif.type === "invite" ? (
-                    <Info size={14} />
-                  ) : (
-                    <AlertTriangle size={14} />
-                  )}
+                  {dbTypeToIcon(notif.type)}
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2">
                     <span className="text-xs font-bold text-[#142843] dark:text-white">
                       {notif.title}
                     </span>
-                    {!notif.read && <span className="w-2 h-2 rounded-full bg-[#0052cc] shrink-0" />}
+                    {!notif.isRead && (
+                      <span className="w-2 h-2 rounded-full bg-[#0052cc] shrink-0" />
+                    )}
                   </div>
-                  <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">{notif.desc}</p>
-                  <p className="text-[10px] text-slate-400 mt-1">{notif.time}</p>
+                  {notif.message && (
+                    <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5 line-clamp-2">
+                      {notif.message}
+                    </p>
+                  )}
+                  <div className="flex items-center gap-3 mt-1 flex-wrap">
+                    <p className="text-[10px] text-slate-400">{formatTime(notif.createdAt)}</p>
+                    {notif.actor && (
+                      <p className="text-[10px] text-slate-400">
+                        by{" "}
+                        <span className="font-semibold text-slate-500">{notif.actor.name}</span>
+                      </p>
+                    )}
+                    {!notif.isRead && (
+                      <button
+                        type="button"
+                        onClick={() => handleMarkRead(notif.id)}
+                        className="text-[10px] text-[#0052cc] hover:underline cursor-pointer"
+                      >
+                        Mark read
+                      </button>
+                    )}
+                  </div>
                 </div>
                 <button
                   type="button"
-                  onClick={() => dismissNotif(notif.id)}
-                  className="p-1 rounded text-slate-300 hover:text-slate-600 dark:hover:text-slate-200 opacity-0 group-hover:opacity-100 transition-all cursor-pointer"
+                  onClick={() => handleDismiss(notif.id)}
+                  className="p-1 rounded text-slate-300 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-all cursor-pointer"
                   title="Dismiss"
                 >
                   <X size={13} />
@@ -263,47 +398,63 @@ export function NotificationsTab() {
         </div>
 
         {/* Pagination */}
-        {totalNotifPages > 1 && (
-          <div className="flex items-center justify-center gap-2 mt-4">
-            <button
-              type="button"
-              onClick={() => setNotifPage((p) => Math.max(1, p - 1))}
-              disabled={notifPage === 1}
-              className="px-3 py-1.5 text-xs font-bold rounded-lg border border-slate-200 dark:border-slate-700 disabled:opacity-40 cursor-pointer"
-            >
-              Prev
-            </button>
-            <span className="text-xs text-slate-500">
-              {notifPage} / {totalNotifPages}
-            </span>
-            <button
-              type="button"
-              onClick={() => setNotifPage((p) => Math.min(totalNotifPages, p + 1))}
-              disabled={notifPage === totalNotifPages}
-              className="px-3 py-1.5 text-xs font-bold rounded-lg border border-slate-200 dark:border-slate-700 disabled:opacity-40 cursor-pointer"
-            >
-              Next
-            </button>
-          </div>
-        )}
+        <div className="flex items-center justify-center gap-3 mt-4">
+          <button
+            type="button"
+            onClick={() => fetchNotifications(page - 1)}
+            disabled={page === 1 || loading}
+            className="px-3 py-1.5 text-xs font-bold rounded-lg border border-slate-200 dark:border-slate-700 disabled:opacity-40 cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors"
+          >
+            Prev
+          </button>
+          <span className="text-xs text-slate-500">Page {page}</span>
+          <button
+            type="button"
+            onClick={() => fetchNotifications(page + 1)}
+            disabled={!hasMore || loading}
+            className="px-3 py-1.5 text-xs font-bold rounded-lg border border-slate-200 dark:border-slate-700 disabled:opacity-40 cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors"
+          >
+            Next
+          </button>
+        </div>
       </div>
 
-      {/* Preferences */}
+      {/* ── Notification Preferences ───────────────────────────────────────── */}
       <div className="pt-4 border-t border-slate-100 dark:border-slate-800">
-        <h3 className="text-sm font-bold text-[#142843] dark:text-white mb-3">
+        <h3 className="text-sm font-bold text-[#142843] dark:text-white mb-1">
           Notification Preferences
         </h3>
+        <p className="text-[11px] text-slate-400 mb-3">
+          Your preferences are saved automatically and affect which notifications appear in your list.
+        </p>
         <div className="space-y-2.5">
-          {PREFS.map(({ label, desc, checked, onChange }) => (
+          {PREF_CONFIG.map(({ key, label, desc, note }) => (
             <div
-              key={label}
-              className="flex items-center justify-between p-3.5 bg-slate-50 dark:bg-slate-800/30 rounded-xl"
+              key={key}
+              className="flex items-start justify-between p-3.5 bg-slate-50 dark:bg-slate-800/30 rounded-xl gap-4"
             >
-              <div>
+              <div className="flex-1 min-w-0">
                 <h4 className="font-semibold text-[#142843] dark:text-white text-xs">{label}</h4>
                 <p className="text-[11px] text-slate-400">{desc}</p>
+                {note && !prefs[key] && (
+                  <p className="text-[10px] text-amber-500 dark:text-amber-400 mt-0.5 flex items-center gap-1">
+                    <Info size={9} />
+                    {note}
+                  </p>
+                )}
               </div>
-              <ToggleSwitch checked={checked} onChange={onChange} />
+              <div className="flex items-center gap-2 shrink-0 pt-0.5">
+                {savingPref === key && (
+                  <span className="text-[10px] text-emerald-500 font-semibold animate-pulse">
+                    Saved
+                  </span>
+                )}
+                <ToggleSwitch
+                  id={`pref-${key}`}
+                  checked={prefs[key]}
+                  onChange={(v) => updatePref(key, v)}
+                />
+              </div>
             </div>
           ))}
         </div>
@@ -311,3 +462,4 @@ export function NotificationsTab() {
     </div>
   );
 }
+

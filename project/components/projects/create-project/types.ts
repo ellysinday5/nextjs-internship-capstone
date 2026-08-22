@@ -22,6 +22,10 @@ export interface CreateProjectFormValues {
   name: string;
   access: "private" | "public" | "team";
   shareWith: string[];
+  description: string;
+  dueDate: string;
+  techStack: string[];
+  categories?: string[];
   selectedViews: ViewId[];
   activePreviewTab: ViewId;
 }

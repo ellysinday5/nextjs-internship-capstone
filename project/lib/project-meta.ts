@@ -41,6 +41,7 @@ export interface ProjectMeta {
   color: string;
   iconIndex: number;
   isFavorite: boolean;
+  views?: string[];
 }
 
 export function loadProjectMeta(projectId: string): ProjectMeta | null {

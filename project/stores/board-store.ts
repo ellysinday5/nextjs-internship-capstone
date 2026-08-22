@@ -112,7 +112,13 @@ export const useBoardStore = create<BoardState>()(
 
       set((state) => ({
         tasks: state.tasks.map((t) =>
-          t.id === tempId ? { ...result.task!, assignee: null, commentsCount: 0 } : t,
+          t.id === tempId
+            ? {
+              ...result.task!,
+              assignee: result.task!.assignee ?? null,
+              commentsCount: result.task!.commentsCount ?? 0,
+            }
+            : t,
         ),
         isSaving: false,
       }));
@@ -125,15 +131,15 @@ export const useBoardStore = create<BoardState>()(
         tasks: state.tasks.map((t) =>
           t.id === taskId
             ? {
-                ...t,
-                ...updates,
-                dueDate:
-                  updates.dueDate === undefined
-                    ? t.dueDate
-                    : updates.dueDate
-                      ? new Date(updates.dueDate)
-                      : null,
-              }
+              ...t,
+              ...updates,
+              dueDate:
+                updates.dueDate === undefined
+                  ? t.dueDate
+                  : updates.dueDate
+                    ? new Date(updates.dueDate)
+                    : null,
+            }
             : t,
         ),
         isSaving: true,
@@ -156,26 +162,23 @@ export const useBoardStore = create<BoardState>()(
       const previousTasks = get().tasks;
       const { lists } = get();
 
-      // Derive the health status implied by the destination column.
       const targetList = lists.find((l) => l.id === newListId);
       const derivedStatus = targetList ? deriveStatusForList(targetList, lists) : undefined;
 
-      // Optimistic update: listId, position, AND derived status all at once.
       set((state) => ({
         tasks: state.tasks.map((t) =>
           t.id === taskId
             ? {
-                ...t,
-                listId: newListId,
-                position: newPosition,
-                ...(derivedStatus ? { status: derivedStatus } : {}),
-              }
+              ...t,
+              listId: newListId,
+              position: newPosition,
+              ...(derivedStatus ? { status: derivedStatus } : {}),
+            }
             : t,
         ),
         isSaving: true,
       }));
 
-      // Persist the move itself first.
       const moveResult = await moveTaskAction({
         taskId,
         toListId: newListId,
@@ -191,12 +194,9 @@ export const useBoardStore = create<BoardState>()(
         return;
       }
 
-      // Persist the derived status as a separate write (moveTaskAction doesn't touch status).
       if (derivedStatus) {
         const statusResult = await updateTaskAction({ id: taskId, status: derivedStatus });
         if (!statusResult.success) {
-          // The move itself already succeeded in the DB — don't roll that back,
-          // just surface that the status sync failed.
           set({
             isSaving: false,
             error: statusResult.error ?? "Task moved, but failed to update status.",

@@ -535,12 +535,21 @@ export async function acceptProjectInviteAction(inviteId: string) {
       return { success: false, error: "Invitation has expired." };
     }
 
+    // Variables captured from the transaction for post-tx use
+    let joinedWorkspaceId: string | null = null;
+    let joinedProjectName: string = "";
+
     await db.transaction(async (tx) => {
-      // 1. Fetch project to get its linked workspaceId
+      // 1. Fetch project to get its linked workspaceId and name (for slug derivation)
       const [project] = await tx
-        .select({ workspaceId: projects.workspaceId })
+        .select({ workspaceId: projects.workspaceId, name: projects.name })
         .from(projects)
         .where(eq(projects.id, invite.projectId));
+
+      if (project) {
+        joinedWorkspaceId = project.workspaceId ?? null;
+        joinedProjectName = project.name;
+      }
 
       // 2. Add to project members if not already added
       const [existingMember] = await tx
@@ -560,20 +569,20 @@ export async function acceptProjectInviteAction(inviteId: string) {
       }
 
       // 3. Auto workspace-membership: ensure user is a workspace member
-      if (project?.workspaceId) {
+      if (joinedWorkspaceId) {
         const [existingWsMember] = await tx
           .select({ id: workspaceMembers.id })
           .from(workspaceMembers)
           .where(
             and(
-              eq(workspaceMembers.workspaceId, project.workspaceId),
+              eq(workspaceMembers.workspaceId, joinedWorkspaceId),
               eq(workspaceMembers.userId, user.id),
             ),
           );
 
         if (!existingWsMember) {
           await tx.insert(workspaceMembers).values({
-            workspaceId: project.workspaceId,
+            workspaceId: joinedWorkspaceId,
             userId: user.id,
             role: "member",
           });
@@ -587,12 +596,26 @@ export async function acceptProjectInviteAction(inviteId: string) {
         .where(eq(invites.id, invite.id));
     });
 
+    // 5. Switch the user's active workspace context to the joined project's workspace
+    //    so the sidebar/dashboard immediately reflects the newly joined project.
+    if (joinedWorkspaceId) {
+      const cookieStore = await cookies();
+      cookieStore.set("current_workspace_id", joinedWorkspaceId, {
+        path: "/",
+        maxAge: 60 * 60 * 24 * 365,
+        sameSite: "lax",
+      });
+    }
+
     revalidatePath(`/projects`);
     revalidatePath(`/team`);
     revalidatePath(`/dashboard`);
     revalidatePath(`/workspaces`);
 
-    return { success: true, projectId: invite.projectId };
+    // Derive a URL-safe slug from the project name (same function used everywhere else)
+    const projectSlug = joinedProjectName ? toSlug(joinedProjectName) : invite.projectId;
+
+    return { success: true, projectId: invite.projectId, projectSlug };
   } catch (error) {
     console.error("[acceptProjectInviteAction] Error:", error);
     return { success: false, error: "Failed to accept invite. Please try again." };
