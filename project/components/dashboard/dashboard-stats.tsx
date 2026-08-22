@@ -1,4 +1,4 @@
-import { TrendingUp, Users, CheckCircle, Clock } from "lucide-react";
+import { CheckCircle, Clock, TrendingUp, Users } from "lucide-react";
 
 const stats = [
   {

@@ -1,20 +1,28 @@
 "use client";
 
-import React, { use, useState } from "react";
-import Link from "next/link";
-import {
-  ArrowLeft,
-  Settings,
-  Users,
-  MoreHorizontal,
-  Plus,
-  LayoutGrid,
-  List,
-  UserCircle2,
-  SlidersHorizontal,
-} from "lucide-react";
+import { type ProjectMember, getProjectMembersAction } from "@/actions/member-actions";
+import { getProjectBySlugAction, updateProjectAction } from "@/actions/project-actions";
+import type { TaskRecord } from "@/actions/task-actions";
+import { AddMemberModal } from "@/components/modals/add-member-modal";
+import { CreateTaskModal } from "@/components/modals/create-task-modal";
+import { CalendarTab } from "@/components/projects/details/calendar-tab";
+import { DashboardTab } from "@/components/projects/details/dashboard-tab";
+import { ListTab } from "@/components/projects/details/list-tab";
+import { OverviewTab } from "@/components/projects/details/overview-tab";
+import { ProjectHeader } from "@/components/projects/details/project-header";
+import { ProjectTabs } from "@/components/projects/details/project-tabs";
+import { ProjectToolbar } from "@/components/projects/details/project-toolbar";
+import { TimelineTab } from "@/components/projects/details/timeline-tab";
+import type { ProjectStatusType } from "@/components/projects/details/types";
+import { KanbanBoard } from "@/components/tasks/kanban-board";
+import { TaskDetailsPane, type TaskItem } from "@/components/tasks/task-details";
+import { useProjectTitle } from "@/context/project-title-context";
+import { useTaskFilters } from "@/hooks/use-task-filters";
+import { buildSectionsFromBoard } from "@/lib/board-to-sections";
+import { loadProjectMeta, saveProjectMeta } from "@/lib/project-meta";
+import { useBoardStore } from "@/stores/board-store";
+import React, { use, useState, useEffect, useMemo, useCallback } from "react";
 
-/* Convert URL slug back to a readable title */
 function slugToTitle(slug: string): string {
   return slug
     .split("-")
@@ -22,405 +30,433 @@ function slugToTitle(slug: string): string {
     .join(" ");
 }
 
-/* ─────────────────────────────────────────────────────────────
-   Types
-───────────────────────────────────────────────────────────── */
-interface Task {
-  id: string;
-  title: string;
-  description: string;
-  priority: "high" | "medium" | "low";
-  assignee: string;
-  tag?: string;
-}
-
-interface Column {
-  id: string;
-  title: string;
-  color: string;
-  tasks: Task[];
-}
-
-/* ─────────────────────────────────────────────────────────────
-   Placeholder Board Data
-───────────────────────────────────────────────────────────── */
-const initialColumns: Column[] = [
-  {
-    id: "todo",
-    title: "To Do",
-    color: "#6366f1",
-    tasks: [
-      { id: "t1", title: "Design homepage mockup", description: "Create initial design concepts", priority: "high", assignee: "J", tag: "Design" },
-      { id: "t2", title: "Research competitors", description: "Analyze competitor websites", priority: "medium", assignee: "S", tag: "Research" },
-      { id: "t3", title: "Define user personas", description: "Create detailed user personas", priority: "low", assignee: "M", tag: "UX" },
-    ],
-  },
-  {
-    id: "in-progress",
-    title: "In Progress",
-    color: "#f59e0b",
-    tasks: [
-      { id: "t4", title: "Develop navigation component", description: "Build responsive navigation bar", priority: "high", assignee: "A", tag: "Dev" },
-      { id: "t5", title: "Content strategy planning", description: "Plan content structure and flow", priority: "medium", assignee: "T", tag: "Content" },
-    ],
-  },
-  {
-    id: "review",
-    title: "In Review",
-    color: "#8b5cf6",
-    tasks: [
-      { id: "t6", title: "Logo design options", description: "Present logo variations to stakeholders", priority: "high", assignee: "L", tag: "Design" },
-    ],
-  },
-  {
-    id: "done",
-    title: "Done",
-    color: "#10b981",
-    tasks: [
-      { id: "t7", title: "Project kickoff meeting", description: "Initial team meeting completed", priority: "medium", assignee: "J", tag: "Planning" },
-      { id: "t8", title: "Requirements gathering", description: "All requirements collected and documented", priority: "high", assignee: "S", tag: "Planning" },
-    ],
-  },
-];
-
-/* ─────────────────────────────────────────────────────────────
-   Priority Badge
-───────────────────────────────────────────────────────────── */
-function PriorityBadge({ priority }: { priority: Task["priority"] }) {
-  const map = {
-    high: "bg-rose-500/10 text-rose-500 border border-rose-500/20",
-    medium: "bg-amber-500/10 text-amber-600 border border-amber-500/20",
-    low: "bg-emerald-500/10 text-emerald-600 border border-emerald-500/20",
-  };
-  return (
-    <span className={`text-[10px] font-bold uppercase px-2 py-0.5 rounded-full ${map[priority]}`}>
-      {priority}
-    </span>
-  );
-}
-
-/* ─────────────────────────────────────────────────────────────
-   Assignee Avatar
-───────────────────────────────────────────────────────────── */
-function Avatar({ letter }: { letter: string }) {
-  return (
-    <div className="w-6 h-6 rounded-full bg-[#00b4d8] flex items-center justify-center text-white text-[10px] font-bold flex-shrink-0">
-      {letter}
-    </div>
-  );
-}
-
-/* ─────────────────────────────────────────────────────────────
-   Task Card
-───────────────────────────────────────────────────────────── */
-function TaskCard({ task }: { task: Task }) {
-  return (
-    <div className="bg-white dark:bg-[#0f1d31] rounded-xl border border-slate-200 dark:border-slate-700/60 p-3.5 shadow-sm hover:shadow-md hover:border-[#00b4d8]/40 transition-all duration-150 cursor-pointer group">
-      {task.tag && (
-        <span className="inline-block text-[10px] font-bold px-2 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 mb-2">
-          {task.tag}
-        </span>
-      )}
-      <h4 className="text-sm font-semibold text-[#142843] dark:text-white mb-1 group-hover:text-[#00b4d8] transition-colors leading-snug">
-        {task.title}
-      </h4>
-      <p className="text-[11px] text-slate-400 dark:text-slate-500 mb-3 leading-relaxed line-clamp-2">
-        {task.description}
-      </p>
-      <div className="flex items-center justify-between">
-        <PriorityBadge priority={task.priority} />
-        <Avatar letter={task.assignee} />
-      </div>
-    </div>
-  );
-}
-
-/* ─────────────────────────────────────────────────────────────
-   Kanban Column
-───────────────────────────────────────────────────────────── */
-function KanbanColumn({ column }: { column: Column }) {
-  return (
-    <div className="flex-shrink-0 w-72 flex flex-col">
-      {/* Column Header */}
-      <div className="flex items-center justify-between mb-3 px-1">
-        <div className="flex items-center gap-2">
-          <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: column.color }} />
-          <span className="text-sm font-bold text-[#142843] dark:text-white">{column.title}</span>
-          <span className="text-[11px] font-bold px-2 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-500">
-            {column.tasks.length}
-          </span>
-        </div>
-        <button
-          type="button"
-          className="p-1 rounded-lg text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
-          aria-label="Column options"
-        >
-          <MoreHorizontal size={15} />
-        </button>
-      </div>
-
-      {/* Divider accent */}
-      <div className="h-0.5 rounded-full mb-3" style={{ backgroundColor: column.color, opacity: 0.5 }} />
-
-      {/* Tasks */}
-      <div className="flex flex-col gap-2.5 flex-1">
-        {column.tasks.map((task) => (
-          <TaskCard key={task.id} task={task} />
-        ))}
-
-        {/* Add task button */}
-        <button
-          type="button"
-          className="w-full py-2.5 flex items-center justify-center gap-1.5 rounded-xl border-2 border-dashed border-slate-200 dark:border-slate-700 text-slate-400 dark:text-slate-500 text-xs font-semibold hover:border-[#00b4d8] hover:text-[#00b4d8] transition-colors mt-1"
-        >
-          <Plus size={13} />
-          Add task
-        </button>
-      </div>
-    </div>
-  );
-}
-
-/* ─────────────────────────────────────────────────────────────
-   List View (simple table-style)
-───────────────────────────────────────────────────────────── */
-function ListView({ columns }: { columns: Column[] }) {
-  const allTasks = columns.flatMap((col) =>
-    col.tasks.map((t) => ({ ...t, status: col.title, statusColor: col.color }))
-  );
-
-  return (
-    <div className="bg-white dark:bg-[#14263e] rounded-2xl border border-slate-200 dark:border-slate-700 overflow-hidden">
-      <div className="grid grid-cols-[1fr_auto_auto_auto] gap-x-4 px-5 py-3 bg-slate-50 dark:bg-[#0f1d31] border-b border-slate-200 dark:border-slate-700 text-[11px] font-bold text-slate-400 uppercase tracking-wider">
-        <span>Task</span>
-        <span>Status</span>
-        <span>Priority</span>
-        <span>Assignee</span>
-      </div>
-      {allTasks.map((task) => (
-        <div
-          key={task.id}
-          className="grid grid-cols-[1fr_auto_auto_auto] gap-x-4 items-center px-5 py-3.5 border-b border-slate-100 dark:border-slate-700/50 last:border-0 hover:bg-slate-50 dark:hover:bg-[#1c304a] transition-colors cursor-pointer"
-        >
-          <div>
-            <p className="text-sm font-semibold text-[#142843] dark:text-white">{task.title}</p>
-            <p className="text-[11px] text-slate-400 mt-0.5">{task.description}</p>
-          </div>
-          <span
-            className="text-[10px] font-bold px-2.5 py-1 rounded-full whitespace-nowrap"
-            style={{ backgroundColor: `${task.statusColor}1a`, color: task.statusColor }}
-          >
-            {task.status}
-          </span>
-          <PriorityBadge priority={task.priority} />
-          <Avatar letter={task.assignee} />
-        </div>
-      ))}
-    </div>
-  );
-}
-
-/* ─────────────────────────────────────────────────────────────
-   Members Tab Placeholder
-───────────────────────────────────────────────────────────── */
-function MembersView() {
-  const members = [
-    { name: "John Doe", role: "Project Lead", avatar: "J", status: "Active" },
-    { name: "Sarah Wilson", role: "Frontend Dev", avatar: "S", status: "Active" },
-    { name: "Mike Johnson", role: "UX Designer", avatar: "M", status: "Active" },
-    { name: "Anna Chen", role: "Backend Dev", avatar: "A", status: "Away" },
-    { name: "Tom Brown", role: "Content Strategist", avatar: "T", status: "Offline" },
-  ];
-  const statusMap: Record<string, string> = {
-    Active: "bg-emerald-500/10 text-emerald-600 border border-emerald-500/20",
-    Away: "bg-amber-500/10 text-amber-600 border border-amber-500/20",
-    Offline: "bg-slate-200 text-slate-500 dark:bg-slate-800 dark:text-slate-400",
-  };
-
-  return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-      {members.map((m) => (
-        <div key={m.name} className="bg-white dark:bg-[#14263e] rounded-2xl border border-slate-200 dark:border-slate-700 p-5 flex items-center gap-4 hover:shadow-md transition-shadow">
-          <div className="w-12 h-12 rounded-full bg-[#00b4d8] flex items-center justify-center text-white text-lg font-bold flex-shrink-0">
-            {m.avatar}
-          </div>
-          <div className="min-w-0">
-            <p className="text-sm font-bold text-[#142843] dark:text-white truncate">{m.name}</p>
-            <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">{m.role}</p>
-            <span className={`inline-block mt-1.5 text-[10px] font-bold px-2 py-0.5 rounded-full ${statusMap[m.status]}`}>
-              {m.status}
-            </span>
-          </div>
-        </div>
-      ))}
-      <button
-        type="button"
-        className="bg-white dark:bg-[#14263e] rounded-2xl border-2 border-dashed border-slate-200 dark:border-slate-700 p-5 flex items-center justify-center gap-2 text-sm font-semibold text-slate-400 hover:border-[#00b4d8] hover:text-[#00b4d8] transition-colors"
-      >
-        <Plus size={16} />
-        Invite Member
-      </button>
-    </div>
-  );
-}
-
-/* ─────────────────────────────────────────────────────────────
-   Settings Tab Placeholder
-───────────────────────────────────────────────────────────── */
-function SettingsView({ projectId }: { projectId: string }) {
-  return (
-    <div className="max-w-2xl space-y-6">
-      <div className="bg-white dark:bg-[#14263e] rounded-2xl border border-slate-200 dark:border-slate-700 p-6 space-y-4">
-        <h3 className="text-base font-bold text-[#142843] dark:text-white">General Settings</h3>
-        <div className="space-y-3">
-          <div>
-            <label className="text-xs font-bold text-slate-500 dark:text-slate-400 block mb-1">Project ID</label>
-            <p className="text-sm font-mono text-slate-700 dark:text-slate-300 bg-slate-50 dark:bg-[#0f1d31] px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700">{projectId}</p>
-          </div>
-          <div>
-            <label className="text-xs font-bold text-slate-500 dark:text-slate-400 block mb-1">Visibility</label>
-            <select className="w-full py-2.5 px-3 bg-slate-50 dark:bg-[#1c304a] border border-slate-200 dark:border-slate-600 rounded-xl text-sm text-[#142843] dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-[#00b4d8]">
-              <option>Team — visible to all members</option>
-              <option>Private — only you</option>
-            </select>
-          </div>
-        </div>
-      </div>
-      <div className="bg-rose-50 dark:bg-rose-950/20 rounded-2xl border border-rose-200 dark:border-rose-800/40 p-6">
-        <h3 className="text-base font-bold text-rose-700 dark:text-rose-400 mb-1">Danger Zone</h3>
-        <p className="text-xs text-rose-500 dark:text-rose-400/80 mb-4">These actions are irreversible. Please proceed with caution.</p>
-        <button
-          type="button"
-          className="px-4 py-2 bg-rose-500 text-white text-sm font-bold rounded-xl hover:bg-rose-600 transition-colors"
-        >
-          Delete Project
-        </button>
-      </div>
-    </div>
-  );
-}
-
-/* ─────────────────────────────────────────────────────────────
-   Tab definitions
-───────────────────────────────────────────────────────────── */
-type Tab = "board" | "list" | "members" | "settings";
-
-const tabs: { id: Tab; label: string; icon: React.ElementType }[] = [
-  { id: "board", label: "Board", icon: LayoutGrid },
-  { id: "list", label: "List", icon: List },
-  { id: "members", label: "Members", icon: UserCircle2 },
-  { id: "settings", label: "Settings", icon: SlidersHorizontal },
-];
-
-/* ─────────────────────────────────────────────────────────────
-   Project Page
-───────────────────────────────────────────────────────────── */
 export default function ProjectPage({ params }: { params: Promise<{ id: string }> }) {
   const { id: slug } = use(params);
-  const projectTitle = slugToTitle(slug);
-  const [activeTab, setActiveTab] = useState<Tab>("board");
-  const [columns] = useState<Column[]>(initialColumns);
+  const initialTitle = slugToTitle(slug);
+
+  const [resolvedProjectId, setResolvedProjectId] = useState<string | null>(null);
+  const [resolveError, setResolveError] = useState<string | null>(null);
+  const [isResolvingProject, setIsResolvingProject] = useState(true);
+  const [projectTitle, setProjectTitle] = useState(initialTitle);
+  const { setProjectTitle: setContextTitle } = useProjectTitle();
+
+  useEffect(() => {
+    setContextTitle(projectTitle);
+    return () => setContextTitle(null);
+  }, [projectTitle, setContextTitle]);
+
+  const [projectDescription, setProjectDescription] = useState("");
+  const [tempDescription, setTempDescription] = useState("");
+  const [isEditingDescription, setIsEditingDescription] = useState(false);
+  const [isSavingDescription, setIsSavingDescription] = useState(false);
+  const [ownerName, setOwnerName] = useState("");
+  const [categories, setCategories] = useState<string[]>([]);
+  const [techStack, setTechStack] = useState<string[]>([]);
+  const [projectColor, setProjectColor] = useState("#3b82f6");
+  const [selectedIconIndex, setSelectedIconIndex] = useState(0);
+  const [isFavorite, setIsFavorite] = useState(false);
+  const [status, setStatus] = useState<ProjectStatusType>("On track");
+  const [members, setMembers] = useState<ProjectMember[]>([]);
+
+  const { lists, tasks, loadProject, createTask, updateTask, deleteTask, createList } =
+    useBoardStore();
+
+  const fetchMembers = useCallback(async (pId: string) => {
+    if (!pId) return;
+    const m = await getProjectMembersAction(pId);
+    setMembers(m);
+  }, []);
+
+  // Parallel, high-speed initial resolution
+  useEffect(() => {
+    let isMounted = true;
+    setIsResolvingProject(true);
+
+    getProjectBySlugAction(slug).then((project) => {
+      if (!isMounted) return;
+      if (!project) {
+        setResolveError("Project not found.");
+        setIsResolvingProject(false);
+        return;
+      }
+
+      setResolvedProjectId(project.id);
+      setProjectTitle(project.name);
+      setProjectDescription(project.description || "");
+      setTempDescription(project.description || "");
+      setOwnerName(project.ownerName || "");
+      setCategories(project.categories || []);
+      setTechStack(project.techStack || []);
+      if (project.status) setStatus(project.status as ProjectStatusType);
+
+      const saved = loadProjectMeta(project.id);
+      if (saved) {
+        setProjectColor(saved.color);
+        setSelectedIconIndex(saved.iconIndex);
+        setIsFavorite(saved.isFavorite);
+      }
+
+      setIsResolvingProject(false);
+
+      // Immediately fetch board tasks/lists and members in parallel
+      loadProject(project.id);
+      fetchMembers(project.id);
+    });
+
+    return () => {
+      isMounted = false;
+    };
+  }, [slug, loadProject, fetchMembers]);
+
+  const sections = useMemo(() => buildSectionsFromBoard(lists, tasks), [lists, tasks]);
+
+  const [availableTabs, setAvailableTabs] = useState([
+    "Overview",
+    "List",
+    "Board",
+    "Timeline",
+    "Dashboard",
+  ]);
+  const [activeTab, setActiveTab] = useState("Overview");
+  const [selectedTask, setSelectedTask] = useState<TaskItem | null>(null);
+
+  const {
+    searchQuery,
+    setSearchQuery,
+    selectedPriorityFilter,
+    setSelectedPriorityFilter,
+    selectedStatusFilter,
+    setSelectedStatusFilter,
+    sortBy,
+    setSortBy,
+    filteredSections,
+  } = useTaskFilters(resolvedProjectId, sections);
+
+  useEffect(() => {
+    if (!resolvedProjectId) return;
+    saveProjectMeta(resolvedProjectId, {
+      color: projectColor,
+      iconIndex: selectedIconIndex,
+      isFavorite,
+    });
+  }, [resolvedProjectId, projectColor, selectedIconIndex, isFavorite]);
+
+  const [inlineAddingSectionId, setInlineAddingSectionId] = useState<string | null>(null);
+  const [newTaskTitle, setNewTaskTitle] = useState("");
+  const [isCreateTaskOpen, setIsCreateTaskOpen] = useState(false);
+  const [defaultTaskListId, setDefaultTaskListId] = useState<string | undefined>(undefined);
+  const [isAddMemberOpen, setIsAddMemberOpen] = useState(false);
+
+  const triggerAddTask = (sectionId?: string) => {
+    setDefaultTaskListId(sectionId ?? lists[0]?.id ?? undefined);
+    setIsCreateTaskOpen(true);
+    if (activeTab === "Overview") setActiveTab("List");
+  };
+
+  async function handleSaveInlineTask(listId: string) {
+    if (!newTaskTitle.trim()) {
+      setInlineAddingSectionId(null);
+      return;
+    }
+    await createTask(listId, { title: newTaskTitle.trim(), listId });
+    setNewTaskTitle("");
+    setInlineAddingSectionId(null);
+  }
+
+  async function handleUpdateTask(updatedTask: TaskItem) {
+    const VALID_STATUSES = [
+      "On track",
+      "At risk",
+      "Off track",
+      "On hold",
+      "Complete",
+      "Dropped",
+    ] as const;
+    type ValidStatus = (typeof VALID_STATUSES)[number];
+    const safeStatus = VALID_STATUSES.includes(updatedTask.status as ValidStatus)
+      ? (updatedTask.status as ValidStatus)
+      : undefined;
+
+    await updateTask(updatedTask.id, {
+      title: updatedTask.title,
+      description: updatedTask.description ?? null,
+      priority: updatedTask.priority,
+      status: safeStatus,
+      assigneeId: updatedTask.assignee?.id || null,
+      dueDate: updatedTask.dueDateISO || null,
+    });
+
+    const freshRecord = useBoardStore.getState().tasks.find((t) => t.id === updatedTask.id);
+    setSelectedTask(freshRecord ? taskRecordToItem(freshRecord) : updatedTask);
+  }
+
+  async function handleDeleteTask(taskId: string) {
+    await deleteTask(taskId);
+  }
+
+  function taskRecordToItem(task: TaskRecord): TaskItem {
+    const getInitials = (name: string) =>
+      name
+        .split(" ")
+        .map((p) => p[0])
+        .slice(0, 2)
+        .join("")
+        .toUpperCase();
+    const listName = lists.find((l) => l.id === task.listId)?.name ?? task.listId;
+    const dueDateISO = task.dueDate ? new Date(task.dueDate).toISOString().slice(0, 10) : undefined;
+
+    return {
+      id: task.id,
+      title: task.title,
+      description: task.description ?? undefined,
+      assignee: task.assignee
+        ? {
+            id: task.assigneeId ?? "",
+            name: task.assignee.name,
+            initials: getInitials(task.assignee.name),
+          }
+        : undefined,
+      dueDate: task.dueDate
+        ? new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric" }).format(
+            new Date(task.dueDate),
+          )
+        : undefined,
+      dueDateISO,
+      priority: (task.priority as TaskItem["priority"]) ?? undefined,
+      status: (task.status as TaskItem["status"]) ?? undefined,
+      subtasks: [],
+      sectionId: listName,
+    };
+  }
+
+  const handleSaveDescription = async (newDesc: string) => {
+    setProjectDescription(newDesc);
+    if (!resolvedProjectId) return;
+    const schemaStatus =
+      status === "Complete" || status === "Dropped"
+        ? "Completed"
+        : status === "On hold"
+          ? "On Hold"
+          : "In Progress";
+    await updateProjectAction({
+      id: resolvedProjectId,
+      name: projectTitle,
+      description: newDesc,
+      status: schemaStatus as "Not Started" | "In Progress" | "Completed" | "On Hold",
+      priority: "Medium",
+      categories,
+      techStack,
+      members: members.map((m) => ({ name: m.name, role: m.role })),
+    });
+  };
+
+  const handleSaveTitle = async (newTitle: string) => {
+    if (!resolvedProjectId) return;
+    const schemaStatus =
+      status === "Complete" || status === "Dropped"
+        ? "Completed"
+        : status === "On hold"
+          ? "On Hold"
+          : "In Progress";
+    await updateProjectAction({
+      id: resolvedProjectId,
+      name: newTitle,
+      description: projectDescription,
+      status: schemaStatus as "Not Started" | "In Progress" | "Completed" | "On Hold",
+      priority: "Medium",
+      categories,
+      techStack,
+      members: members.map((m) => ({ name: m.name, role: m.role })),
+    });
+  };
+
+  const handleSaveStatus = async (newStatus: ProjectStatusType) => {
+    if (!resolvedProjectId) return;
+    const schemaStatus =
+      newStatus === "Complete" || newStatus === "Dropped"
+        ? "Completed"
+        : newStatus === "On hold"
+          ? "On Hold"
+          : "In Progress";
+    await updateProjectAction({
+      id: resolvedProjectId,
+      name: projectTitle,
+      description: projectDescription,
+      status: schemaStatus as "Not Started" | "In Progress" | "Completed" | "On Hold",
+      priority: "Medium",
+      categories,
+      techStack,
+      members: members.map((m) => ({ name: m.name, role: m.role })),
+    });
+  };
+
+  if (resolveError) {
+    return (
+      <div className="flex h-full items-center justify-center text-sm text-red-500 font-medium">
+        {resolveError}
+      </div>
+    );
+  }
 
   return (
-    <div className="space-y-0 -mt-2">
-      {/* ── Page Header ── */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
-        <div className="flex items-center gap-3">
-          <Link
-            href="/projects"
-            className="p-2 rounded-xl text-slate-500 dark:text-slate-400 hover:text-[#142843] dark:hover:text-white hover:bg-white dark:hover:bg-[#14263e] border border-transparent hover:border-slate-200 dark:hover:border-slate-700 transition-all"
-            aria-label="Back to projects"
-          >
-            <ArrowLeft size={18} />
-          </Link>
-          <div>
-            <h1 className="text-xl sm:text-2xl font-extrabold text-[#142843] dark:text-white leading-tight">
-              {projectTitle}
-            </h1>
-          </div>
-        </div>
-
-        {/* Action buttons */}
-        <div className="flex items-center gap-2">
-          <button
-            type="button"
-            className="p-2 rounded-xl text-slate-500 dark:text-slate-400 hover:text-[#00b4d8] hover:bg-white dark:hover:bg-[#14263e] border border-transparent hover:border-slate-200 dark:hover:border-slate-700 transition-all"
-            aria-label="Members"
-            title="Members"
-            onClick={() => setActiveTab("members")}
-          >
-            <Users size={18} />
-          </button>
-          <button
-            type="button"
-            className="p-2 rounded-xl text-slate-500 dark:text-slate-400 hover:text-[#00b4d8] hover:bg-white dark:hover:bg-[#14263e] border border-transparent hover:border-slate-200 dark:hover:border-slate-700 transition-all"
-            aria-label="Settings"
-            title="Settings"
-            onClick={() => setActiveTab("settings")}
-          >
-            <Settings size={18} />
-          </button>
-          <button
-            type="button"
-            className="p-2 rounded-xl text-slate-500 dark:text-slate-400 hover:text-[#00b4d8] hover:bg-white dark:hover:bg-[#14263e] border border-transparent hover:border-slate-200 dark:hover:border-slate-700 transition-all"
-            aria-label="More options"
-          >
-            <MoreHorizontal size={18} />
-          </button>
-          <button
-            type="button"
-            className="inline-flex items-center gap-1.5 px-4 py-2 bg-[#00b4d8] hover:bg-[#0096b8] text-white rounded-xl text-sm font-bold shadow-sm transition-all hover:scale-[1.02]"
-          >
-            <Plus size={15} />
-            Add Task
-          </button>
-        </div>
-      </div>
-
-      {/* ── Tab Bar ── */}
-      <div className="flex items-center gap-1 border-b border-slate-200 dark:border-slate-700/60 mb-6">
-        {tabs.map(({ id, label, icon: Icon }) => (
-          <button
-            key={id}
-            type="button"
-            onClick={() => setActiveTab(id)}
-            className={`inline-flex items-center gap-1.5 px-4 py-2.5 text-sm font-semibold border-b-2 transition-all -mb-px ${
-              activeTab === id
-                ? "border-[#00b4d8] text-[#00b4d8]"
-                : "border-transparent text-slate-500 dark:text-slate-400 hover:text-[#142843] dark:hover:text-white hover:border-slate-300 dark:hover:border-slate-600"
-            }`}
-          >
-            <Icon size={15} />
-            {label}
-          </button>
-        ))}
-      </div>
-
-      {/* ── Tab Content ── */}
-      {activeTab === "board" && (
-        <div className="overflow-x-auto pb-6">
-          <div className="flex gap-5 min-w-max px-0.5 pt-0.5 pb-1">
-            {columns.map((col) => (
-              <KanbanColumn key={col.id} column={col} />
-            ))}
-
-            {/* Add column button */}
-            <div className="flex-shrink-0 w-72 flex items-start pt-8">
-              <button
-                type="button"
-                className="w-full py-3 flex items-center justify-center gap-2 rounded-xl border-2 border-dashed border-slate-200 dark:border-slate-700 text-slate-400 dark:text-slate-500 text-sm font-semibold hover:border-[#00b4d8] hover:text-[#00b4d8] transition-colors"
-              >
-                <Plus size={15} />
-                Add Column
-              </button>
-            </div>
-          </div>
+    <div className="flex h-full bg-white dark:bg-[#0f1d31] text-slate-800 dark:text-slate-100 overflow-hidden font-sans relative">
+      {/* Top subtle progress bar during background loading */}
+      {isResolvingProject && (
+        <div className="absolute top-0 left-0 right-0 z-50 h-0.5 bg-blue-100 dark:bg-slate-800 overflow-hidden">
+          <div className="h-full bg-gradient-to-r from-blue-500 via-indigo-500 to-sky-400 animate-pulse w-full" />
         </div>
       )}
 
-      {activeTab === "list" && <ListView columns={columns} />}
-      {activeTab === "members" && <MembersView />}
-      {activeTab === "settings" && <SettingsView projectId={slug} />}
+      <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
+        <ProjectHeader
+          projectTitle={projectTitle}
+          setProjectTitle={setProjectTitle}
+          onTitleSave={handleSaveTitle}
+          projectColor={projectColor}
+          setProjectColor={setProjectColor}
+          selectedIconIndex={selectedIconIndex}
+          setSelectedIconIndex={setSelectedIconIndex}
+          isFavorite={isFavorite}
+          setIsFavorite={setIsFavorite}
+          status={status}
+          setStatus={setStatus}
+          onStatusSave={handleSaveStatus}
+          members={members}
+          onAddMember={() => setIsAddMemberOpen(true)}
+        />
+
+        <ProjectTabs
+          activeTab={activeTab}
+          setActiveTab={setActiveTab}
+          availableTabs={availableTabs}
+          onAddTab={(tabName) => {
+            if (!availableTabs.includes(tabName)) {
+              setAvailableTabs((prev) => [...prev, tabName]);
+            }
+            setActiveTab(tabName);
+          }}
+        />
+
+        <div className="flex-1 overflow-auto flex flex-col">
+          {activeTab === "Overview" ? (
+            <OverviewTab
+              projectDescription={projectDescription}
+              tempDescription={tempDescription}
+              setTempDescription={setTempDescription}
+              isEditingDescription={isEditingDescription}
+              setIsEditingDescription={setIsEditingDescription}
+              isSavingDescription={isSavingDescription}
+              onSaveDescription={async (d) => {
+                setIsSavingDescription(true);
+                await handleSaveDescription(d);
+                setIsSavingDescription(false);
+              }}
+              ownerName={ownerName}
+              status={status as string}
+              taskCount={tasks.length}
+              techStack={techStack}
+              members={members}
+              onAddMember={() => setIsAddMemberOpen(true)}
+            />
+          ) : activeTab === "Board" ? (
+            <div className="flex flex-col h-full">
+              <ProjectToolbar
+                onAddTask={triggerAddTask}
+                searchQuery={searchQuery}
+                setSearchQuery={setSearchQuery}
+                selectedPriorityFilter={selectedPriorityFilter}
+                setSelectedPriorityFilter={setSelectedPriorityFilter}
+                selectedStatusFilter={selectedStatusFilter}
+                setSelectedStatusFilter={setSelectedStatusFilter}
+                sortBy={sortBy}
+                setSortBy={setSortBy}
+                onAddSection={async () => {
+                  const t = prompt("Enter section name:");
+                  if (t) await createList(t);
+                }}
+                hideClosed={true}
+              />
+              <div className="flex-1 min-h-0 flex flex-col">
+                <KanbanBoard
+                  projectId={resolvedProjectId ?? ""}
+                  onSelectTask={(t) => setSelectedTask(taskRecordToItem(t))}
+                />
+              </div>
+            </div>
+          ) : activeTab === "Timeline" || activeTab === "Gantt" ? (
+            <TimelineTab
+              sections={filteredSections}
+              onSelectTask={setSelectedTask}
+              onAddTask={triggerAddTask}
+              onDeleteTask={handleDeleteTask}
+            />
+          ) : activeTab === "Dashboard" ? (
+            <DashboardTab sections={filteredSections} />
+          ) : activeTab === "Calendar" ? (
+            <CalendarTab
+              sections={filteredSections}
+              onSelectTask={setSelectedTask}
+              onAddTask={triggerAddTask}
+            />
+          ) : (
+            <div className="flex flex-col h-full">
+              <ProjectToolbar
+                onAddTask={triggerAddTask}
+                searchQuery={searchQuery}
+                setSearchQuery={setSearchQuery}
+                selectedPriorityFilter={selectedPriorityFilter}
+                setSelectedPriorityFilter={setSelectedPriorityFilter}
+                selectedStatusFilter={selectedStatusFilter}
+                setSelectedStatusFilter={setSelectedStatusFilter}
+                sortBy={sortBy}
+                setSortBy={setSortBy}
+                onAddSection={async () => {
+                  const t = prompt("Enter section name:");
+                  if (t) await createList(t);
+                }}
+                hideClosed={true}
+              />
+              <ListTab
+                filteredSections={filteredSections}
+                selectedTask={selectedTask}
+                onSelectTask={setSelectedTask}
+                inlineAddingSectionId={inlineAddingSectionId}
+                setInlineAddingSectionId={setInlineAddingSectionId}
+                newTaskTitle={newTaskTitle}
+                setNewTaskTitle={setNewTaskTitle}
+                onSaveInlineTask={handleSaveInlineTask}
+              />
+            </div>
+          )}
+        </div>
+      </div>
+
+      {selectedTask && (
+        <TaskDetailsPane
+          task={selectedTask}
+          projectName={projectTitle}
+          onClose={() => setSelectedTask(null)}
+          onUpdateTask={handleUpdateTask}
+          onDeleteTask={handleDeleteTask}
+          members={members}
+        />
+      )}
+
+      <CreateTaskModal
+        isOpen={isCreateTaskOpen}
+        onClose={() => setIsCreateTaskOpen(false)}
+        lists={lists.map((l) => ({ id: l.id, name: l.name }))}
+        defaultListId={defaultTaskListId}
+        onSuccess={() => setIsCreateTaskOpen(false)}
+      />
+      <AddMemberModal
+        isOpen={isAddMemberOpen}
+        projectOptions={resolvedProjectId ? [{ id: resolvedProjectId, name: projectTitle }] : []}
+        onClose={() => setIsAddMemberOpen(false)}
+        onSuccess={() => {
+          if (resolvedProjectId) fetchMembers(resolvedProjectId);
+        }}
+      />
     </div>
   );
 }

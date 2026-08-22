@@ -1,18 +1,15 @@
 "use client";
 
+import { AuthIllustration } from "@/components/auth/auth-illustration";
+import { type SignUpFormValues, signUpSchema } from "@/lib/db/auth-schemas";
+import { useSignUp } from "@clerk/nextjs/legacy";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { AlertCircle, CheckCircle2, Eye, EyeOff } from "lucide-react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { useSignUp } from "@clerk/nextjs/legacy";
-import { useRouter } from "next/navigation";
-import Link from "next/link";
-import { Eye, EyeOff, AlertCircle, CheckCircle2 } from "lucide-react";
-import { signUpSchema, SignUpFormValues } from "@/lib/auth-schemas";
-import { AuthIllustration } from "@/components/auth/auth-illustration";
 
-/* ─────────────────────────────────────────────────────────────
-   Reusable Field Components
-───────────────────────────────────────────────────────────── */
 function RequiredLabel({ htmlFor, children }: { htmlFor: string; children: React.ReactNode }) {
   return (
     <label htmlFor={htmlFor} className="block text-xs font-semibold text-[#142843] mb-1">
@@ -34,9 +31,6 @@ function FieldError({ message }: { message?: string }) {
   );
 }
 
-/* ─────────────────────────────────────────────────────────────
-   Password Strength Indicator
-───────────────────────────────────────────────────────────── */
 function PasswordStrength({ password }: { password: string }) {
   if (!password) return null;
 
@@ -66,9 +60,6 @@ function PasswordStrength({ password }: { password: string }) {
   );
 }
 
-/* ─────────────────────────────────────────────────────────────
-   Sign-Up Page
-───────────────────────────────────────────────────────────── */
 export default function SignUpPage() {
   const { isLoaded, signUp, setActive } = useSignUp();
   const router = useRouter();
@@ -78,13 +69,10 @@ export default function SignUpPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
 
-  /* Email verification state */
   const [pendingVerification, setPendingVerification] = useState(false);
   const [verificationCode, setVerificationCode] = useState("");
   const [verifyError, setVerifyError] = useState<string | null>(null);
   const [verifying, setVerifying] = useState(false);
-
-  /* Track "Last used" method via localStorage */
   const [lastUsed, setLastUsed] = useState<"google" | "email" | null>(null);
   useEffect(() => {
     const stored = localStorage.getItem("syntraflow_last_auth") as "google" | "email" | null;
@@ -103,7 +91,6 @@ export default function SignUpPage() {
 
   const passwordValue = watch("password", "");
 
-  /* ── Email / Password sign-up ── */
   const onSubmit = async (data: SignUpFormValues) => {
     if (!isLoaded) return;
     setServerError(null);
@@ -130,7 +117,6 @@ export default function SignUpPage() {
     }
   };
 
-  /* ── Email verification ── */
   const onVerify = async () => {
     if (!isLoaded || !verificationCode.trim()) return;
     setVerifyError(null);
@@ -151,7 +137,6 @@ export default function SignUpPage() {
     }
   };
 
-  /* ── Google OAuth sign-up ── */
   const handleGoogleSignUp = async () => {
     if (!isLoaded || !signUp) return;
     setGoogleLoading(true);
@@ -175,15 +160,12 @@ export default function SignUpPage() {
 
   return (
     <div className="min-h-screen w-full bg-[url('/bg-logo.png')] bg-cover bg-center bg-no-repeat flex items-center justify-center p-4 sm:p-6 md:p-10 font-sans relative">
+      <div id="clerk-captcha" />
       <div className="w-full max-w-[1040px] bg-white rounded-2xl shadow-2xl border border-slate-100 p-6 sm:p-8 md:p-10 flex flex-col md:flex-row items-center justify-between gap-8 md:gap-12 min-h-[500px]">
-        {/* Left Side: Animated Brand Intro */}
         <div className="w-full md:w-[380px] lg:w-[420px] h-[300px] sm:h-[340px] md:h-[400px] shrink-0 flex items-center justify-center">
           <AuthIllustration />
         </div>
-
-        {/* Right Side */}
         <div className="w-full md:w-[440px] flex flex-col items-center justify-center">
-          {/* Header */}
           <div className="flex flex-col items-center justify-center text-center mb-5">
             <img
               src="/syntraflow-icon.svg"
@@ -203,7 +185,6 @@ export default function SignUpPage() {
             </p>
           </div>
 
-          {/* ── Email Verification Step ── */}
           {pendingVerification ? (
             <div className="w-full space-y-4">
               {verifyError && (
@@ -257,9 +238,7 @@ export default function SignUpPage() {
               </p>
             </div>
           ) : (
-            /* ── Sign-Up Form Step ── */
             <>
-              {/* Google OAuth Button */}
               <button
                 type="button"
                 suppressHydrationWarning
@@ -293,7 +272,6 @@ export default function SignUpPage() {
                 )}
               </button>
 
-              {/* Divider */}
               <div className="flex items-center w-full gap-3 mb-3.5">
                 <div className="flex-1 h-px bg-slate-200" />
                 <span className="text-xs text-slate-400 font-medium">or</span>
@@ -308,7 +286,6 @@ export default function SignUpPage() {
               )}
 
               <form onSubmit={handleSubmit(onSubmit)} className="w-full space-y-3" noValidate>
-                {/* First / Last Name Row */}
                 <div className="flex gap-3">
                   <div className="flex-1">
                     <RequiredLabel htmlFor="signup-firstname">First name</RequiredLabel>
@@ -346,7 +323,6 @@ export default function SignUpPage() {
                   </div>
                 </div>
 
-                {/* Email */}
                 <div>
                   <div className="flex items-center justify-between mb-1">
                     <RequiredLabel htmlFor="signup-email">Email address</RequiredLabel>
@@ -372,7 +348,6 @@ export default function SignUpPage() {
                   <FieldError message={errors.email?.message} />
                 </div>
 
-                {/* Password */}
                 <div>
                   <RequiredLabel htmlFor="signup-password">Password</RequiredLabel>
                   <div className="relative">
@@ -403,7 +378,6 @@ export default function SignUpPage() {
                   <PasswordStrength password={passwordValue} />
                 </div>
 
-                {/* Confirm Password */}
                 <div>
                   <RequiredLabel htmlFor="signup-confirm-password">Confirm password</RequiredLabel>
                   <div className="relative">
@@ -437,7 +411,6 @@ export default function SignUpPage() {
                   <FieldError message={errors.confirmPassword?.message} />
                 </div>
 
-                {/* Submit */}
                 <button
                   type="submit"
                   suppressHydrationWarning

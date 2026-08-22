@@ -1,5 +1,5 @@
+import { LogIn, ShieldAlert } from "lucide-react";
 import Link from "next/link";
-import { ShieldAlert, LogIn } from "lucide-react";
 
 export default function UnauthorizedPage() {
   return (

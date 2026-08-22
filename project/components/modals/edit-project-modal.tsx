@@ -1,13 +1,13 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { sileo } from "@/utils/alerts";
-import { updateProjectSchema, UpdateProjectFormValues } from "@/lib/project-schemas";
-import { updateProjectAction, ProjectWithStats } from "@/app/actions/project-actions";
+import { type ProjectWithStats, updateProjectAction } from "@/actions/project-actions";
 import { Modal } from "@/components/modals/BaseModal";
 import { ConfirmationModal } from "@/components/modals/ConfirmationModal";
+import { type UpdateProjectFormValues, updateProjectSchema } from "@/lib/project-schemas";
+import { sileo } from "@/utils/alerts";
+import { zodResolver } from "@hookform/resolvers/zod";
+import React, { useEffect, useState } from "react";
+import { useForm } from "react-hook-form";
 
 interface EditProjectModalProps {
   isOpen: boolean;

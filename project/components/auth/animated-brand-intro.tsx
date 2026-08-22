@@ -1,7 +1,7 @@
 "use client";
 
+import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { useEffect, useState } from "react";
-import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
 
 export interface AnimatedBrandIntroProps {
   /** Path to the brand logo image (default: "/syntraflow-full.svg") */

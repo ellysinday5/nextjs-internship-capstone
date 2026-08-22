@@ -1,5 +1,5 @@
+import { Calendar, MoreHorizontal, Users } from "lucide-react";
 import Link from "next/link";
-import { MoreHorizontal, Users, Calendar } from "lucide-react";
 
 const projects = [
   {

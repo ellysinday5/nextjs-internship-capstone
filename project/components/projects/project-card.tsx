@@ -1,45 +1,107 @@
-// TODO: Task 4.5 - Design and implement project cards and layouts
+"use client";
 
-/*
-TODO: Implementation Notes for Interns:
+import { deleteProjectAction } from "@/actions/project-actions";
+import { ConfirmationModal } from "@/components/modals/ConfirmationModal";
+import type { ProjectCardData, ProjectCardStatus } from "@/lib/project-card-types";
+import type { ProjectItem } from "@/lib/project-data";
+import { loadProjectMeta } from "@/lib/project-meta";
+import { useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
+import { ProjectCardItem } from "./project-card-item";
 
-This component should display:
-- Project name and description
-- Progress indicator
-- Team member count
-- Due date
-- Status badge
-- Actions menu (edit, delete, etc.)
-
-Props interface:
 interface ProjectCardProps {
-  project: {
-    id: string
-    name: string
-    description?: string
-    progress: number
-    memberCount: number
-    dueDate?: Date
-    status: 'active' | 'completed' | 'on-hold'
-  }
-  onEdit?: (id: string) => void
-  onDelete?: (id: string) => void
+  project: ProjectItem;
+  onEditLocal?: (project: ProjectItem) => void;
+  onProjectDeleted?: (projectId: string) => void;
 }
 
-Features to implement:
-- Hover effects
-- Click to navigate to project board
-- Responsive design
-- Loading states
-- Error states
-*/
+export function ProjectCard({ project, onEditLocal, onProjectDeleted }: ProjectCardProps) {
+  const router = useRouter();
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
 
-export function ProjectCard() {
+  // Load per-project customizations from localStorage (color, icon, favorite)
+  const [accentColor, setAccentColor] = useState<string | undefined>(undefined);
+  const [iconIndex, setIconIndex] = useState<number | undefined>(undefined);
+  const [isFavorite, setIsFavorite] = useState<boolean | undefined>(undefined);
+
+  useEffect(() => {
+    const meta = loadProjectMeta(project.id);
+    if (meta) {
+      setAccentColor(meta.color);
+      setIconIndex(meta.iconIndex);
+      setIsFavorite(meta.isFavorite);
+    }
+  }, [project.id]);
+
+  const cardData: ProjectCardData = {
+    id: project.id,
+    name: project.name,
+    description: project.description,
+    progress: project.progress,
+    memberCount: project.members,
+    dueDate: project.dbProject?.dueDate ?? undefined,
+    status: mapStatus(project.status),
+    accentColor,
+    iconIndex,
+    isFavorite,
+  };
+
+  function handleEdit(id: string) {
+    if (project.isDb) {
+      router.push(`/projects/${id}/edit`);
+    } else {
+      onEditLocal?.(project);
+    }
+  }
+
+  function handleDelete(_id: string) {
+    setDeleteError(null);
+    setShowDeleteConfirm(true);
+  }
+
+  async function confirmDelete() {
+    if (!project.dbProject) {
+      setShowDeleteConfirm(false);
+      onProjectDeleted?.(project.id);
+      return;
+    }
+
+    setIsDeleting(true);
+    const result = await deleteProjectAction(project.dbProject.id);
+    setIsDeleting(false);
+
+    if (!result.success) {
+      setDeleteError(result.error ?? "Failed to delete project.");
+      return;
+    }
+
+    setShowDeleteConfirm(false);
+    onProjectDeleted?.(project.dbProject.id);
+  }
+
   return (
-    <div className="bg-white dark:bg-outer_space-500 p-6 rounded-lg border border-french_gray-300 dark:border-payne's_gray-400">
-      <p className="text-center text-payne's_gray-500 dark:text-french_gray-400">
-        TODO: Implement ProjectCard component
-      </p>
-    </div>
+    <>
+      <ProjectCardItem project={cardData} onEdit={handleEdit} onDelete={handleDelete} />
+
+      <ConfirmationModal
+        isOpen={showDeleteConfirm}
+        onClose={() => setShowDeleteConfirm(false)}
+        onConfirm={confirmDelete}
+        variant="delete"
+        title={`Delete "${project.name}"?`}
+        description="This will permanently remove the project and all its lists, tasks, and comments. This action can't be undone."
+        isLoading={isDeleting}
+      />
+
+      {deleteError && <p className="mt-2 text-xs font-medium text-red-500">{deleteError}</p>}
+    </>
   );
+}
+
+function mapStatus(status: string): ProjectCardStatus {
+  if (status === "Completed") return "completed";
+  if (status === "On Hold") return "on-hold";
+  return "active";
 }

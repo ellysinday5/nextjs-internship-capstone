@@ -1,18 +1,18 @@
-"use client"
+"use client";
 
-import { useRef, useState } from "react"
-import Autoplay from "embla-carousel-autoplay"
-import { ListTodo, Activity, Users2, BarChart3, ChevronLeft, ChevronRight } from "lucide-react"
 import {
   Carousel,
+  type CarouselApi,
   CarouselContent,
   CarouselItem,
-  type CarouselApi,
-} from "@/components/ui/carousel"
+} from "@/components/ui/carousel";
+import Autoplay from "embla-carousel-autoplay";
+import { Activity, BarChart3, ChevronLeft, ChevronRight, ListTodo, Users2 } from "lucide-react";
+import { useRef, useState } from "react";
 
 interface TeamLandingProps {
-  onBrowsePeople: () => void
-  onCreateTeam: () => void
+  onBrowsePeople: () => void;
+  onCreateTeam: () => void;
 }
 
 const FEATURE_CARDS = [
@@ -44,7 +44,7 @@ const FEATURE_CARDS = [
     accent: "bg-amber-50 text-amber-600 dark:bg-amber-900/30 dark:text-amber-300",
     bar: "bg-amber-200 dark:bg-amber-800/50",
   },
-]
+];
 
 function FeatureMockup({ icon: Icon, accent, bar }: (typeof FEATURE_CARDS)[number]) {
   return (
@@ -61,13 +61,16 @@ function FeatureMockup({ icon: Icon, accent, bar }: (typeof FEATURE_CARDS)[numbe
         <div className="h-6 w-6 rounded-full border-2 border-slate-50 bg-slate-400 dark:border-slate-800 dark:bg-slate-500" />
       </div>
     </div>
-  )
+  );
 }
 
 // Decorative "loading" skeleton cards for the background layer
 function SkeletonCardRow({ count, className = "" }: { count: number; className?: string }) {
   return (
-    <div className={`grid gap-4 ${className}`} style={{ gridTemplateColumns: `repeat(${count}, minmax(0, 1fr))` }}>
+    <div
+      className={`grid gap-4 ${className}`}
+      style={{ gridTemplateColumns: `repeat(${count}, minmax(0, 1fr))` }}
+    >
       {Array.from({ length: count }).map((_, i) => (
         <div key={i} className="space-y-2">
           <div className="h-8 w-8 rounded-full bg-slate-200 dark:bg-slate-700" />
@@ -75,14 +78,14 @@ function SkeletonCardRow({ count, className = "" }: { count: number; className?:
         </div>
       ))}
     </div>
-  )
+  );
 }
 
 export function TeamLanding({ onBrowsePeople, onCreateTeam }: TeamLandingProps) {
-  const [api, setApi] = useState<CarouselApi>()
+  const [api, setApi] = useState<CarouselApi>();
   const autoplay = useRef(
-    Autoplay({ delay: 3500, stopOnInteraction: false, stopOnMouseEnter: true })
-  )
+    Autoplay({ delay: 3500, stopOnInteraction: false, stopOnMouseEnter: true }),
+  );
 
   return (
     <div className="relative flex h-[calc(100vh-8rem)] flex-col overflow-hidden rounded-3xl border border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900">
@@ -102,8 +105,8 @@ export function TeamLanding({ onBrowsePeople, onCreateTeam }: TeamLandingProps) 
               Align teams and visualize their work!
             </h1>
             <p className="mt-6 text-lg text-slate-500 dark:text-slate-400">
-              Use Teams Hub to coordinate teams, organize priorities, and understand
-              the details of their work.
+              Use Teams Hub to coordinate teams, organize priorities, and understand the details of
+              their work.
             </p>
 
             <div className="mt-9 flex flex-col gap-3 sm:flex-row sm:justify-center lg:justify-start">
@@ -169,5 +172,5 @@ export function TeamLanding({ onBrowsePeople, onCreateTeam }: TeamLandingProps) 
         </div>
       </div>
     </div>
-  )
+  );
 }

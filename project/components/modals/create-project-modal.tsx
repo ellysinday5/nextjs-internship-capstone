@@ -1,13 +1,13 @@
 "use client";
 
-import React, { useState } from "react";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { sileo } from "@/utils/alerts";
-import { createProjectSchema, CreateProjectFormValues } from "@/lib/project-schemas";
-import { createProjectAction } from "@/app/actions/project-actions";
+import { createProjectAction } from "@/actions/project-actions";
 import { Modal } from "@/components/modals/BaseModal";
 import { ConfirmationModal } from "@/components/modals/ConfirmationModal";
+import { type CreateProjectFormValues, createProjectSchema } from "@/lib/project-schemas";
+import { sileo } from "@/utils/alerts";
+import { zodResolver } from "@hookform/resolvers/zod";
+import React, { useState } from "react";
+import { useForm } from "react-hook-form";
 
 interface CreateProjectModalProps {
   isOpen: boolean;

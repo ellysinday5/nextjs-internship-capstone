@@ -1,4 +1,4 @@
-import { Kanban, Users, Calendar, BarChart3, Shield, Zap } from "lucide-react";
+import { BarChart3, Calendar, Kanban, Shield, Users, Zap } from "lucide-react";
 
 const features = [
   {

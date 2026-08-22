@@ -1,12 +1,13 @@
-import type React from "react";
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
+import type React from "react";
 import "./globals.css";
-import { ClerkProvider } from "@clerk/nextjs";
-//import { ClerkProvider, Show, SignInButton, SignUpButton, UserButton } from '@clerk/nextjs'
-import { ThemeProvider } from "@/components/ui/theme-provider";
 import { AuthToast } from "@/components/auth/auth-toast";
 import { SileoToaster } from "@/components/ui/sileo-toaster";
+import { ThemeProvider } from "@/components/ui/theme-provider";
+import { UserProfileProvider } from "@/context/user-profile-context";
+import { ClerkProvider } from "@clerk/nextjs";
+import { QueryProvider } from "./providers";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -28,28 +29,16 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             },
           }}
         >
-          <ThemeProvider>
-            <AuthToast />
-            <SileoToaster />
-            {children}
-          </ThemeProvider>
+          <QueryProvider>
+            <ThemeProvider>
+              <UserProfileProvider>
+                <AuthToast />
+                <SileoToaster />
+                {children}
+              </UserProfileProvider>
+            </ThemeProvider>
+          </QueryProvider>
         </ClerkProvider>
-        {/* <ClerkProvider>
-          <header className="flex justify-end items-center p-4 gap-4 h-16">
-            <Show when="signed-out">
-              <SignInButton />
-              <SignUpButton>
-                <button className="bg-[#6c47ff] text-white rounded-full font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 cursor-pointer">
-                  Sign Up
-                </button>
-              </SignUpButton>
-            </Show>
-            <Show when="signed-in">
-              <UserButton />
-            </Show>
-          </header>
-          {children}
-        </ClerkProvider> */}
       </body>
     </html>
   );
