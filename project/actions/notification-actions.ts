@@ -33,6 +33,16 @@ export async function createNotification(data: CreateNotificationInput) {
   await db.insert(notifications).values(data);
 }
 
+async function getDbUser(clerkId: string) {
+  let dbUser = await db.query.users.findFirst({
+    where: (u, { eq }) => eq(u.clerkId, clerkId),
+  });
+  if (!dbUser) {
+    dbUser = (await syncUser()) ?? undefined;
+  }
+  return dbUser;
+}
+
 // ============================================
 // READ — latest N notifications for the dropdown
 // ============================================
@@ -40,9 +50,7 @@ export async function getRecentNotificationsAction(limit = 10) {
   const { userId: clerkId } = await auth();
   if (!clerkId) return { success: false, error: "Unauthorized", data: null };
 
-  const dbUser = await db.query.users.findFirst({
-    where: (u, { eq }) => eq(u.clerkId, clerkId),
-  });
+  const dbUser = await getDbUser(clerkId);
   if (!dbUser) return { success: false, error: "User not found", data: null };
 
   const results = await db.query.notifications.findMany({
@@ -66,9 +74,7 @@ export async function getAllNotificationsAction(page = 1, pageSize = 20) {
   const { userId: clerkId } = await auth();
   if (!clerkId) return { success: false, error: "Unauthorized", data: null };
 
-  const dbUser = await db.query.users.findFirst({
-    where: (u, { eq }) => eq(u.clerkId, clerkId),
-  });
+  const dbUser = await getDbUser(clerkId);
   if (!dbUser) return { success: false, error: "User not found", data: null };
 
   const results = await db.query.notifications.findMany({
@@ -91,9 +97,7 @@ export async function getUnreadNotificationCountAction() {
   const { userId: clerkId } = await auth();
   if (!clerkId) return { success: false, error: "Unauthorized", data: 0 };
 
-  const dbUser = await db.query.users.findFirst({
-    where: (u, { eq }) => eq(u.clerkId, clerkId),
-  });
+  const dbUser = await getDbUser(clerkId);
   if (!dbUser) return { success: false, error: "User not found", data: 0 };
 
   const [result] = await db
@@ -111,9 +115,7 @@ export async function markNotificationAsReadAction(notificationId: string) {
   const { userId: clerkId } = await auth();
   if (!clerkId) return { success: false, error: "Unauthorized" };
 
-  const dbUser = await db.query.users.findFirst({
-    where: (u, { eq }) => eq(u.clerkId, clerkId),
-  });
+  const dbUser = await getDbUser(clerkId);
   if (!dbUser) return { success: false, error: "User not found" };
 
   // Guard: only allow marking your OWN notifications as read
@@ -132,9 +134,7 @@ export async function markAllNotificationsAsReadAction() {
   const { userId: clerkId } = await auth();
   if (!clerkId) return { success: false, error: "Unauthorized" };
 
-  const dbUser = await db.query.users.findFirst({
-    where: (u, { eq }) => eq(u.clerkId, clerkId),
-  });
+  const dbUser = await getDbUser(clerkId);
   if (!dbUser) return { success: false, error: "User not found" };
 
   await db
@@ -152,9 +152,7 @@ export async function deleteNotificationAction(notificationId: string) {
   const { userId: clerkId } = await auth();
   if (!clerkId) return { success: false, error: "Unauthorized" };
 
-  const dbUser = await db.query.users.findFirst({
-    where: (u, { eq }) => eq(u.clerkId, clerkId),
-  });
+  const dbUser = await getDbUser(clerkId);
   if (!dbUser) return { success: false, error: "User not found" };
 
   await db
