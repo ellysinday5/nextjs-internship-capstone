@@ -1,9 +1,6 @@
 "use client";
 
-<<<<<<< HEAD
 import type { ProjectMember } from "@/actions/member-actions";
-=======
->>>>>>> 4016eb6 (Fixed and Initial ui for the system)
 import { Modal } from "@/components/modals/BaseModal";
 import { ConfirmationModal } from "@/components/modals/ConfirmationModal";
 import {
@@ -12,7 +9,6 @@ import {
 } from "@/components/modals/file-preview-modal";
 import { useBoardStore } from "@/stores/board-store";
 import { sileo } from "@/utils/alerts";
-<<<<<<< HEAD
 import {
   Calendar,
   ChevronRight,
@@ -29,11 +25,6 @@ import {
 } from "lucide-react";
 import type React from "react";
 import { useEffect, useRef, useState } from "react";
-=======
-import { CheckCircle2, Plus, X } from "lucide-react";
-import type React from "react";
-import { useState } from "react";
->>>>>>> 4016eb6 (Fixed and Initial ui for the system)
 
 interface ListOption {
   id: string;
@@ -281,7 +272,6 @@ export function CreateTaskModal({
           </div>
         }
       >
-<<<<<<< HEAD
         {/* Loading Guard */}
         {isLoading || lists.length === 0 ? (
           <div className="space-y-4 py-4 animate-pulse">
@@ -289,29 +279,6 @@ export function CreateTaskModal({
             <div className="h-10 bg-slate-200 dark:bg-slate-800 rounded-xl w-full" />
             <div className="h-32 bg-slate-100 dark:bg-slate-800/50 rounded-xl w-full" />
             <div className="h-20 bg-slate-100 dark:bg-slate-800/50 rounded-xl w-full" />
-=======
-        <form id="create-task-form" onSubmit={handleSubmit} className="space-y-5" noValidate>
-          {/* Task Title */}
-          <div>
-            <label className="mb-1.5 block text-sm font-medium text-slate-700 dark:text-slate-200">
-              Task Title <span className="text-red-500">*</span>
-            </label>
-            <input
-              required
-              value={title}
-              onChange={(e) => {
-                setTitle(e.target.value);
-                setTitleError(null);
-              }}
-              placeholder="e.g. Fix navigation bar hydration bug"
-              className={`w-full rounded-xl border-2 px-4 py-3 text-sm text-slate-900 outline-none transition-colors placeholder:text-slate-400 dark:bg-slate-900 dark:text-slate-100 ${
-                titleError
-                  ? "border-red-400 focus:border-red-500"
-                  : "border-slate-200 focus:border-[#0033a0] dark:border-slate-700"
-              }`}
-            />
-            {titleError && <p className="mt-1 text-xs font-semibold text-red-500">{titleError}</p>}
->>>>>>> 4016eb6 (Fixed and Initial ui for the system)
           </div>
         ) : (
           <form
@@ -496,7 +463,6 @@ export function CreateTaskModal({
               />
             </div>
 
-<<<<<<< HEAD
             {/* Attachments Section with Inline Preview */}
             <div className="space-y-2">
               <input
@@ -524,28 +490,6 @@ export function CreateTaskModal({
                   onDrop={handleDrop}
                   onClick={() => fileInputRef.current?.click()}
                   className="w-full flex flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed border-slate-200 dark:border-slate-700 py-5 text-xs text-slate-400 hover:border-[#0033a0] hover:text-[#0033a0] transition-colors cursor-pointer bg-slate-50/50 dark:bg-slate-900/30"
-=======
-          {/* Status */}
-          <div>
-            <label className="mb-1.5 block text-sm font-medium text-slate-700 dark:text-slate-200">
-              Status
-            </label>
-            <div className="flex items-center gap-2 flex-wrap">
-              {STATUS_OPTIONS.map((opt) => (
-                <button
-                  key={opt.value}
-                  type="button"
-                  onClick={() => setStatus(opt.value)}
-                  className={`rounded-full px-3.5 py-1.5 text-xs font-semibold border-2 transition-all ${
-                    status === opt.value
-                      ? opt.value === "On track"
-                        ? "border-emerald-400 bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300"
-                        : opt.value === "At risk"
-                          ? "border-amber-400 bg-amber-50 text-amber-700 dark:bg-amber-950/40 dark:text-amber-300"
-                          : "border-red-400 bg-red-50 text-red-700 dark:bg-red-950/40 dark:text-red-300"
-                      : "border-slate-200 bg-white text-slate-600 hover:border-slate-300 hover:bg-slate-50 dark:border-slate-700 dark:bg-transparent dark:text-slate-300"
-                  }`}
->>>>>>> 4016eb6 (Fixed and Initial ui for the system)
                 >
                   <Paperclip size={20} className="opacity-40" />
                   <span>

@@ -1,10 +1,6 @@
 "use client";
 
-<<<<<<< HEAD
 import { PROJECT_CATEGORIES } from "@/lib/validations/project"; // Use as defaults
-=======
-import { PROJECT_CATEGORIES } from "@/lib/project-schemas"; // Use as defaults
->>>>>>> 4016eb6 (Fixed and Initial ui for the system)
 import type React from "react";
 import { createContext, useContext, useEffect, useState } from "react";
 

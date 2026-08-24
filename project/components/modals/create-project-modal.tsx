@@ -1,10 +1,6 @@
 "use client";
 
-<<<<<<< HEAD
 import { createProjectAction } from "@/actions/project-actions";
-=======
-import { createProjectAction } from "@/app/actions/project-actions";
->>>>>>> 4016eb6 (Fixed and Initial ui for the system)
 import { Modal } from "@/components/modals/BaseModal";
 import { ConfirmationModal } from "@/components/modals/ConfirmationModal";
 import { type CreateProjectFormValues, createProjectSchema } from "@/lib/project-schemas";

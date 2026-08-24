@@ -1,17 +1,9 @@
 "use client";
 
-<<<<<<< HEAD
 import { Calendar, CheckCircle2, Folder, Globe, Lock, Tag, User, Users } from "lucide-react";
 import React from "react";
 import {
   type CreateProjectFormValues,
-=======
-import { CheckCircle2, Folder, User } from "lucide-react";
-import React from "react";
-import {
-  type CreateProjectFormValues,
-  POPULAR_VIEWS,
->>>>>>> 4016eb6 (Fixed and Initial ui for the system)
   RECOMMENDED_VIEWS,
   type ViewId,
 } from "./types";

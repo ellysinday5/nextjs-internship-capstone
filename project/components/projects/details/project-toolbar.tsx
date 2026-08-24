@@ -1,7 +1,6 @@
 "use client";
 
 import {
-<<<<<<< HEAD
   CheckCircle2,
   ChevronDown,
   Filter,
@@ -18,20 +17,6 @@ import {
   X,
 } from "lucide-react";
 import React, { useState, useRef, useEffect } from "react";
-=======
-  ArrowUpDown,
-  CheckCircle2,
-  ChevronDown,
-  Filter,
-  Layers,
-  Plus,
-  Search,
-  Star,
-  X,
-} from "lucide-react";
-import type React from "react";
-import { useEffect, useRef, useState } from "react";
->>>>>>> 4016eb6 (Fixed and Initial ui for the system)
 
 interface ProjectToolbarProps {
   onAddTask: (sectionId?: string) => void;
@@ -77,30 +62,7 @@ interface FilterRule {
   value: string;
 }
 
-<<<<<<< HEAD
 const AVAILABLE_ASSIGNEES = ["Ellen Grace Sinday", "John Doe", "Jane Smith", "Bob Johnson"];
-=======
-/** Right-side controls shared by every tab toolbar */
-function ToolbarControls({
-  searchQuery,
-  setSearchQuery,
-  selectedPriorityFilter,
-  setSelectedPriorityFilter,
-  selectedStatusFilter,
-  setSelectedStatusFilter,
-}: Pick<
-  ProjectToolbarProps,
-  | "searchQuery"
-  | "setSearchQuery"
-  | "selectedPriorityFilter"
-  | "setSelectedPriorityFilter"
-  | "selectedStatusFilter"
-  | "setSelectedStatusFilter"
-  | "sortBy"
-  | "setSortBy"
->) {
-  const hasActiveFilters = selectedPriorityFilter !== "All" || selectedStatusFilter !== "All";
->>>>>>> 4016eb6 (Fixed and Initial ui for the system)
 
 const FILTER_FIELDS = [
   "Status",

@@ -229,7 +229,6 @@ export function ListTabSkeleton({ noShell = false }: { noShell?: boolean } = {})
 /* ══════════════════════════════════════════════════════════════════════════
    Board skeleton  (index 2)
 ══════════════════════════════════════════════════════════════════════════ */
-<<<<<<< HEAD
 export function BoardTabSkeleton({ noShell = false }: { noShell?: boolean } = {}) {
   // Column definitions: [columnName-width, card widths[]]
   const COLUMNS = [{ cards: [100, 80, 90, 75] }, { cards: [90] }, { cards: [] }, { cards: [] }];
@@ -292,49 +291,6 @@ export function BoardTabSkeleton({ noShell = false }: { noShell?: boolean } = {}
         ))}
 
         {/* + Add section dashed button */}
-=======
-export function BoardTabSkeleton() {
-  return (
-    <SkeletonShell activeTabIndex={2}>
-      <div className="flex flex-1 items-start gap-3 overflow-x-auto overflow-y-auto p-5">
-        {[{ cards: [100, 80, 90, 75] }, { cards: [90] }, { cards: [] }, { cards: [] }].map(
-          (col, ci) => (
-            <div
-              key={ci}
-              className="flex w-[272px] flex-shrink-0 flex-col rounded-xl border border-slate-200/80 dark:border-slate-700/50 bg-[#f5f6f7] dark:bg-[#14263e]/70"
-            >
-              {/* Column header */}
-              <div className="flex items-center gap-2 px-3 pt-3 pb-2">
-                <Bone className="h-3.5 w-16" />
-                <Bone className="h-3.5 w-5" />
-              </div>
-              {/* Cards */}
-              <div className="flex flex-col gap-2 px-2.5 pb-1">
-                {col.cards.map((w, ti) => (
-                  <div
-                    key={ti}
-                    className="rounded-xl border border-slate-200 dark:border-slate-700/60 bg-white dark:bg-[#0f1d31] p-3.5 space-y-2.5"
-                  >
-                    <div className="flex items-start gap-2.5">
-                      <Bone className="h-4 w-4 rounded-full shrink-0 mt-0.5" />
-                      <Bone className="h-3.5 flex-1" style={{ width: `${w}%` }} />
-                    </div>
-                    <div className="ml-[23px] flex items-center justify-between">
-                      <Bone className="h-5 w-5 rounded-full" />
-                      <Bone className="h-3 w-10" />
-                    </div>
-                  </div>
-                ))}
-              </div>
-              {/* Add task */}
-              <div className="px-2.5 pb-2.5 pt-1">
-                <Bone className="h-7 w-20 rounded-lg" />
-              </div>
-            </div>
-          ),
-        )}
-        {/* + Add section */}
->>>>>>> 4016eb6 (Fixed and Initial ui for the system)
         <div className="w-[272px] flex-shrink-0">
           <Bone className="h-9 w-full rounded-xl" style={{ borderStyle: "dashed", opacity: 0.5 }} />
         </div>

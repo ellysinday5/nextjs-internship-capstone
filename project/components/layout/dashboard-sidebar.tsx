@@ -1,9 +1,6 @@
 "use client";
 
-<<<<<<< HEAD
 import { WorkspaceSwitcher } from "@/components/layout/workspace-switcher";
-=======
->>>>>>> 4016eb6 (Fixed and Initial ui for the system)
 import {
   BarChart2,
   Calendar,

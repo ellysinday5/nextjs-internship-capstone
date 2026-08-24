@@ -1,15 +1,10 @@
 "use client";
 
 import {
-<<<<<<< HEAD
   Activity,
   BarChart3,
   Calendar,
   Check,
-=======
-  BarChart3,
-  Calendar,
->>>>>>> 4016eb6 (Fixed and Initial ui for the system)
   Clock,
   FileText,
   Kanban,
@@ -18,15 +13,10 @@ import {
   Paperclip,
   Plus,
   Users,
-<<<<<<< HEAD
   X,
 } from "lucide-react";
 import type React from "react";
 import { useEffect, useRef, useState } from "react";
-=======
-} from "lucide-react";
-import React, { useState } from "react";
->>>>>>> 4016eb6 (Fixed and Initial ui for the system)
 
 interface ProjectTabsProps {
   activeTab: string;
@@ -151,39 +141,11 @@ export function ProjectTabs({
 
         {/* Add View Dropdown */}
         {isAddMenuOpen && (
-<<<<<<< HEAD
           <div className="absolute left-0 top-full mt-1.5 z-50 w-72 rounded-2xl border border-slate-200 bg-white p-2 shadow-2xl dark:border-slate-800 dark:bg-slate-900 animate-in fade-in slide-in-from-top-1 duration-150">
             <div className="flex items-center justify-between px-2.5 py-1.5 border-b border-slate-100 dark:border-slate-800">
               <div>
                 <h4 className="text-xs font-bold text-slate-800 dark:text-slate-100">Add a view</h4>
                 <p className="text-[10px] text-slate-400">Add views to organize and visualize work</p>
-=======
-          <div className="absolute top-full left-0 z-50 w-80 rounded-2xl border border-slate-200 bg-white p-4 shadow-2xl dark:border-slate-800 dark:bg-[#14263e]">
-            {/* Popular section */}
-            <div className="space-y-2 mb-4">
-              <h3 className="text-xs font-semibold text-slate-400 uppercase tracking-wider">
-                Popular
-              </h3>
-              <div className="grid grid-cols-2 gap-2">
-                {ADD_TAB_POPULAR.map((item) => (
-                  <button
-                    key={item.name}
-                    onClick={() => {
-                      onAddTab(item.name);
-                      setIsAddMenuOpen(false);
-                    }}
-                    className="flex items-start gap-2.5 p-2 rounded-xl text-left hover:bg-slate-50 dark:hover:bg-slate-800/60 transition-colors"
-                  >
-                    <item.icon size={18} className="text-blue-500 shrink-0 mt-0.5" />
-                    <div>
-                      <div className="text-xs font-bold text-slate-800 dark:text-slate-100">
-                        {item.name}
-                      </div>
-                      <div className="text-[10px] text-slate-400 leading-tight">{item.desc}</div>
-                    </div>
-                  </button>
-                ))}
->>>>>>> 4016eb6 (Fixed and Initial ui for the system)
               </div>
               <button
                 type="button"
@@ -240,13 +202,9 @@ export function ProjectTabs({
                           </span>
                         )}
                       </div>
-<<<<<<< HEAD
                       <p className="text-[11px] text-slate-400 leading-tight line-clamp-1">
                         {item.desc}
                       </p>
-=======
-                      <div className="text-[10px] text-slate-400 leading-tight">{item.desc}</div>
->>>>>>> 4016eb6 (Fixed and Initial ui for the system)
                     </div>
                   </button>
                 );

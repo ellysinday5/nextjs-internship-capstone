@@ -407,10 +407,7 @@ export function AnalyticsTab({ members, teams: _teams }: AnalyticsTabProps) {
   });
   const [memberFilter, setMemberFilter] = useState<MemberFilter>("Online");
   const [itemTypeOpen, setItemTypeOpen] = useState(false);
-<<<<<<< HEAD
   const [itemType, setItemType] = useState<"Tasks" | "Subtasks" | "All">("All");
-=======
->>>>>>> 4016eb6 (Fixed and Initial ui for the system)
 
   const onlineMembers = useMemo(() => members.filter((m) => m.status === "Online"), [members]);
   const offlineMembers = useMemo(
@@ -435,7 +432,6 @@ export function AnalyticsTab({ members, teams: _teams }: AnalyticsTabProps) {
 
   // Chart bars: simulated data for historical ranges, real data for today, influenced by itemType filter
   const chartBars = useMemo(() => {
-<<<<<<< HEAD
     return daysInRange.map((d) => {
       const daySeed = d.getFullYear() * 10000 + (d.getMonth() + 1) * 100 + d.getDate();
       const x = Math.sin(daySeed) * 10000;
@@ -461,15 +457,6 @@ export function AnalyticsTab({ members, teams: _teams }: AnalyticsTabProps) {
     });
   }, [daysInRange, onlineMembers.length, today, members.length, itemType]);
 
-=======
-    if (!isToday) return daysInRange.map((d) => ({ date: d, value: 0 }));
-    return daysInRange.map((d) => ({
-      date: d,
-      value: sameDay(d, today) ? onlineMembers.length : 0,
-    }));
-  }, [daysInRange, isToday, onlineMembers.length, today]);
-
->>>>>>> 4016eb6 (Fixed and Initial ui for the system)
   const maxBar = Math.max(...chartBars.map((b) => b.value), 1);
   const hasData = chartBars.some((b) => b.value > 0);
 
@@ -536,7 +523,6 @@ export function AnalyticsTab({ members, teams: _teams }: AnalyticsTabProps) {
             </p>
           </div>
         ) : (
-<<<<<<< HEAD
           <div className="flex flex-col gap-2">
             <div className="flex items-end gap-1 h-16 px-1">
               {chartBars.map((bar, i) => {
@@ -563,24 +549,6 @@ export function AnalyticsTab({ members, teams: _teams }: AnalyticsTabProps) {
               )}
               <span>{formatDisplayDate(dateRange.end)}</span>
             </div>
-=======
-          <div className="flex items-end gap-1 h-16 px-1">
-            {chartBars.map((bar, i) => {
-              const heightPct = (bar.value / maxBar) * 100;
-              return (
-                <div
-                  key={i}
-                  className="group flex flex-col items-center justify-end flex-1 h-full gap-0.5"
-                  title={`${formatDisplayDate(bar.date)}: ${bar.value} online`}
-                >
-                  <div
-                    className="w-full max-w-[40px] rounded-t bg-blue-500/70 dark:bg-blue-400/60 group-hover:bg-blue-500 dark:group-hover:bg-blue-400 transition-colors"
-                    style={{ height: `${heightPct}%`, minHeight: bar.value > 0 ? "4px" : "0" }}
-                  />
-                </div>
-              );
-            })}
->>>>>>> 4016eb6 (Fixed and Initial ui for the system)
           </div>
         )}
       </div>
@@ -706,7 +674,6 @@ function MemberCard({ member }: { member: TeamMember }) {
     Away: "bg-amber-500",
     Offline: "bg-slate-400 dark:bg-slate-500",
   };
-<<<<<<< HEAD
 
   // Generate dynamic, realistic activity text based on member details
   const activityText = useMemo(() => {
@@ -727,8 +694,6 @@ function MemberCard({ member }: { member: TeamMember }) {
       return `Offline • active ${hours}h ago`;
     }
   }, [member.status, member.id]);
-=======
->>>>>>> 4016eb6 (Fixed and Initial ui for the system)
 
   return (
     <div className="rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-[#14263e] p-4 flex flex-col gap-3 min-h-[140px] hover:shadow-md transition-shadow duration-200">

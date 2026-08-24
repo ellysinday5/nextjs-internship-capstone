@@ -3,16 +3,10 @@
 import { DashboardSidebar } from "@/components/layout/dashboard-sidebar";
 import { Footer } from "@/components/layout/footer";
 import { Header } from "@/components/layout/header";
-<<<<<<< HEAD
 import { useTheme } from "@/components/ui/theme-provider";
 import { CategoryProvider } from "@/context/category-context";
 import { ProjectTitleProvider, useProjectTitle } from "@/context/project-title-context";
 import { BarChart2, Building2, Calendar, FolderOpen, Home, Settings, Users } from "lucide-react";
-=======
-import { CategoryProvider } from "@/context/category-context";
-import { ProjectTitleProvider, useProjectTitle } from "@/context/project-title-context";
-import { BarChart2, Calendar, FolderOpen, Home, Settings, Users } from "lucide-react";
->>>>>>> 4016eb6 (Fixed and Initial ui for the system)
 import { usePathname } from "next/navigation";
 import type React from "react";
 import { Suspense, useEffect, useState } from "react";

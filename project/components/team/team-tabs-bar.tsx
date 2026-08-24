@@ -1,25 +1,15 @@
 "use client";
 
-<<<<<<< HEAD
 import { BarChart2, Mail, UserCog, Users } from "lucide-react";
 import { UserPlus } from "lucide-react";
 
 export type TeamTab = "all-teams" | "all-people" | "analytics" | "my-invites";
-=======
-import { BarChart2, UserCog, UserPlus, Users } from "lucide-react";
-
-export type TeamTab = "all-teams" | "all-people" | "analytics" | "my-teams";
->>>>>>> 4016eb6 (Fixed and Initial ui for the system)
 
 interface TeamTabsBarProps {
   activeTab: TeamTab;
   onTabChange: (tab: TeamTab) => void;
-<<<<<<< HEAD
   onInviteClick?: () => void;
   canInvite?: boolean;
-=======
-  onInviteClick: () => void;
->>>>>>> 4016eb6 (Fixed and Initial ui for the system)
 }
 
 type TabConfig = {
@@ -32,11 +22,7 @@ const TABS: TabConfig[] = [
   { id: "all-teams", label: "All Teams", icon: Users },
   { id: "all-people", label: "All People", icon: UserCog },
   { id: "analytics", label: "Analytics", icon: BarChart2 },
-<<<<<<< HEAD
   { id: "my-invites", label: "My Invites", icon: Mail },
-=======
-  { id: "my-teams", label: "My Teams" },
->>>>>>> 4016eb6 (Fixed and Initial ui for the system)
 ];
 
 export function TeamTabsBar({

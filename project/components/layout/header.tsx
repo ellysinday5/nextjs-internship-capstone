@@ -2,14 +2,9 @@
 
 import { UserMenu } from "@/components/auth/user-menu";
 import { HeaderSearchModal } from "@/components/layout/header-search-modal";
-<<<<<<< HEAD
 import { NotificationBell } from "@/components/notifications/notification-bell";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
 import { Menu, Search } from "lucide-react";
-=======
-import { ThemeToggle } from "@/components/ui/theme-toggle";
-import { Bell, Menu, Search } from "lucide-react";
->>>>>>> 4016eb6 (Fixed and Initial ui for the system)
 import React, { useState } from "react";
 
 interface HeaderProps {

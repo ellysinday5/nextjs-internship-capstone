@@ -1,17 +1,10 @@
 "use client";
 
-<<<<<<< HEAD
 import { type AvailableTeam, getAvailableTeamsAction } from "@/actions/project-actions";
 import { createProjectSchema } from "@/lib/project-schemas";
 import { ChevronDown, Globe, Lock, Users, X } from "lucide-react";
 import type React from "react";
 import { useEffect, useMemo, useRef, useState } from "react";
-=======
-import { createProjectSchema } from "@/lib/project-schemas";
-import { ChevronDown, Globe, Lock, Users, X } from "lucide-react";
-import type React from "react";
-import { useState } from "react";
->>>>>>> 4016eb6 (Fixed and Initial ui for the system)
 import type { CreateProjectFormValues } from "./types";
 
 interface StepOneFormProps {
@@ -241,17 +234,11 @@ export function StepOneForm({ formData, setFormData, onContinue }: StepOneFormPr
                 onFocus={() => setIsDropdownOpen(true)}
                 onKeyDown={handleAddTag}
                 placeholder={
-<<<<<<< HEAD
                   formData.shareWith.length === 0
                     ? "Type team name or select from available teams..."
                     : "Add more teams..."
                 }
                 className="flex-1 min-w-[140px] bg-transparent px-1 text-sm text-slate-800 outline-none placeholder:text-slate-400 dark:text-slate-100"
-=======
-                  formData.shareWith.length === 0 ? "Type team name & press Enter..." : ""
-                }
-                className="flex-1 min-w-[120px] bg-transparent px-1 text-sm text-slate-800 outline-none placeholder:text-slate-400 dark:text-slate-100"
->>>>>>> 4016eb6 (Fixed and Initial ui for the system)
               />
             </div>
 

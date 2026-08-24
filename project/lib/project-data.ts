@@ -1,8 +1,4 @@
-<<<<<<< HEAD
 import type { ProjectWithStats } from "@/actions/project-actions";
-=======
-import type { ProjectWithStats } from "@/app/actions/project-actions";
->>>>>>> 4016eb6 (Fixed and Initial ui for the system)
 
 export interface ProjectItem {
   id: string;

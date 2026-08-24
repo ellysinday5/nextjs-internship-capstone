@@ -1,6 +1,5 @@
 "use client";
 
-<<<<<<< HEAD
 import { toSlug } from "@/lib/project-data";
 import { ArrowRight, FolderKanban, Plus, Search, Users, X } from "lucide-react";
 import Link from "next/link";
@@ -12,14 +11,6 @@ export interface TeamProjectOption {
   ownerName: string;
   description: string | null;
   memberCount?: number;
-=======
-import type { Team } from "@/lib/team-data";
-import { Plus, Users } from "lucide-react";
-
-interface AllTeamsTabProps {
-  teams: Team[];
-  onCreateTeam: () => void;
->>>>>>> 4016eb6 (Fixed and Initial ui for the system)
 }
 
 interface AllTeamsTabProps {

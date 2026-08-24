@@ -1,19 +1,11 @@
 "use client";
 
-<<<<<<< HEAD
 import type { TaskRecord } from "@/actions/task-actions";
-=======
-import type { TaskRecord } from "@/app/actions/task-actions";
->>>>>>> 4016eb6 (Fixed and Initial ui for the system)
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import {
   Calendar,
   CheckCircle2,
-<<<<<<< HEAD
-=======
-  CirclePlus,
->>>>>>> 4016eb6 (Fixed and Initial ui for the system)
   Flag,
   GripVertical,
   MessageSquare,

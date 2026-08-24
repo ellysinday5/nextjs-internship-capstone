@@ -6,20 +6,12 @@ import {
   getListsAction,
   reorderListsAction,
   updateListAction,
-<<<<<<< HEAD
 } from "@/actions/list-actions";
-=======
-} from "@/app/actions/list-actions";
->>>>>>> 4016eb6 (Fixed and Initial ui for the system)
 import type {
   CreateListFormValues,
   ReorderListsFormValues,
   UpdateListFormValues,
-<<<<<<< HEAD
 } from "@/lib/db/list-schemas";
-=======
-} from "@/lib/list-schemas";
->>>>>>> 4016eb6 (Fixed and Initial ui for the system)
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 export function useLists(projectId: string) {

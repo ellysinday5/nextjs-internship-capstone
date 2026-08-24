@@ -40,15 +40,9 @@ export function useTasks(projectId: string) {
         assigneeId: newTaskData.assigneeId ?? null,
         assignee: null,
         priority: newTaskData.priority ?? null,
-<<<<<<< HEAD
-        status: null,
-        dueDate: newTaskData.dueDate ? new Date(newTaskData.dueDate) : null,
-        position: previousTasks?.filter((t) => t.listId === newTaskData.listId).length ?? 0,
-=======
         status: newTaskData.status ?? null,
         dueDate: newTaskData.dueDate ? new Date(newTaskData.dueDate) : null,
-        position: (previousTasks?.filter((t: TaskRecord) => t.listId === newTaskData.listId).length ?? 0),
->>>>>>> 4016eb6 (Fixed and Initial ui for the system)
+        position: previousTasks?.filter((t) => t.listId === newTaskData.listId).length ?? 0,
         commentsCount: 0,
         createdAt: new Date(),
         updatedAt: new Date(),
@@ -106,13 +100,9 @@ export function useTasks(projectId: string) {
       await queryClient.cancelQueries({ queryKey });
       const previousTasks = queryClient.getQueryData<TaskRecord[]>(queryKey);
 
-<<<<<<< HEAD
       queryClient.setQueryData<TaskRecord[]>(queryKey, (old = []) =>
         old.filter((t) => t.id !== taskId),
       );
-=======
-      queryClient.setQueryData<TaskRecord[]>(queryKey, (old: TaskRecord[] | undefined = []) => old.filter((t: TaskRecord) => t.id !== taskId));
->>>>>>> 4016eb6 (Fixed and Initial ui for the system)
       return { previousTasks };
     },
     onError: (_err: unknown, _taskId: string, context?: { previousTasks?: TaskRecord[] }) => {

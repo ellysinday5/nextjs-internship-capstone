@@ -1,6 +1,5 @@
 "use client";
 
-<<<<<<< HEAD
 import { deleteProjectAction } from "@/actions/project-actions";
 import { ConfirmationModal } from "@/components/modals/ConfirmationModal";
 import type { ProjectCardData, ProjectCardStatus } from "@/lib/project-card-types";
@@ -8,14 +7,6 @@ import type { ProjectItem } from "@/lib/project-data";
 import { loadProjectMeta } from "@/lib/project-meta";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-=======
-import { deleteProjectAction } from "@/app/actions/project-actions";
-import { ConfirmationModal } from "@/components/modals/ConfirmationModal";
-import type { ProjectCardData, ProjectCardStatus } from "@/lib/project-card-types";
-import type { ProjectItem } from "@/lib/project-data";
-import { useRouter } from "next/navigation";
-import { useState } from "react";
->>>>>>> 4016eb6 (Fixed and Initial ui for the system)
 import { ProjectCardItem } from "./project-card-item";
 
 interface ProjectCardProps {
@@ -112,9 +103,5 @@ export function ProjectCard({ project, onEditLocal, onProjectDeleted }: ProjectC
 function mapStatus(status: string): ProjectCardStatus {
   if (status === "Completed") return "completed";
   if (status === "On Hold") return "on-hold";
-<<<<<<< HEAD
   return "active";
-=======
-  return "active"; // covers "In Progress", "Review", "Planning"
->>>>>>> 4016eb6 (Fixed and Initial ui for the system)
 }

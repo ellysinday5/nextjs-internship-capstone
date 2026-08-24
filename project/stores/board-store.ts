@@ -5,13 +5,9 @@ import {
   createListAction,
   deleteListAction,
   getListsAction,
-<<<<<<< HEAD
   reorderListsAction,
   updateListAction,
 } from "@/actions/list-actions";
-=======
-} from "@/app/actions/list-actions";
->>>>>>> 4016eb6 (Fixed and Initial ui for the system)
 import {
   type TaskRecord,
   createTaskAction,
@@ -19,14 +15,9 @@ import {
   getProjectTasksAction,
   moveTaskAction,
   updateTaskAction,
-<<<<<<< HEAD
 } from "@/actions/task-actions";
 import type { CreateTaskFormValues, UpdateTaskFormValues } from "@/lib/db/task-schemas";
 import { deriveStatusForList } from "@/lib/task-status";
-=======
-} from "@/app/actions/task-actions";
-import type { CreateTaskFormValues, UpdateTaskFormValues } from "@/lib/task-schemas";
->>>>>>> 4016eb6 (Fixed and Initial ui for the system)
 import { create } from "zustand";
 import { subscribeWithSelector } from "zustand/middleware";
 
@@ -123,10 +114,10 @@ export const useBoardStore = create<BoardState>()(
         tasks: state.tasks.map((t) =>
           t.id === tempId
             ? {
-              ...result.task!,
-              assignee: result.task!.assignee ?? null,
-              commentsCount: result.task!.commentsCount ?? 0,
-            }
+                ...result.task!,
+                assignee: result.task!.assignee ?? null,
+                commentsCount: result.task!.commentsCount ?? 0,
+              }
             : t,
         ),
         isSaving: false,
@@ -140,17 +131,6 @@ export const useBoardStore = create<BoardState>()(
         tasks: state.tasks.map((t) =>
           t.id === taskId
             ? {
-<<<<<<< HEAD
-              ...t,
-              ...updates,
-              dueDate:
-                updates.dueDate === undefined
-                  ? t.dueDate
-                  : updates.dueDate
-                    ? new Date(updates.dueDate)
-                    : null,
-            }
-=======
                 ...t,
                 ...updates,
                 dueDate:
@@ -160,7 +140,6 @@ export const useBoardStore = create<BoardState>()(
                       ? new Date(updates.dueDate)
                       : null,
               }
->>>>>>> 4016eb6 (Fixed and Initial ui for the system)
             : t,
         ),
         isSaving: true,
@@ -168,15 +147,6 @@ export const useBoardStore = create<BoardState>()(
 
       const result = await updateTaskAction({ id: taskId, ...updates });
 
-<<<<<<< HEAD
-        if(!result.success) {
-    set({
-      tasks: previousTasks,
-      isSaving: false,
-      error: result.error ?? "Failed to update task.",
-  });
-return;
-=======
       if (!result.success) {
         set({
           tasks: previousTasks,
@@ -184,9 +154,8 @@ return;
           error: result.error ?? "Failed to update task.",
         });
         return;
->>>>>>> 4016eb6 (Fixed and Initial ui for the system)
       }
-set({ isSaving: false });
+      set({ isSaving: false });
     },
 
     moveTask: async (taskId, newListId, newPosition) => {
@@ -200,11 +169,11 @@ set({ isSaving: false });
         tasks: state.tasks.map((t) =>
           t.id === taskId
             ? {
-              ...t,
-              listId: newListId,
-              position: newPosition,
-              ...(derivedStatus ? { status: derivedStatus } : {}),
-            }
+                ...t,
+                listId: newListId,
+                position: newPosition,
+                ...(derivedStatus ? { status: derivedStatus } : {}),
+              }
             : t,
         ),
         isSaving: true,
@@ -216,19 +185,11 @@ set({ isSaving: false });
         toPosition: newPosition,
       });
 
-<<<<<<< HEAD
       if (!moveResult.success) {
         set({
           tasks: previousTasks,
           isSaving: false,
           error: moveResult.error ?? "Failed to move task.",
-=======
-      if (!result.success) {
-        set({
-          tasks: previousTasks,
-          isSaving: false,
-          error: result.error ?? "Failed to move task.",
->>>>>>> 4016eb6 (Fixed and Initial ui for the system)
         });
         return;
       }
@@ -242,28 +203,17 @@ set({ isSaving: false });
           });
           return;
         }
-        : t,
-    ),
-    isSaving: true,
-  }));
+      }
 
-  // Persist the move itself first.
-  const moveResult = await moveTaskAction({
-    taskId,
-    toListId: newListId,
-    toPosition: newPosition,
-  });
+      set({ isSaving: false });
+    },
 
-<<<<<<< HEAD
-  if (!moveResult.success) {
-    set({
-      tasks: previousTasks,
-      isSaving: false,
-      error: moveResult.error ?? "Failed to move task.",
-    });
-    return;
-  }
-=======
+    deleteTask: async (taskId) => {
+      const previousTasks = get().tasks;
+      set((state) => ({ tasks: state.tasks.filter((t) => t.id !== taskId), isSaving: true }));
+
+      const result = await deleteTaskAction(taskId);
+
       if (!result.success) {
         set({
           tasks: previousTasks,
@@ -274,39 +224,6 @@ set({ isSaving: false });
       }
       set({ isSaving: false });
     },
->>>>>>> 4016eb6 (Fixed and Initial ui for the system)
-
-  if (derivedStatus) {
-    const statusResult = await updateTaskAction({ id: taskId, status: derivedStatus });
-    if (!statusResult.success) {
-
-      set({
-        isSaving: false,
-        error: statusResult.error ?? "Task moved, but failed to update status.",
-      });
-      return;
-    }
-  }
-
-  set({ isSaving: false });
-},
-
-  deleteTask: async (taskId) => {
-    const previousTasks = get().tasks;
-    set((state) => ({ tasks: state.tasks.filter((t) => t.id !== taskId), isSaving: true }));
-
-    const result = await deleteTaskAction(taskId);
-
-    if (!result.success) {
-      set({
-        tasks: previousTasks,
-        isSaving: false,
-        error: result.error ?? "Failed to delete task.",
-      });
-      return;
-    }
-    set({ isSaving: false });
-  },
 
     renameList: async (listId, name) => {
       const previousLists = get().lists;
@@ -316,68 +233,60 @@ set({ isSaving: false });
 
       const result = await updateListAction({ id: listId, name });
       if (!result.success) {
-<<<<<<< HEAD
         set({ lists: previousLists, error: result.error ?? "Failed to rename section." });
-=======
+      }
+    },
+
+    reorderLists: async (orderedIds) => {
+      const previousLists = get().lists;
+      const projectId = get().currentProjectId;
+      if (!projectId) return;
+
+      const idToPos = new Map(orderedIds.map((id, index) => [id, index]));
+      const newLists = [...previousLists].sort(
+        (a, b) => (idToPos.get(a.id) ?? a.position) - (idToPos.get(b.id) ?? b.position),
+      );
+
+      set({ lists: newLists });
+
+      const result = await reorderListsAction({ projectId, orderedIds });
+      if (!result.success) {
+        set({ lists: previousLists, error: result.error ?? "Failed to reorder sections." });
+      }
+    },
+
+    createList: async (name) => {
+      const projectId = get().currentProjectId;
+      if (!projectId) return;
+
+      const result = await createListAction({ name, projectId });
+      if (!result.success || !result.list) {
+        set({ error: result.error ?? "Failed to create list." });
+        return;
+      }
+      set((state) => ({ lists: [...state.lists, { ...result.list!, taskCount: 0 }] }));
+    },
+
+    deleteList: async (listId) => {
+      const previousLists = get().lists;
+      const previousTasks = get().tasks;
+
+      set((state) => ({
+        lists: state.lists.filter((l) => l.id !== listId),
+        tasks: state.tasks.filter((t) => t.listId !== listId),
+      }));
+
+      const result = await deleteListAction(listId);
+      if (!result.success) {
         set({
           lists: previousLists,
           tasks: previousTasks,
           error: result.error ?? "Failed to delete list.",
         });
->>>>>>> 4016eb6 (Fixed and Initial ui for the system)
       }
     },
 
-      reorderLists: async (orderedIds) => {
-        const previousLists = get().lists;
-        const projectId = get().currentProjectId;
-        if (!projectId) return;
-
-        const idToPos = new Map(orderedIds.map((id, index) => [id, index]));
-        const newLists = [...previousLists].sort(
-          (a, b) => (idToPos.get(a.id) ?? a.position) - (idToPos.get(b.id) ?? b.position),
-        );
-
-        set({ lists: newLists });
-
-        const result = await reorderListsAction({ projectId, orderedIds });
-        if (!result.success) {
-          set({ lists: previousLists, error: result.error ?? "Failed to reorder sections." });
-        }
-      },
-
-        createList: async (name) => {
-          const projectId = get().currentProjectId;
-          if (!projectId) return;
-
-          const result = await createListAction({ name, projectId });
-          if (!result.success || !result.list) {
-            set({ error: result.error ?? "Failed to create list." });
-            return;
-          }
-          set((state) => ({ lists: [...state.lists, { ...result.list!, taskCount: 0 }] }));
-        },
-
-          deleteList: async (listId) => {
-            const previousLists = get().lists;
-            const previousTasks = get().tasks;
-
-            set((state) => ({
-              lists: state.lists.filter((l) => l.id !== listId),
-              tasks: state.tasks.filter((t) => t.listId !== listId),
-            }));
-
-            const result = await deleteListAction(listId);
-            if (!result.success) {
-              set({
-                lists: previousLists,
-                tasks: previousTasks,
-                error: result.error ?? "Failed to delete list.",
-              });
-            }
-          },
-
-            setDraggedTask: (task) => set({ draggedTask: task }),
-              setDraggedOverList: (listId) => set({ draggedOverList: listId }),
+    setDraggedTask: (task) => set({ draggedTask: task }),
+    setDraggedOverList: (listId) => set({ draggedOverList: listId }),
   })),
 );

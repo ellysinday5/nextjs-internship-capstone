@@ -1,26 +1,8 @@
 "use client";
 
-<<<<<<< HEAD
 import type { ProjectMember } from "@/actions/member-actions";
 import { Plus, Tag, Users } from "lucide-react";
 import { z } from "zod";
-=======
-import { removeProjectMemberAction } from "@/app/actions/member-actions";
-import { sileo } from "@/utils/alerts";
-import {
-  Briefcase,
-  Calendar,
-  Crown,
-  MoreHorizontal,
-  Plus,
-  Shield,
-  Target,
-  Users,
-  X,
-} from "lucide-react";
-import React, { useState } from "react";
-import { type ProjectStatusType, STATUS_OPTIONS } from "./types";
->>>>>>> 4016eb6 (Fixed and Initial ui for the system)
 
 const descriptionSchema = z.string().max(300, "Description must not exceed 300 characters.");
 
@@ -170,7 +152,6 @@ export function OverviewTab({
           </div>
         </div>
 
-<<<<<<< HEAD
         {/* Tech Stack / Tags */}
         <div className="md:col-span-2 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-[#14263e] p-5 shadow-sm space-y-3.5">
           <h4 className="text-[11px] font-extrabold uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
@@ -182,62 +163,6 @@ export function OverviewTab({
               <span
                 key={`cat-${i}`}
                 className="px-3 py-1 rounded-full text-xs font-semibold bg-sky-50 dark:bg-sky-950/40 text-sky-700 dark:text-sky-300 border border-sky-200 dark:border-sky-800"
-=======
-            {/* Member cards */}
-            {members.map((member, idx) => {
-              const avatarColor = AVATAR_COLORS[idx % AVATAR_COLORS.length];
-              const isProjectManager = member.role === "Project Manager";
-              return (
-                <div
-                  key={member.id}
-                  className="group flex items-center gap-3 rounded-xl border border-slate-200 bg-white p-3 dark:border-slate-800 dark:bg-slate-900 min-w-[180px] relative"
-                >
-                  <div
-                    className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full font-bold text-xs ${avatarColor}`}
-                  >
-                    {getInitials(member.name)}
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <div className="text-xs font-bold text-slate-900 dark:text-slate-100 truncate">
-                      {member.name}
-                    </div>
-                    <div
-                      className={`flex items-center gap-1 text-[11px] font-semibold ${
-                        isProjectManager
-                          ? "text-blue-600 dark:text-blue-400"
-                          : "text-emerald-600 dark:text-emerald-400"
-                      }`}
-                    >
-                      {isProjectManager ? <Shield size={10} /> : <Users size={10} />}
-                      {member.role}
-                    </div>
-                  </div>
-
-                  {/* Remove button — only visible to managers */}
-                  {isManager && (
-                    <button
-                      onClick={() => handleRemoveMember(member)}
-                      disabled={removingId === member.id}
-                      className="absolute -top-1.5 -right-1.5 hidden group-hover:flex h-5 w-5 items-center justify-center rounded-full bg-red-100 text-red-500 hover:bg-red-200 dark:bg-red-950/60 dark:text-red-400 transition-colors"
-                      title={`Remove ${member.name}`}
-                    >
-                      {removingId === member.id ? (
-                        <span className="h-2 w-2 rounded-full border border-red-400 border-t-transparent animate-spin" />
-                      ) : (
-                        <X size={10} />
-                      )}
-                    </button>
-                  )}
-                </div>
-              );
-            })}
-
-            {/* Add member button (shown when no members yet and user is manager) */}
-            {isManager && members.length === 0 && (
-              <button
-                onClick={onAddMember}
-                className="flex items-center gap-2 rounded-xl border border-dashed border-slate-300 p-3 text-xs font-semibold text-slate-500 hover:border-blue-400 hover:text-blue-600 dark:border-slate-700 dark:text-slate-400 transition-colors min-w-[160px]"
->>>>>>> 4016eb6 (Fixed and Initial ui for the system)
               >
                 {cat}
               </span>
@@ -307,70 +232,7 @@ export function OverviewTab({
               </div>
             ))}
           </div>
-<<<<<<< HEAD
         )}
-=======
-        </div>
-
-        {/* Due date */}
-        <div className="flex items-center gap-2.5 text-xs text-slate-500 dark:text-slate-400">
-          <Calendar size={15} />
-          <span>No due date</span>
-        </div>
-
-        {/* Role legend */}
-        <div className="rounded-xl border border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-slate-900 space-y-3">
-          <h4 className="text-xs font-bold text-slate-700 dark:text-slate-300">Role Permissions</h4>
-          <div className="space-y-2">
-            <div className="flex items-start gap-2">
-              <Shield size={12} className="text-blue-500 mt-0.5 shrink-0" />
-              <div>
-                <p className="text-[11px] font-bold text-blue-600 dark:text-blue-400">
-                  Project Manager
-                </p>
-                <p className="text-[10px] text-slate-500 dark:text-slate-400 leading-relaxed">
-                  Full access — add/remove members, manage all tasks, configure project
-                </p>
-              </div>
-            </div>
-            <div className="flex items-start gap-2">
-              <Users size={12} className="text-emerald-500 mt-0.5 shrink-0" />
-              <div>
-                <p className="text-[11px] font-bold text-emerald-600 dark:text-emerald-400">
-                  Member
-                </p>
-                <p className="text-[10px] text-slate-500 dark:text-slate-400 leading-relaxed">
-                  Add tasks, edit/delete tasks, reply to comments, message teammates
-                </p>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Activity Timeline */}
-        <div className="space-y-4 pt-2">
-          <div className="flex items-start gap-3 relative pl-2 border-l border-dashed border-slate-300 dark:border-slate-700">
-            <div className="absolute -left-[5px] top-1.5 h-2 w-2 rounded-full bg-slate-400" />
-            <div>
-              <div className="text-xs font-bold text-slate-800 dark:text-slate-200">You joined</div>
-              <div className="text-[11px] text-slate-400">15 days ago</div>
-              <div className="mt-1 flex h-5 w-5 items-center justify-center rounded-full bg-amber-400 text-[9px] font-bold text-amber-950">
-                {ownerInitials}
-              </div>
-            </div>
-          </div>
-
-          <div className="flex items-start gap-3 relative pl-2 border-l border-dashed border-slate-300 dark:border-slate-700">
-            <div className="absolute -left-[5px] top-1.5 h-2 w-2 rounded-full bg-slate-400" />
-            <div>
-              <div className="text-xs font-bold text-slate-800 dark:text-slate-200">
-                Project created
-              </div>
-              <div className="text-[11px] text-slate-400">{ownerName} • 15 days ago</div>
-            </div>
-          </div>
-        </div>
->>>>>>> 4016eb6 (Fixed and Initial ui for the system)
       </div>
     </div>
   );
