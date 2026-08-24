@@ -125,45 +125,6 @@ export function ProjectsToolbar({
           </div>
 
           <FilterDropdown
-            label="Owner"
-            icon={<User size={14} />}
-            value={selectedOwner}
-            options={owners}
-            isOpen={openDropdown === "owner"}
-            onToggle={() => toggleDropdown("owner")}
-            onSelect={(val) => {
-              setSelectedOwner(val);
-              setOpenDropdown(null);
-            }}
-          />
-
-          <FilterDropdown
-            label="Team"
-            icon={<Shield size={14} />}
-            value={selectedTeam}
-            options={teamsList}
-            isOpen={openDropdown === "team"}
-            onToggle={() => toggleDropdown("team")}
-            onSelect={(val) => {
-              setSelectedTeam(val);
-              setOpenDropdown(null);
-            }}
-          />
-
-          <FilterDropdown
-            label="Members"
-            icon={<Users size={14} />}
-            value={selectedMembers}
-            options={membersFilterOptions}
-            isOpen={openDropdown === "members"}
-            onToggle={() => toggleDropdown("members")}
-            onSelect={(val) => {
-              setSelectedMembers(val);
-              setOpenDropdown(null);
-            }}
-          />
-
-          <FilterDropdown
             label="Category"
             icon={<ChevronDown size={14} />}
             value={selectedCategory}

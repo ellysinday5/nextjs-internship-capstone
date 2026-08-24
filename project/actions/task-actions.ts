@@ -93,9 +93,11 @@ export async function getProjectTasksAction(projectId: string): Promise<TaskReco
       .select({ id: lists.id })
       .from(lists)
       .where(eq(lists.projectId, projectId));
+
     if (projectLists.length === 0) return [];
 
-    const listIds = projectLists.map((l) => l.id);
+    const listIds = projectLists.map((l) => l.id).filter(Boolean);
+    if (listIds.length === 0) return [];
 
     const rows = await db
       .select({

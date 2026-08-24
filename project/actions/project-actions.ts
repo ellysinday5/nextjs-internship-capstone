@@ -52,7 +52,7 @@ export async function getProjectsAction(): Promise<ProjectWithStats[]> {
       .from(projectMembers)
       .where(eq(projectMembers.userId, user.id));
 
-    const memberProjectIds = memberProjectRows.map((m) => m.projectId);
+    const memberProjectIds = memberProjectRows.map((m) => m.projectId).filter(Boolean);
 
     // 2. Query projects where user is owner OR member
     const whereClause =
@@ -83,63 +83,88 @@ export async function getProjectsAction(): Promise<ProjectWithStats[]> {
 
     if (userProjects.length === 0) return [];
 
-    const results: ProjectWithStats[] = await Promise.all(
-      userProjects.map(async (p) => {
-        const projectLists = await db
-          .select({ id: lists.id })
-          .from(lists)
-          .where(eq(lists.projectId, p.id));
+    const projectIds = userProjects.map((p) => p.id).filter(Boolean);
+    if (projectIds.length === 0) return [];
 
-        let totalTasks = 0;
-        let completedTasks = 0;
+    // Batch fetch lists, tasks, and members in parallel (3 queries instead of N*M waterfall)
+    const [allLists, allTasks, allMembers] = await Promise.all([
+      db
+        .select({
+          id: lists.id,
+          projectId: lists.projectId,
+        })
+        .from(lists)
+        .where(inArray(lists.projectId, projectIds)),
+      db
+        .select({
+          id: tasks.id,
+          projectId: lists.projectId,
+          status: tasks.status,
+        })
+        .from(tasks)
+        .innerJoin(lists, eq(tasks.listId, lists.id))
+        .where(inArray(lists.projectId, projectIds)),
+      db
+        .select({
+          id: projectMembers.id,
+          projectId: projectMembers.projectId,
+          name: projectMembers.name,
+          role: projectMembers.role,
+        })
+        .from(projectMembers)
+        .where(inArray(projectMembers.projectId, projectIds)),
+    ]);
 
-        if (projectLists.length > 0) {
-          const listIds = projectLists.map((l) => l.id);
-          for (const lId of listIds) {
-            const listTasks = await db
-              .select({ id: tasks.id, priority: tasks.priority, status: tasks.status })
-              .from(tasks)
-              .where(eq(tasks.listId, lId));
+    // In-memory aggregation
+    const listCountMap = new Map<string, number>();
+    for (const l of allLists) {
+      listCountMap.set(l.projectId, (listCountMap.get(l.projectId) || 0) + 1);
+    }
 
-            totalTasks += listTasks.length;
-            completedTasks += listTasks.filter(
-              (t) => t.status === "Completed" || t.status === "Done",
-            ).length;
-          }
-        }
+    const taskStatsMap = new Map<string, { total: number; completed: number }>();
+    for (const t of allTasks) {
+      const stats = taskStatsMap.get(t.projectId) || { total: 0, completed: 0 };
+      stats.total += 1;
+      if (
+        t.status === "Completed" ||
+        t.status === "Done" ||
+        t.status === "Complete"
+      ) {
+        stats.completed += 1;
+      }
+      taskStatsMap.set(t.projectId, stats);
+    }
 
-        const members = await db
-          .select({
-            id: projectMembers.id,
-            name: projectMembers.name,
-            role: projectMembers.role,
-          })
-          .from(projectMembers)
-          .where(eq(projectMembers.projectId, p.id));
+    const membersMap = new Map<string, { id: string; name: string; role: string }[]>();
+    for (const m of allMembers) {
+      const list = membersMap.get(m.projectId) || [];
+      list.push({ id: m.id, name: m.name, role: m.role });
+      membersMap.set(m.projectId, list);
+    }
 
-        return {
-          id: p.id,
-          name: p.name,
-          description: p.description,
-          ownerId: p.ownerId,
-          ownerName: p.ownerName || "Project Owner",
-          dueDate: p.dueDate,
-          categories: p.categories,
-          techStack: p.techStack,
-          status: p.status,
-          priority: p.priority,
-          createdAt: p.createdAt,
-          updatedAt: p.updatedAt,
-          listCount: projectLists.length,
-          taskCount: totalTasks,
-          completedTaskCount: completedTasks,
-          memberCount: members.length,
-          members,
-        };
-      }),
-    );
-
-    return results;
+    return userProjects.map((p) => {
+      const stats = taskStatsMap.get(p.id) || { total: 0, completed: 0 };
+      const members = membersMap.get(p.id) || [];
+      return {
+        id: p.id,
+        name: p.name,
+        description: p.description,
+        ownerId: p.ownerId,
+        ownerName: p.ownerName || "Project Owner",
+        dueDate: p.dueDate,
+        categories: p.categories || [],
+        techStack: p.techStack || [],
+        status: p.status,
+        priority: p.priority,
+        createdAt: p.createdAt,
+        updatedAt: p.updatedAt,
+        listCount: listCountMap.get(p.id) || 0,
+        taskCount: stats.total,
+        completedTaskCount: stats.completed,
+        memberCount: members.length,
+        members,
+      };
+    });
   } catch (error) {
     console.error("[getProjectsAction] Error fetching projects:", error);
     return [];
