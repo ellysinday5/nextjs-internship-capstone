@@ -259,15 +259,31 @@ export function NotificationsTab() {
       <div>
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-2">
-            <h2 className="text-base font-black text-[#142843] dark:text-white">
-              My Notifications
+            <h2 className="text-xl font-extrabold text-[#142843] dark:text-white tracking-tight">
+              Notifications &amp; Activity
             </h2>
             {unreadCount > 0 && (
-              <span className="px-2 py-0.5 rounded-full text-[10px] font-black bg-[#0052cc] text-white">
-                {unreadCount}
+              <span className="px-2.5 py-0.5 rounded-full text-xs font-black bg-[#0052cc] text-white animate-pulse">
+                {unreadCount} new
               </span>
             )}
           </div>
+          <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
+            Real-time feed of task updates, team mentions, invitations, and alerts.
+          </p>
+        </div>
+
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={() => fetchRealNotifications(false)}
+            disabled={isRefreshing}
+            className="p-2 text-slate-500 hover:text-[#0052cc] dark:hover:text-sky-400 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 transition-all cursor-pointer"
+            title="Refresh notifications"
+          >
+            <RefreshCw size={15} className={isRefreshing ? "animate-spin text-[#0052cc]" : ""} />
+          </button>
+
           {unreadCount > 0 && (
             <button
               type="button"
@@ -280,6 +296,7 @@ export function NotificationsTab() {
             </button>
           )}
         </div>
+      </div>
 
         {/* Category tabs */}
         <div className="flex items-center gap-1 border-b border-slate-100 dark:border-slate-800 mb-3 overflow-x-auto">
@@ -303,14 +320,12 @@ export function NotificationsTab() {
                     : "border-transparent text-slate-500 hover:text-slate-800 dark:hover:text-white"
                 }`}
               >
-                {tab.label}
-                <span className="px-1.5 rounded-full text-[10px] font-black bg-slate-100 dark:bg-slate-800">
-                  {count}
-                </span>
-              </button>
-            );
-          })}
-        </div>
+                {count}
+              </span>
+            </button>
+          );
+        })}
+      </div>
 
         {/* List items */}
         <div className="space-y-2 min-h-[120px]">
@@ -351,10 +366,18 @@ export function NotificationsTab() {
                 <div className="w-8 h-8 rounded-full bg-blue-100 dark:bg-blue-950 flex items-center justify-center shrink-0 mt-0.5 text-[#0052cc]">
                   {dbTypeToIcon(notif.type)}
                 </div>
+
+                {/* Content */}
                 <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2">
-                    <span className="text-xs font-bold text-[#142843] dark:text-white">
-                      {notif.title}
+                  <div className="flex items-center gap-2 justify-between">
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs font-bold text-[#142843] dark:text-white">
+                        {notif.title}
+                      </span>
+                      {isUnread && <span className="w-2 h-2 rounded-full bg-[#0052cc] shrink-0" />}
+                    </div>
+                    <span className="text-[10px] text-slate-400 dark:text-slate-500 whitespace-nowrap">
+                      {timeFormatted}
                     </span>
                     {!notif.isRead && (
                       <span className="w-2 h-2 rounded-full bg-[#0052cc] shrink-0" />
@@ -393,9 +416,10 @@ export function NotificationsTab() {
                   <X size={13} />
                 </button>
               </div>
-            ))
-          )}
-        </div>
+            );
+          })
+        )}
+      </div>
 
         {/* Pagination */}
         <div className="flex items-center justify-center gap-3 mt-4">

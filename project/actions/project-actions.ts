@@ -52,7 +52,7 @@ export async function getProjectsAction(): Promise<ProjectWithStats[]> {
       .from(projectMembers)
       .where(eq(projectMembers.userId, user.id));
 
-    const memberProjectIds = memberProjectRows.map((m) => m.projectId);
+    const memberProjectIds = memberProjectRows.map((m) => m.projectId).filter(Boolean);
 
     // 2. Query projects where user is owner OR member
     const whereClause =
