@@ -36,14 +36,8 @@
     "@hookform/resolvers": "^5.5.7",
     "@neondatabase/serverless": "^1.1.0",
     "@radix-ui/react-slot": "^1.3.3",
-<<<<<<< HEAD
     "@tanstack/query-core": "^5.101.4",
     "@tanstack/react-query": "^5.101.4",
-=======
-    "@testing-library/jest-dom": "^6.6.3",
-    "@testing-library/react": "^16.1.0",
-    "@testing-library/user-event": "^14.5.2",
->>>>>>> 4016eb6 (Fixed and Initial ui for the system)
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "drizzle-orm": "^0.45.2",
