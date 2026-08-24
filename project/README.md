@@ -1,10 +1,10 @@
 # ProjectFlow - Next.js Internship Capstone Project
 
-## 🚀 Project Overview
+##Project Overview
 
 **ProjectFlow** is a collaborative project management tool built with Next.js 16 App Router, designed as the capstone project for a 12-week full-stack development internship program. This is currently a **mockup/prototype** with placeholder components and incomplete functionality.
 
-### 📋 What We're Building
+### What We're Building
 
 A modern, Kanban-style project management application similar to Trello or Asana, featuring:
 
@@ -16,7 +16,7 @@ A modern, Kanban-style project management application similar to Trello or Asana
 - **Real-time Collaboration** features ⏳ *Planned*
 - **Responsive Design** with Tailwind CSS + custom color scheme ✅ *Implemented*
 
-## 🎯 Learning Objectives
+##Learning Objectives
 
 By completing this project, interns will demonstrate proficiency in:
 

@@ -1,8 +1,7 @@
 "use client";
 
 import type { ProjectMember } from "@/actions/member-actions";
-import { useCategories } from "@/context/category-context";
-import { Plus, Users } from "lucide-react";
+import { Plus, Tag, Users } from "lucide-react";
 import { z } from "zod";
 
 const descriptionSchema = z.string().max(300, "Description must not exceed 300 characters.");
@@ -18,6 +17,7 @@ interface OverviewTabProps {
   ownerName: string;
   status: string;
   taskCount: number;
+  categories?: string[];
   techStack: string[];
   members: ProjectMember[];
   onAddMember: () => void;
@@ -34,11 +34,11 @@ export function OverviewTab({
   ownerName,
   status,
   taskCount,
-  techStack,
+  categories = [],
+  techStack = [],
   members,
   onAddMember,
 }: OverviewTabProps) {
-  const { categories } = useCategories();
 
   return (
     <div className="flex-1 overflow-auto bg-slate-50/50 dark:bg-[#0f1d31]/50 p-6 lg:p-8 space-y-6">
@@ -154,45 +154,31 @@ export function OverviewTab({
 
         {/* Tech Stack / Tags */}
         <div className="md:col-span-2 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-[#14263e] p-5 shadow-sm space-y-3.5">
-          <h4 className="text-[11px] font-extrabold uppercase tracking-wider text-slate-400">
+          <h4 className="text-[11px] font-extrabold uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
+            <Tag size={12} />
             CATEGORIES &amp; TECH STACK
           </h4>
           <div className="flex flex-wrap gap-2">
-            {categories.length > 0 ? (
-              categories.map((cat, i) => (
-                <span
-                  key={i}
-                  className="px-3 py-1 rounded-full text-xs font-semibold bg-sky-50 dark:bg-sky-950/40 text-sky-700 dark:text-sky-300 border border-sky-200 dark:border-sky-800"
-                >
-                  {cat}
-                </span>
-              ))
-            ) : (
-              <span className="px-3 py-1 rounded-full text-xs font-semibold bg-sky-50 dark:bg-sky-950/40 text-sky-700 dark:text-sky-300 border border-sky-200 dark:border-sky-800">
-                Frontend
+            {categories.map((cat, i) => (
+              <span
+                key={`cat-${i}`}
+                className="px-3 py-1 rounded-full text-xs font-semibold bg-sky-50 dark:bg-sky-950/40 text-sky-700 dark:text-sky-300 border border-sky-200 dark:border-sky-800"
+              >
+                {cat}
               </span>
-            )}
-            {techStack.length > 0 ? (
-              techStack.map((tech, i) => (
-                <span
-                  key={i}
-                  className="px-3 py-1 rounded-full text-xs font-semibold bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300"
-                >
-                  {tech}
-                </span>
-              ))
-            ) : (
-              <>
-                <span className="px-3 py-1 rounded-full text-xs font-semibold bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300">
-                  Next.js
-                </span>
-                <span className="px-3 py-1 rounded-full text-xs font-semibold bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300">
-                  TypeScript
-                </span>
-                <span className="px-3 py-1 rounded-full text-xs font-semibold bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300">
-                  TailwindCSS
-                </span>
-              </>
+            ))}
+            {techStack.map((tech, i) => (
+              <span
+                key={`tech-${i}`}
+                className="px-3 py-1 rounded-full text-xs font-semibold bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700"
+              >
+                {tech}
+              </span>
+            ))}
+            {categories.length === 0 && techStack.length === 0 && (
+              <span className="text-xs text-slate-400 italic">
+                No categories or tech stack specified.
+              </span>
             )}
           </div>
         </div>
