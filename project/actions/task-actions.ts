@@ -89,16 +89,6 @@ export async function getProjectTasksAction(projectId: string): Promise<TaskReco
     const hasAccess = await assertProjectAccess(projectId, user.id);
     if (!hasAccess) return [];
 
-    const projectLists = await db
-      .select({ id: lists.id })
-      .from(lists)
-      .where(eq(lists.projectId, projectId));
-
-    if (projectLists.length === 0) return [];
-
-    const listIds = projectLists.map((l) => l.id).filter(Boolean);
-    if (listIds.length === 0) return [];
-
     const rows = await db
       .select({
         id: tasks.id,
@@ -119,8 +109,9 @@ export async function getProjectTasksAction(projectId: string): Promise<TaskReco
         )`,
       })
       .from(tasks)
+      .innerJoin(lists, eq(tasks.listId, lists.id))
       .leftJoin(users, eq(tasks.assigneeId, users.id))
-      .where(inArray(tasks.listId, listIds))
+      .where(eq(lists.projectId, projectId))
       .orderBy(asc(tasks.position));
 
     return rows.map((r) => ({
@@ -184,6 +175,24 @@ export async function createTaskAction(data: CreateTaskFormValues) {
         position: maxPosition + 1,
       })
       .returning();
+    let assigneeInfo: TaskAssignee | null = null;
+    if (assigneeId) {
+      const assignedUser = await db.query.users.findFirst({
+        where: (u, { eq }) => eq(u.id, assigneeId),
+        columns: { id: true, name: true, email: true },
+      });
+      if (assignedUser) {
+        assigneeInfo = assignedUser;
+      } else {
+        const member = await db.query.projectMembers.findFirst({
+          where: (pm, { eq }) => eq(pm.id, assigneeId),
+          columns: { id: true, name: true },
+        });
+        if (member) {
+          assigneeInfo = { id: member.id, name: member.name, email: "" };
+        }
+      }
+    }
 
     if (assigneeId && assigneeId !== user.id) {
       await createNotification({
@@ -198,7 +207,14 @@ export async function createTaskAction(data: CreateTaskFormValues) {
     }
 
     revalidatePath(`/projects/${projectId}`);
-    return { success: true, task: newTask };
+    return {
+      success: true,
+      task: {
+        ...newTask,
+        assignee: assigneeInfo,
+        commentsCount: 0,
+      } as TaskRecord,
+    };
   } catch (error: unknown) {
     console.error("[createTaskAction] Error creating task:", error);
     return { success: false, error: "Failed to create task. Please try again." };

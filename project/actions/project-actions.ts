@@ -83,10 +83,9 @@ export async function getProjectsAction(): Promise<ProjectWithStats[]> {
 
     if (userProjects.length === 0) return [];
 
-    const projectIds = userProjects.map((p) => p.id).filter(Boolean);
-    if (projectIds.length === 0) return [];
+    const projectIds = userProjects.map((p) => p.id);
 
-    // Batch fetch lists, tasks, and members in parallel (3 queries instead of N*M waterfall)
+    // Batch fetch all lists, tasks, and members in parallel (3 fast queries instead of N*M waterfall)
     const [allLists, allTasks, allMembers] = await Promise.all([
       db
         .select({
@@ -115,7 +114,7 @@ export async function getProjectsAction(): Promise<ProjectWithStats[]> {
         .where(inArray(projectMembers.projectId, projectIds)),
     ]);
 
-    // In-memory aggregation
+    // Fast in-memory aggregation (0ms)
     const listCountMap = new Map<string, number>();
     for (const l of allLists) {
       listCountMap.set(l.projectId, (listCountMap.get(l.projectId) || 0) + 1);
@@ -125,11 +124,7 @@ export async function getProjectsAction(): Promise<ProjectWithStats[]> {
     for (const t of allTasks) {
       const stats = taskStatsMap.get(t.projectId) || { total: 0, completed: 0 };
       stats.total += 1;
-      if (
-        t.status === "Completed" ||
-        t.status === "Done" ||
-        t.status === "Complete"
-      ) {
+      if (t.status === "Completed" || t.status === "Done" || t.status === "Complete") {
         stats.completed += 1;
       }
       taskStatsMap.set(t.projectId, stats);
@@ -323,8 +318,16 @@ export async function createProjectAction(data: CreateProjectFormValues) {
       return { success: false, error: firstError };
     }
 
-    const { name, description, dueDate, categories, techStack, status, priority, members } =
-      validated.data;
+    const {
+      name,
+      description,
+      dueDate,
+      categories = ["Frontend"],
+      techStack = [],
+      status = "In Progress",
+      priority = "Medium",
+      members = [],
+    } = validated.data;
 
     const newProject = await db.transaction(async (tx) => {
       // 1. Look up user's owned workspace or auto-create one if none exists
@@ -391,6 +394,12 @@ export async function createProjectAction(data: CreateProjectFormValues) {
             role: m.role,
           })),
         );
+      } else {
+        await tx.insert(projectMembers).values({
+          projectId: project.id,
+          name: user.name || "Owner",
+          role: "Owner",
+        });
       }
 
       // Seed the four default Kanban columns
@@ -411,6 +420,28 @@ export async function createProjectAction(data: CreateProjectFormValues) {
   } catch (error: unknown) {
     console.error("[createProjectAction] Error creating project:", error);
     return { success: false, error: "Failed to create project. Please try again." };
+  }
+}
+
+export interface AvailableTeam {
+  id: string;
+  name: string;
+  ownerName: string;
+  memberCount: number;
+}
+
+export async function getAvailableTeamsAction(): Promise<AvailableTeam[]> {
+  try {
+    const projects = await getProjectsAction();
+    return projects.map((p) => ({
+      id: p.id,
+      name: p.name,
+      ownerName: p.ownerName,
+      memberCount: p.memberCount || p.members?.length || 1,
+    }));
+  } catch (err) {
+    console.error("[getAvailableTeamsAction] Error:", err);
+    return [];
   }
 }
 
@@ -479,8 +510,17 @@ export async function updateProjectAction(data: UpdateProjectFormValues) {
       return { success: false, error: firstError };
     }
 
-    const { id, name, description, dueDate, categories, techStack, status, priority, members } =
-      validated.data;
+    const {
+      id,
+      name,
+      description,
+      dueDate,
+      categories,
+      techStack,
+      status,
+      priority,
+      members = [],
+    } = validated.data;
 
     const canManage = await assertCanManageProject(id, user.id);
     if (!canManage) {
@@ -503,10 +543,9 @@ export async function updateProjectAction(data: UpdateProjectFormValues) {
         .where(eq(projects.id, id))
         .returning();
 
-      // Simplest correct approach: replace members wholesale
-      await tx.delete(projectMembers).where(eq(projectMembers.projectId, id));
-
-      if (members.length > 0) {
+      if (members && members.length > 0) {
+        // Simplest correct approach: replace members wholesale if provided
+        await tx.delete(projectMembers).where(eq(projectMembers.projectId, id));
         await tx.insert(projectMembers).values(
           members.map((m) => ({
             projectId: id,

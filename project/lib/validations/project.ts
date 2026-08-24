@@ -50,16 +50,19 @@ export const createProjectSchema = z.object({
     .optional()
     .or(z.literal("")),
   dueDate: z.string().optional().or(z.literal("")),
-  categories: z.array(z.string()).min(1, "Pick at least one category"),
-  techStack: z.array(z.string()).min(1, "Add at least one tech stack item"),
-  // Zod v4: use { message } for simple custom messages on enum
-  status: z.enum(PROJECT_STATUSES, {
-    message: `Status must be one of: ${PROJECT_STATUSES.join(", ")}`,
-  }),
-  priority: z.enum(PROJECT_PRIORITIES, {
-    message: `Priority must be one of: ${PROJECT_PRIORITIES.join(", ")}`,
-  }),
-  members: z.array(teamMemberSchema).min(1, "Add at least one team member"),
+  categories: z.array(z.string()).optional(),
+  techStack: z.array(z.string()).optional(),
+  status: z
+    .enum(PROJECT_STATUSES, {
+      message: `Status must be one of: ${PROJECT_STATUSES.join(", ")}`,
+    })
+    .optional(),
+  priority: z
+    .enum(PROJECT_PRIORITIES, {
+      message: `Priority must be one of: ${PROJECT_PRIORITIES.join(", ")}`,
+    })
+    .optional(),
+  members: z.array(teamMemberSchema).optional(),
 });
 
 export type CreateProjectFormValues = z.infer<typeof createProjectSchema>;

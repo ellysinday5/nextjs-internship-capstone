@@ -158,6 +158,8 @@ export async function inviteTeamMember(projectId: string, email: string, role = 
     const expiresAt = new Date();
     expiresAt.setDate(now.getDate() + INVITE_EXPIRY_DAYS);
 
+    let savedInviteId: string | undefined;
+
     if (existingPendingInvite) {
       if (existingPendingInvite.expiresAt > now) {
         return {
@@ -166,7 +168,7 @@ export async function inviteTeamMember(projectId: string, email: string, role = 
         };
       } else {
         // Refresh expired invite
-        await db
+        const [updated] = await db
           .update(invites)
           .set({
             token: crypto.randomUUID(),
@@ -175,20 +177,26 @@ export async function inviteTeamMember(projectId: string, email: string, role = 
             expiresAt,
             createdAt: now,
           })
-          .where(eq(invites.id, existingPendingInvite.id));
+          .where(eq(invites.id, existingPendingInvite.id))
+          .returning();
+        savedInviteId = updated?.id ?? existingPendingInvite.id;
       }
     } else {
       // Create new pending invite
-      await db.insert(invites).values({
-        email: trimmedEmail,
-        projectId,
-        invitedBy: currentUser.id,
-        token: crypto.randomUUID(),
-        status: "pending",
-        role,
-        expiresAt,
-        createdAt: now,
-      });
+      const [inserted] = await db
+        .insert(invites)
+        .values({
+          email: trimmedEmail,
+          projectId,
+          invitedBy: currentUser.id,
+          token: crypto.randomUUID(),
+          status: "pending",
+          role,
+          expiresAt,
+          createdAt: now,
+        })
+        .returning();
+      savedInviteId = inserted?.id;
     }
 
     // Create in-app notification if the invited user already exists in the system
@@ -201,7 +209,12 @@ export async function inviteTeamMember(projectId: string, email: string, role = 
         title: "Project Invitation",
         message: `${currentUser.name} invited you to join "${project.name}" as ${role}.`,
         href: `/projects/${projectId}`,
-        metadata: { projectId, projectName: project.name, role },
+        metadata: {
+          inviteId: savedInviteId,
+          projectId,
+          projectName: project.name,
+          role,
+        },
       });
     }
 

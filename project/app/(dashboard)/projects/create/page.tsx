@@ -7,6 +7,7 @@ import { StepOneForm } from "@/components/projects/create-project/step-one-form"
 import { StepTwoViews } from "@/components/projects/create-project/step-two-views";
 import type { CreateProjectFormValues, ViewId } from "@/components/projects/create-project/types";
 import { BackButton } from "@/components/ui/back-button";
+import { saveProjectMeta } from "@/lib/project-meta";
 import { sileo } from "@/utils/alerts";
 import { X } from "lucide-react";
 import { useRouter } from "next/navigation";
@@ -23,11 +24,17 @@ export default function CreateProjectPage() {
     name: "",
     access: "private",
     shareWith: [],
+    description: "",
+    dueDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split("T")[0],
+    techStack: ["Next.js", "TypeScript", "TailwindCSS"],
     selectedViews: ["list", "board", "timeline", "dashboard"],
     activePreviewTab: "list",
   });
 
-  const isDirty = formData.name.trim().length > 0;
+  const isDirty =
+    formData.name.trim().length > 0 ||
+    formData.description.trim().length > 0 ||
+    formData.shareWith.length > 0;
 
   const handleCloseAttempt = () => {
     if (isDirty) {
@@ -64,20 +71,36 @@ export default function CreateProjectPage() {
     setIsSubmitting(true);
     setServerError(null);
 
+    const description =
+      formData.description.trim() ||
+      (formData.shareWith.length > 0
+        ? `Project shared with: ${formData.shareWith.join(", ")}`
+        : "");
+
     const res = await createProjectAction({
       name: formData.name.trim(),
-      description: `Project shared with: ${formData.shareWith.join(", ") || "None"}`,
+      description,
       categories: ["Frontend"],
-      techStack: ["Next.js", "TypeScript", "TailwindCSS"],
+      techStack: formData.techStack.length > 0 ? formData.techStack : ["Next.js", "TypeScript"],
       status: "In Progress",
       priority: "Medium",
-      dueDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split("T")[0],
-      members: [{ name: "Ellen Grace Sinday", role: "Owner" }],
+      dueDate: formData.dueDate || undefined,
+      members: [],
     });
 
     setIsSubmitting(false);
 
     if (res.success) {
+      if (res.project?.id) {
+        const capitalizedViews = formData.selectedViews.map(
+          (v) => v.charAt(0).toUpperCase() + v.slice(1),
+        );
+        const viewsToSave = [
+          "Overview",
+          ...capitalizedViews.filter((v) => v.toLowerCase() !== "overview"),
+        ];
+        saveProjectMeta(res.project.id, { views: viewsToSave });
+      }
       sileo.success(`Project "${formData.name}" created successfully!`, "Project Created");
       router.push("/projects");
       router.refresh();

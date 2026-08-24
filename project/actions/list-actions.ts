@@ -124,8 +124,7 @@ export async function getListsAction(projectId: string): Promise<ListWithTasks[]
 
     if (projectLists.length === 0) return [];
 
-    const listIds = projectLists.map((l) => l.id).filter(Boolean);
-    if (listIds.length === 0) return projectLists.map((l) => ({ ...l, taskCount: 0 }));
+    const listIds = projectLists.map((l) => l.id);
 
     const taskCountRows = await db
       .select({

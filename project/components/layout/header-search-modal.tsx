@@ -573,7 +573,7 @@ export function HeaderSearchModal({ isOpen, onClose }: HeaderSearchModalProps) {
               <div className="py-8 text-center bg-slate-50/50 dark:bg-[#0f1d31]/50 rounded-2xl border border-dashed border-slate-200 dark:border-slate-800">
                 <Search size={28} className="mx-auto text-slate-300 dark:text-slate-600 mb-2" />
                 <p className="text-sm font-semibold text-slate-600 dark:text-slate-300">
-                  {loadingDb ? "Loading database items..." : "No matching items found"}
+                  {loadingDb ? "Loading items..." : "No matching items found"}
                 </p>
                 <p className="text-xs text-slate-400 mt-1">
                   Try typing a different keyword or switching categories.

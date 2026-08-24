@@ -2,43 +2,104 @@
 
 import {
   type NotificationWithActor,
+  deleteNotificationAction,
   getAllNotificationsAction,
-  getUnreadNotificationCountAction,
   markAllNotificationsAsReadAction,
   markNotificationAsReadAction,
 } from "@/actions/notification-actions";
-import { sileo } from "@/utils/alerts";
 import {
   AlertTriangle,
   Bell,
-  Check,
   CheckCheck,
-  ExternalLink,
   Info,
   Loader2,
-  Mail,
-  RefreshCw,
-  Sparkles,
   Star,
-  Trash2,
   UserPlus,
   X,
 } from "lucide-react";
-import Link from "next/link";
-import type React from "react";
-import { useCallback, useEffect, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 
-type NotifFilterType = "all" | "task" | "mention" | "invite" | "system";
+// ─── Types ───────────────────────────────────────────────────────────────────
+
+type NotifCategory = "all" | "task" | "mention" | "invite" | "system";
+
+interface NotifPrefs {
+  emailNotifs: boolean;
+  pushNotifs: boolean;
+  taskAlerts: boolean;
+  weeklyDigest: boolean;
+}
+
+const PREFS_STORAGE_KEY = "sf_notif_prefs";
+
+const DEFAULT_PREFS: NotifPrefs = {
+  emailNotifs: true,
+  pushNotifs: true,
+  taskAlerts: true,
+  weeklyDigest: false,
+};
+
+// ─── Helper: map DB notification type → UI category ──────────────────────────
+
+function dbTypeToCategory(type: string): NotifCategory {
+  if (type === "task_assigned" || type === "task_status_changed") return "task";
+  if (type === "mentioned" || type === "comment_added") return "mention";
+  if (
+    type === "project_invite" ||
+    type === "workspace_invite" ||
+    type === "invite_accepted" ||
+    type === "member_added"
+  )
+    return "invite";
+  return "system";
+}
+
+function dbTypeToIcon(type: string) {
+  const cat = dbTypeToCategory(type);
+  if (cat === "task") return <CheckCheck size={14} />;
+  if (cat === "mention") return <Star size={14} />;
+  if (cat === "invite") return <UserPlus size={14} />;
+  return <AlertTriangle size={14} />;
+}
+
+/** Returns false if the user's preferences suppress this notification category */
+function isAllowedByPrefs(type: string, prefs: NotifPrefs): boolean {
+  const cat = dbTypeToCategory(type);
+  if (cat === "task" && !prefs.taskAlerts) return false;
+  if (cat === "system" && !prefs.weeklyDigest) return false;
+  return true;
+}
+
+function formatTime(dateStr: string | Date | null) {
+  if (!dateStr) return "";
+  const date = new Date(dateStr);
+  const now = new Date();
+  const diffMs = now.getTime() - date.getTime();
+  const diffMin = Math.floor(diffMs / 60000);
+  if (diffMin < 1) return "Just now";
+  if (diffMin < 60) return `${diffMin}m ago`;
+  const diffHr = Math.floor(diffMin / 60);
+  if (diffHr < 24) return `${diffHr}h ago`;
+  const diffDay = Math.floor(diffHr / 24);
+  if (diffDay === 1) return "Yesterday";
+  if (diffDay < 7) return `${diffDay}d ago`;
+  return date.toLocaleDateString(undefined, { month: "short", day: "numeric" });
+}
+
+// ─── Toggle Switch ────────────────────────────────────────────────────────────
 
 function ToggleSwitch({
+  id,
   checked,
   onChange,
 }: {
+  id: string;
   checked: boolean;
   onChange: (v: boolean) => void;
 }) {
   return (
     <button
+      id={id}
       type="button"
       role="switch"
       aria-checked={checked}
@@ -57,139 +118,146 @@ function ToggleSwitch({
   );
 }
 
-const NOTIFS_PER_PAGE = 6;
+// ─── Main Component ───────────────────────────────────────────────────────────
+
+const NOTIFS_PER_PAGE = 5;
+
+const NOTIF_TABS: { key: NotifCategory; label: string }[] = [
+  { key: "all", label: "All" },
+  { key: "task", label: "Tasks" },
+  { key: "mention", label: "Mentions" },
+  { key: "invite", label: "Invites" },
+  { key: "system", label: "System" },
+];
 
 export function NotificationsTab() {
+  // ── Real notifications from DB ──────────────────────────────────────────
   const [notifications, setNotifications] = useState<NotificationWithActor[]>([]);
-  const [unreadCount, setUnreadCount] = useState(0);
-  const [isLoading, setIsLoading] = useState(true);
-  const [isRefreshing, setIsRefreshing] = useState(false);
-  const [selectedFilter, setSelectedFilter] = useState<NotifFilterType>("all");
-  const [currentPage, setCurrentPage] = useState(1);
+  const [loading, setLoading] = useState(true);
+  const [page, setPage] = useState(1);
+  const [hasMore, setHasMore] = useState(false);
+  const [notifCategory, setNotifCategory] = useState<NotifCategory>("all");
+  const [isMarkingAll, setIsMarkingAll] = useState(false);
 
-  // User notification preferences state
-  const [emailNotifs, setEmailNotifs] = useState(true);
-  const [pushNotifs, setPushNotifs] = useState(true);
-  const [taskAlerts, setTaskAlerts] = useState(true);
-  const [weeklyDigest, setWeeklyDigest] = useState(false);
+  // ── Preferences (persisted in localStorage) ─────────────────────────────
+  const [prefs, setPrefs] = useState<NotifPrefs>(DEFAULT_PREFS);
+  const [prefsLoaded, setPrefsLoaded] = useState(false);
+  const [savingPref, setSavingPref] = useState<string | null>(null);
 
-  const fetchRealNotifications = useCallback(async (showLoadingSpinner = false) => {
-    if (showLoadingSpinner) setIsLoading(true);
-    setIsRefreshing(true);
+  // ── Load prefs from localStorage on mount ───────────────────────────────
+  useEffect(() => {
     try {
-      const [notifsRes, countRes] = await Promise.all([
-        getAllNotificationsAction(1, 50),
-        getUnreadNotificationCountAction(),
-      ]);
-
-      if (notifsRes.success && notifsRes.data) {
-        setNotifications(notifsRes.data);
+      const stored = localStorage.getItem(PREFS_STORAGE_KEY);
+      if (stored) {
+        setPrefs({ ...DEFAULT_PREFS, ...JSON.parse(stored) });
       }
-      if (countRes.success && typeof countRes.data === "number") {
-        setUnreadCount(countRes.data);
+    } catch {
+      // ignore parse errors
+    }
+    setPrefsLoaded(true);
+  }, []);
+
+  // ── Persist prefs to localStorage whenever they change (after initial load) ─
+  useEffect(() => {
+    if (!prefsLoaded) return;
+    localStorage.setItem(PREFS_STORAGE_KEY, JSON.stringify(prefs));
+  }, [prefs, prefsLoaded]);
+
+  // ── Fetch notifications ──────────────────────────────────────────────────
+  const fetchNotifications = useCallback(async (pageNum = 1) => {
+    setLoading(true);
+    try {
+      const res = await getAllNotificationsAction(pageNum, NOTIFS_PER_PAGE + 1);
+      if (res.success && res.data) {
+        const fetched = res.data as NotificationWithActor[];
+        setHasMore(fetched.length > NOTIFS_PER_PAGE);
+        setNotifications(fetched.slice(0, NOTIFS_PER_PAGE));
+        setPage(pageNum);
       }
     } catch (err) {
-      console.error("Failed to load real notifications:", err);
+      console.error("Failed to fetch notifications:", err);
     } finally {
-      setIsLoading(false);
-      setIsRefreshing(false);
+      setLoading(false);
     }
   }, []);
 
   useEffect(() => {
-    fetchRealNotifications(true);
-    const interval = setInterval(() => fetchRealNotifications(false), 20000);
-    return () => clearInterval(interval);
-  }, [fetchRealNotifications]);
+    fetchNotifications(1);
+  }, [fetchNotifications]);
 
-  const handleMarkAllRead = async () => {
-    try {
-      await markAllNotificationsAsReadAction();
-      setNotifications((prev) => prev.map((n) => ({ ...n, isRead: true })));
-      setUnreadCount(0);
-      sileo.success("All notifications marked as read.", "Inbox Cleared");
-    } catch {
-      sileo.error("Failed to mark notifications as read.", "Error");
-    }
-  };
+  // ── Derived counts & filtered list ──────────────────────────────────────
+  const unreadCount = notifications.filter((n) => !n.isRead).length;
 
-  const handleMarkSingleRead = async (notificationId: string) => {
-    try {
-      await markNotificationAsReadAction(notificationId);
-      setNotifications((prev) =>
-        prev.map((n) => (n.id === notificationId ? { ...n, isRead: true } : n)),
-      );
-      setUnreadCount((prev) => Math.max(0, prev - 1));
-    } catch (err) {
-      console.error("Failed to mark notification as read:", err);
-    }
-  };
-
-  // Filter notifications based on type
-  const filteredNotifs = notifications.filter((notif) => {
-    if (selectedFilter === "all") return true;
-    const typeStr = (notif.type || "").toLowerCase();
-    if (selectedFilter === "task") return typeStr.includes("task");
-    if (selectedFilter === "mention")
-      return typeStr.includes("mention") || typeStr.includes("comment");
-    if (selectedFilter === "invite") return typeStr.includes("invite") || typeStr.includes("team");
-    if (selectedFilter === "system")
-      return (
-        !typeStr.includes("task") && !typeStr.includes("mention") && !typeStr.includes("invite")
-      );
+  const filteredNotifs = notifications.filter((n) => {
+    const cat = dbTypeToCategory(n.type);
+    if (notifCategory !== "all" && cat !== notifCategory) return false;
+    if (!isAllowedByPrefs(n.type, prefs)) return false;
     return true;
   });
 
-  const totalPages = Math.max(1, Math.ceil(filteredNotifs.length / NOTIFS_PER_PAGE));
-  const pagedNotifs = filteredNotifs.slice(
-    (currentPage - 1) * NOTIFS_PER_PAGE,
-    currentPage * NOTIFS_PER_PAGE,
-  );
+  // ── Actions ──────────────────────────────────────────────────────────────
+  async function handleMarkAllRead() {
+    setIsMarkingAll(true);
+    await markAllNotificationsAsReadAction();
+    await fetchNotifications(page);
+    setIsMarkingAll(false);
+  }
 
-  const filterTabs: {
-    key: NotifFilterType;
+  async function handleMarkRead(id: string) {
+    await markNotificationAsReadAction(id);
+    setNotifications((prev) =>
+      prev.map((n) => (n.id === id ? { ...n, isRead: true } : n)),
+    );
+  }
+
+  async function handleDismiss(id: string) {
+    setNotifications((prev) => prev.filter((n) => n.id !== id));
+    await deleteNotificationAction(id);
+  }
+
+  function updatePref<K extends keyof NotifPrefs>(key: K, value: boolean) {
+    setSavingPref(key);
+    setPrefs((p) => ({ ...p, [key]: value }));
+    setTimeout(() => setSavingPref(null), 700);
+  }
+
+  const PREF_CONFIG: {
+    key: keyof NotifPrefs;
     label: string;
-    icon: React.ComponentType<{ size?: number; className?: string }>;
+    desc: string;
+    note: string | null;
   }[] = [
-    { key: "all", label: "All", icon: Bell },
-    { key: "task", label: "Tasks", icon: CheckCheck },
-    { key: "mention", label: "Mentions", icon: Star },
-    { key: "invite", label: "Invites", icon: UserPlus },
-    { key: "system", label: "System", icon: Info },
-  ];
-
-  const PREFS = [
     {
+      key: "emailNotifs",
       label: "Email Notifications",
-      desc: "Receive real-time updates and activity summaries via email",
-      checked: emailNotifs,
-      onChange: setEmailNotifs,
+      desc: "Receive updates via email",
+      note: null,
     },
     {
+      key: "pushNotifs",
       label: "Push Notifications",
-      desc: "Get instant desktop alerts for urgent tasks and mentions",
-      checked: pushNotifs,
-      onChange: setPushNotifs,
+      desc: "Get real-time browser notifications",
+      note: null,
     },
     {
+      key: "taskAlerts",
       label: "Task Assignment Alerts",
-      desc: "Notify instantly when someone assigns or reassigns a task to you",
-      checked: taskAlerts,
-      onChange: setTaskAlerts,
+      desc: "Notify instantly when assigned to a task",
+      note: "Task notifications are hidden from your list while this is off",
     },
     {
+      key: "weeklyDigest",
       label: "Weekly Summary Digest",
-      desc: "Receive a compiled weekly productivity and milestone report",
-      checked: weeklyDigest,
-      onChange: setWeeklyDigest,
+      desc: "Receive productivity report weekly",
+      note: "System/digest notifications are hidden from your list while this is off",
     },
   ];
 
   return (
-    <div className="p-6 sm:p-8 space-y-7">
-      {/* Header section */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-5 border-b border-slate-100 dark:border-slate-800">
-        <div>
+    <div className="p-6 sm:p-8 space-y-6">
+      {/* ── Notifications List ─────────────────────────────────────────────── */}
+      <div>
+        <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-2">
             <h2 className="text-xl font-extrabold text-[#142843] dark:text-white tracking-tight">
               Notifications &amp; Activity
@@ -220,53 +288,36 @@ export function NotificationsTab() {
             <button
               type="button"
               onClick={handleMarkAllRead}
-              className="inline-flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-bold text-[#0052cc] dark:text-sky-400 bg-blue-50 dark:bg-blue-950/40 hover:bg-blue-100 dark:hover:bg-blue-900/40 rounded-xl transition-all cursor-pointer"
+              disabled={isMarkingAll}
+              className="text-xs font-semibold text-[#0052cc] hover:underline cursor-pointer disabled:opacity-50 flex items-center gap-1"
             >
-              <Check size={13} />
-              Mark all read
+              {isMarkingAll && <Loader2 size={11} className="animate-spin" />}
+              Mark all as read
             </button>
           )}
         </div>
       </div>
 
-      {/* Filter Tabs */}
-      <div className="flex items-center gap-1.5 overflow-x-auto pb-1 border-b border-slate-100 dark:border-slate-800">
-        {filterTabs.map((tab) => {
-          const isActive = selectedFilter === tab.key;
-          const count =
-            tab.key === "all"
-              ? notifications.length
-              : notifications.filter((n) => {
-                  const t = (n.type || "").toLowerCase();
-                  if (tab.key === "task") return t.includes("task");
-                  if (tab.key === "mention") return t.includes("mention") || t.includes("comment");
-                  if (tab.key === "invite") return t.includes("invite") || t.includes("team");
-                  if (tab.key === "system")
-                    return !t.includes("task") && !t.includes("mention") && !t.includes("invite");
-                  return true;
-                }).length;
-
-          return (
-            <button
-              key={tab.key}
-              type="button"
-              onClick={() => {
-                setSelectedFilter(tab.key);
-                setCurrentPage(1);
-              }}
-              className={`flex items-center gap-2 px-3.5 py-2 text-xs font-bold rounded-xl transition-all cursor-pointer ${
-                isActive
-                  ? "bg-[#0052cc] text-white shadow-xs"
-                  : "text-slate-500 hover:text-slate-800 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800/60"
-              }`}
-            >
-              <tab.icon size={13} />
-              <span>{tab.label}</span>
-              <span
-                className={`px-1.5 py-0.2 rounded-full text-[10px] font-black ${
-                  isActive
-                    ? "bg-white/20 text-white"
-                    : "bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400"
+        {/* Category tabs */}
+        <div className="flex items-center gap-1 border-b border-slate-100 dark:border-slate-800 mb-3 overflow-x-auto">
+          {NOTIF_TABS.map((tab) => {
+            const count =
+              tab.key === "all"
+                ? notifications.filter((n) => isAllowedByPrefs(n.type, prefs)).length
+                : notifications.filter(
+                    (n) =>
+                      dbTypeToCategory(n.type) === tab.key &&
+                      isAllowedByPrefs(n.type, prefs),
+                  ).length;
+            return (
+              <button
+                key={tab.key}
+                type="button"
+                onClick={() => setNotifCategory(tab.key)}
+                className={`flex items-center gap-1.5 px-3 py-2 text-xs font-bold rounded-t-lg border-b-2 transition-all -mb-px cursor-pointer whitespace-nowrap ${
+                  notifCategory === tab.key
+                    ? "border-[#0052cc] text-[#0052cc] bg-blue-50/50 dark:bg-blue-950/20"
+                    : "border-transparent text-slate-500 hover:text-slate-800 dark:hover:text-white"
                 }`}
               >
                 {count}
@@ -276,65 +327,44 @@ export function NotificationsTab() {
         })}
       </div>
 
-      {/* Notification List */}
-      <div className="space-y-2.5 min-h-[220px]">
-        {isLoading ? (
-          <div className="flex flex-col items-center justify-center py-16 text-slate-400">
-            <Loader2 size={28} className="animate-spin text-[#0052cc] mb-3" />
-            <p className="text-xs font-semibold">Loading your notifications...</p>
-          </div>
-        ) : pagedNotifs.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-16 text-center border-2 border-dashed border-slate-200 dark:border-slate-800 rounded-2xl p-6 bg-slate-50/50 dark:bg-slate-900/20">
-            <div className="w-12 h-12 rounded-2xl bg-blue-50 dark:bg-blue-950/50 flex items-center justify-center text-[#0052cc] dark:text-sky-400 mb-3">
-              <Bell size={22} className="opacity-70" />
+        {/* List items */}
+        <div className="space-y-2 min-h-[120px]">
+          {loading ? (
+            <div className="py-12 text-center text-slate-400">
+              <Loader2 size={24} className="mx-auto mb-2 animate-spin opacity-40" />
+              <p className="text-sm font-semibold">Loading notifications…</p>
             </div>
-            <h4 className="text-sm font-bold text-slate-700 dark:text-slate-200">
-              No notifications found
-            </h4>
-            <p className="text-xs text-slate-400 mt-1 max-w-sm">
-              {selectedFilter === "all"
-                ? "You're all caught up! New workspace activities, assignments, and invites will appear here."
-                : `No notifications matching the "${selectedFilter}" category.`}
-            </p>
-          </div>
-        ) : (
-          pagedNotifs.map((notif) => {
-            const isUnread = !notif.isRead;
-            const timeFormatted = notif.createdAt
-              ? new Date(notif.createdAt).toLocaleDateString(undefined, {
-                  month: "short",
-                  day: "numeric",
-                  hour: "2-digit",
-                  minute: "2-digit",
-                })
-              : "Just now";
-
-            return (
+          ) : filteredNotifs.length === 0 ? (
+            <div className="py-12 text-center text-slate-400">
+              <Bell size={28} className="mx-auto mb-2 opacity-40" />
+              <p className="text-sm font-semibold">
+                {notifCategory === "all"
+                  ? "No notifications yet."
+                  : `No ${notifCategory} notifications.`}
+              </p>
+              {notifCategory === "task" && !prefs.taskAlerts && (
+                <p className="text-xs mt-1 text-amber-500">
+                  Task alerts are disabled in your preferences below.
+                </p>
+              )}
+              {notifCategory === "system" && !prefs.weeklyDigest && (
+                <p className="text-xs mt-1 text-amber-500">
+                  Weekly digest is disabled in your preferences below.
+                </p>
+              )}
+            </div>
+          ) : (
+            filteredNotifs.map((notif) => (
               <div
                 key={notif.id}
-                className={`p-4 rounded-xl border transition-all flex items-start gap-3.5 group ${
-                  isUnread
-                    ? "border-[#0052cc]/30 bg-blue-50/50 dark:bg-blue-950/20 hover:bg-blue-50/80 dark:hover:bg-blue-950/40 shadow-xs"
-                    : "border-slate-200 dark:border-slate-700/80 bg-white dark:bg-[#14263e] hover:border-slate-300 dark:hover:border-slate-600"
+                className={`p-3.5 rounded-xl border flex items-start gap-3 group transition-all ${
+                  notif.isRead
+                    ? "border-slate-200 dark:border-slate-700 bg-white dark:bg-[#1c304a] opacity-70"
+                    : "border-[#0052cc]/30 bg-blue-50/40 dark:bg-blue-950/10"
                 }`}
               >
-                {/* Icon box */}
-                <div
-                  className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 mt-0.5 ${
-                    isUnread
-                      ? "bg-[#0052cc] text-white shadow-xs"
-                      : "bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400"
-                  }`}
-                >
-                  {(notif.type || "").toLowerCase().includes("task") ? (
-                    <CheckCheck size={16} />
-                  ) : (notif.type || "").toLowerCase().includes("mention") ? (
-                    <Star size={16} />
-                  ) : (notif.type || "").toLowerCase().includes("invite") ? (
-                    <UserPlus size={16} />
-                  ) : (
-                    <Info size={16} />
-                  )}
+                <div className="w-8 h-8 rounded-full bg-blue-100 dark:bg-blue-950 flex items-center justify-center shrink-0 mt-0.5 text-[#0052cc]">
+                  {dbTypeToIcon(notif.type)}
                 </div>
 
                 {/* Content */}
@@ -349,100 +379,106 @@ export function NotificationsTab() {
                     <span className="text-[10px] text-slate-400 dark:text-slate-500 whitespace-nowrap">
                       {timeFormatted}
                     </span>
+                    {!notif.isRead && (
+                      <span className="w-2 h-2 rounded-full bg-[#0052cc] shrink-0" />
+                    )}
                   </div>
-
                   {notif.message && (
-                    <p className="text-xs text-slate-600 dark:text-slate-300 mt-1 leading-relaxed">
+                    <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5 line-clamp-2">
                       {notif.message}
                     </p>
                   )}
-
-                  {notif.actor && (
-                    <span className="inline-block text-[11px] text-[#0052cc] dark:text-sky-400 font-semibold mt-1.5">
-                      By {notif.actor.name || notif.actor.email}
-                    </span>
-                  )}
+                  <div className="flex items-center gap-3 mt-1 flex-wrap">
+                    <p className="text-[10px] text-slate-400">{formatTime(notif.createdAt)}</p>
+                    {notif.actor && (
+                      <p className="text-[10px] text-slate-400">
+                        by{" "}
+                        <span className="font-semibold text-slate-500">{notif.actor.name}</span>
+                      </p>
+                    )}
+                    {!notif.isRead && (
+                      <button
+                        type="button"
+                        onClick={() => handleMarkRead(notif.id)}
+                        className="text-[10px] text-[#0052cc] hover:underline cursor-pointer"
+                      >
+                        Mark read
+                      </button>
+                    )}
+                  </div>
                 </div>
-
-                {/* Action Link / Mark Read */}
-                <div className="flex items-center gap-1 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
-                  {notif.href && (
-                    <Link
-                      href={notif.href}
-                      onClick={(e) => e.stopPropagation()}
-                      className="p-1.5 text-slate-400 hover:text-[#0052cc] dark:hover:text-white rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700/60 transition-colors"
-                      title="Open related item"
-                    >
-                      <ExternalLink size={13} />
-                    </Link>
-                  )}
-                  {isUnread && (
-                    <button
-                      type="button"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleMarkSingleRead(notif.id);
-                      }}
-                      className="p-1.5 text-slate-400 hover:text-emerald-600 rounded-lg hover:bg-emerald-50 dark:hover:bg-emerald-950/30 transition-colors cursor-pointer"
-                      title="Mark as read"
-                    >
-                      <Check size={13} />
-                    </button>
-                  )}
-                </div>
+                <button
+                  type="button"
+                  onClick={() => handleDismiss(notif.id)}
+                  className="p-1 rounded text-slate-300 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-all cursor-pointer"
+                  title="Dismiss"
+                >
+                  <X size={13} />
+                </button>
               </div>
             );
           })
         )}
       </div>
 
-      {/* Pagination */}
-      {totalPages > 1 && (
-        <div className="flex items-center justify-between pt-2 border-t border-slate-100 dark:border-slate-800">
-          <span className="text-xs text-slate-400">
-            Page {currentPage} of {totalPages} ({filteredNotifs.length} total)
-          </span>
-          <div className="flex items-center gap-2">
-            <button
-              type="button"
-              onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
-              disabled={currentPage === 1}
-              className="px-3 py-1.5 text-xs font-bold rounded-xl border border-slate-200 dark:border-slate-700 disabled:opacity-40 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors cursor-pointer"
-            >
-              Previous
-            </button>
-            <button
-              type="button"
-              onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
-              disabled={currentPage === totalPages}
-              className="px-3 py-1.5 text-xs font-bold rounded-xl border border-slate-200 dark:border-slate-700 disabled:opacity-40 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors cursor-pointer"
-            >
-              Next
-            </button>
-          </div>
+        {/* Pagination */}
+        <div className="flex items-center justify-center gap-3 mt-4">
+          <button
+            type="button"
+            onClick={() => fetchNotifications(page - 1)}
+            disabled={page === 1 || loading}
+            className="px-3 py-1.5 text-xs font-bold rounded-lg border border-slate-200 dark:border-slate-700 disabled:opacity-40 cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors"
+          >
+            Prev
+          </button>
+          <span className="text-xs text-slate-500">Page {page}</span>
+          <button
+            type="button"
+            onClick={() => fetchNotifications(page + 1)}
+            disabled={!hasMore || loading}
+            className="px-3 py-1.5 text-xs font-bold rounded-lg border border-slate-200 dark:border-slate-700 disabled:opacity-40 cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors"
+          >
+            Next
+          </button>
         </div>
-      )}
+      </div>
 
-      {/* Notification Preferences */}
-      <div className="pt-6 border-t border-slate-100 dark:border-slate-800">
-        <div className="mb-4">
-          <h3 className="text-sm font-bold text-[#142843] dark:text-white">Delivery Preferences</h3>
-          <p className="text-xs text-slate-400 mt-0.5">
-            Configure how and when SyntraFlow delivers notifications to you.
-          </p>
-        </div>
-
-        <div className="space-y-3">
-          {PREFS.map(({ label, desc, checked, onChange }) => (
+      {/* ── Notification Preferences ───────────────────────────────────────── */}
+      <div className="pt-4 border-t border-slate-100 dark:border-slate-800">
+        <h3 className="text-sm font-bold text-[#142843] dark:text-white mb-1">
+          Notification Preferences
+        </h3>
+        <p className="text-[11px] text-slate-400 mb-3">
+          Your preferences are saved automatically and affect which notifications appear in your list.
+        </p>
+        <div className="space-y-2.5">
+          {PREF_CONFIG.map(({ key, label, desc, note }) => (
             <div
-              key={label}
-              className="flex items-center justify-between p-4 bg-slate-50 dark:bg-slate-800/30 rounded-xl border border-slate-100 dark:border-slate-800 hover:border-slate-200 dark:hover:border-slate-700 transition-colors"
+              key={key}
+              className="flex items-start justify-between p-3.5 bg-slate-50 dark:bg-slate-800/30 rounded-xl gap-4"
             >
-              <div>
+              <div className="flex-1 min-w-0">
                 <h4 className="font-semibold text-[#142843] dark:text-white text-xs">{label}</h4>
-                <p className="text-[11px] text-slate-400 mt-0.5">{desc}</p>
+                <p className="text-[11px] text-slate-400">{desc}</p>
+                {note && !prefs[key] && (
+                  <p className="text-[10px] text-amber-500 dark:text-amber-400 mt-0.5 flex items-center gap-1">
+                    <Info size={9} />
+                    {note}
+                  </p>
+                )}
               </div>
-              <ToggleSwitch checked={checked} onChange={onChange} />
+              <div className="flex items-center gap-2 shrink-0 pt-0.5">
+                {savingPref === key && (
+                  <span className="text-[10px] text-emerald-500 font-semibold animate-pulse">
+                    Saved
+                  </span>
+                )}
+                <ToggleSwitch
+                  id={`pref-${key}`}
+                  checked={prefs[key]}
+                  onChange={(v) => updatePref(key, v)}
+                />
+              </div>
             </div>
           ))}
         </div>
@@ -450,3 +486,4 @@ export function NotificationsTab() {
     </div>
   );
 }
+

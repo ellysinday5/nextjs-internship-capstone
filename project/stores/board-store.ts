@@ -112,7 +112,13 @@ export const useBoardStore = create<BoardState>()(
 
       set((state) => ({
         tasks: state.tasks.map((t) =>
-          t.id === tempId ? { ...result.task!, assignee: null, commentsCount: 0 } : t,
+          t.id === tempId
+            ? {
+              ...result.task!,
+              assignee: result.task!.assignee ?? null,
+              commentsCount: result.task!.commentsCount ?? 0,
+            }
+            : t,
         ),
         isSaving: false,
       }));
@@ -152,23 +158,50 @@ return;
 set({ isSaving: false });
     },
 
-moveTask: async (taskId, newListId, newPosition) => {
-  const previousTasks = get().tasks;
-  const { lists } = get();
+    moveTask: async (taskId, newListId, newPosition) => {
+      const previousTasks = get().tasks;
+      const { lists } = get();
 
-  // Derive the health status implied by the destination column.
-  const targetList = lists.find((l) => l.id === newListId);
-  const derivedStatus = targetList ? deriveStatusForList(targetList, lists) : undefined;
+      const targetList = lists.find((l) => l.id === newListId);
+      const derivedStatus = targetList ? deriveStatusForList(targetList, lists) : undefined;
 
-  // Optimistic update: listId, position, AND derived status all at once.
-  set((state) => ({
-    tasks: state.tasks.map((t) =>
-      t.id === taskId
-        ? {
-          ...t,
-          listId: newListId,
-          position: newPosition,
-          ...(derivedStatus ? { status: derivedStatus } : {}),
+      set((state) => ({
+        tasks: state.tasks.map((t) =>
+          t.id === taskId
+            ? {
+              ...t,
+              listId: newListId,
+              position: newPosition,
+              ...(derivedStatus ? { status: derivedStatus } : {}),
+            }
+            : t,
+        ),
+        isSaving: true,
+      }));
+
+      const moveResult = await moveTaskAction({
+        taskId,
+        toListId: newListId,
+        toPosition: newPosition,
+      });
+
+      if (!moveResult.success) {
+        set({
+          tasks: previousTasks,
+          isSaving: false,
+          error: moveResult.error ?? "Failed to move task.",
+        });
+        return;
+      }
+
+      if (derivedStatus) {
+        const statusResult = await updateTaskAction({ id: taskId, status: derivedStatus });
+        if (!statusResult.success) {
+          set({
+            isSaving: false,
+            error: statusResult.error ?? "Task moved, but failed to update status.",
+          });
+          return;
         }
         : t,
     ),
