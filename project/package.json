@@ -47,6 +47,7 @@
     "jsdom": "^25.0.1",
     "lucide-react": "^0.454.0",
     "next": "^16.0.0",
+    "nodemailer": "^9.0.5",
     "react": "^19",
     "react-dom": "^19",
     "react-hook-form": "^7.83.0",
