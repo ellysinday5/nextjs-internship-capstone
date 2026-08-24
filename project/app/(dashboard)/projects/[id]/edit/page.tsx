@@ -1,7 +1,11 @@
 "use client";
 
+<<<<<<< HEAD
 import { BackButton } from "@/components/ui/back-button";
 import { ChevronDown, Gauge, Pencil } from "lucide-react";
+=======
+import { ArrowLeft, ChevronDown, Gauge, Pencil } from "lucide-react";
+>>>>>>> 4016eb6 (Fixed and Initial ui for the system)
 import { useRouter } from "next/navigation";
 import React, { useState, useEffect, use } from "react";
 
@@ -322,6 +326,7 @@ export default function EditProjectPage({ params }: { params: Promise<{ id: stri
                     placeholder="e.g. Frontend Squad"
                     className={inputCls}
                   />
+<<<<<<< HEAD
                 </div>
 
                 {/* Completion Progress */}
@@ -346,6 +351,138 @@ export default function EditProjectPage({ params }: { params: Promise<{ id: stri
                     <span>50%</span>
                     <span>100%</span>
                   </div>
+=======
+                  <Pencil
+                    size={14}
+                    className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none"
+                  />
+                </div>
+                {formError && (
+                  <p className="mt-1.5 text-xs font-medium text-red-500">{formError}</p>
+                )}
+              </div>
+
+              {/* Description */}
+              <div>
+                <label className={label}>Description</label>
+                <textarea
+                  rows={4}
+                  value={form.description}
+                  onChange={(e) => set("description", e.target.value)}
+                  placeholder="What is this project about?"
+                  className="w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 px-4 py-3 text-sm text-slate-800 dark:text-slate-100 outline-none focus:border-[#0052cc] focus:ring-1 focus:ring-[#0052cc]/30 resize-none placeholder-slate-400 leading-relaxed transition-colors"
+                />
+              </div>
+
+              {/* Tech Stack Editor */}
+              <TechStackEditor
+                techStack={form.techStack}
+                setTechStack={(stack) => set("techStack", stack)}
+              />
+            </div>
+
+            {/* ── RIGHT COLUMN ── */}
+            <div className="space-y-6">
+              {/* Category */}
+              <div>
+                <label className={label}>Category</label>
+                <div className="relative">
+                  <select
+                    value={form.category}
+                    onChange={(e) => set("category", e.target.value)}
+                    className={`${inputCls} appearance-none cursor-pointer pr-10`}
+                  >
+                    {categories.map((c) => (
+                      <option key={c} value={c}>
+                        {c}
+                      </option>
+                    ))}
+                  </select>
+                  <ChevronDown
+                    size={14}
+                    className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none"
+                  />
+                </div>
+              </div>
+
+              {/* Status */}
+              <div>
+                <label className={label}>Status</label>
+                <div className="relative">
+                  <select
+                    value={form.status}
+                    onChange={(e) => set("status", e.target.value)}
+                    className={`w-full appearance-none rounded-xl border px-4 py-3 text-sm font-bold outline-none focus:border-[#0052cc] cursor-pointer pr-10 transition-colors ${STATUS_COLORS[form.status] || "border-slate-300 bg-white text-slate-800"}`}
+                  >
+                    {ALL_STATUSES.map((s) => (
+                      <option key={s} value={s}>
+                        {s}
+                      </option>
+                    ))}
+                  </select>
+                  <ChevronDown
+                    size={14}
+                    className="absolute right-3.5 top-1/2 -translate-y-1/2 pointer-events-none opacity-60"
+                  />
+                </div>
+              </div>
+
+              {/* Priority */}
+              <div>
+                <label className={label}>Priority</label>
+                <div className="relative">
+                  <select
+                    value={form.priority}
+                    onChange={(e) => set("priority", e.target.value)}
+                    className={`w-full appearance-none rounded-xl border px-4 py-3 text-sm font-bold outline-none focus:border-[#0052cc] cursor-pointer pr-10 transition-colors ${PRIORITY_COLORS[form.priority] || "border-slate-300 bg-white text-slate-800"}`}
+                  >
+                    {ALL_PRIORITIES.map((p) => (
+                      <option key={p} value={p}>
+                        {p}
+                      </option>
+                    ))}
+                  </select>
+                  <ChevronDown
+                    size={14}
+                    className="absolute right-3.5 top-1/2 -translate-y-1/2 pointer-events-none opacity-60"
+                  />
+                </div>
+              </div>
+
+              {/* Team Name */}
+              <div>
+                <label className={label}>Team Name</label>
+                <input
+                  type="text"
+                  value={form.teamName}
+                  onChange={(e) => set("teamName", e.target.value)}
+                  placeholder="e.g. Frontend Squad"
+                  className={inputCls}
+                />
+              </div>
+
+              {/* Completion Progress */}
+              <div>
+                <div className="flex items-center justify-between mb-2">
+                  <label className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
+                    <Gauge size={14} /> Completion Progress
+                  </label>
+                  <span className="text-sm font-extrabold text-[#0052cc]">{form.progress}%</span>
+                </div>
+                <input
+                  type="range"
+                  min={0}
+                  max={100}
+                  step={1}
+                  value={form.progress}
+                  onChange={(e) => set("progress", Number.parseInt(e.target.value))}
+                  className="w-full h-2 accent-[#0052cc] cursor-pointer"
+                />
+                <div className="flex justify-between text-[11px] text-slate-400 mt-1 font-medium">
+                  <span>0%</span>
+                  <span>50%</span>
+                  <span>100%</span>
+>>>>>>> 4016eb6 (Fixed and Initial ui for the system)
                 </div>
               </div>
             </div>

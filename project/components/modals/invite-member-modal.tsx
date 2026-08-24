@@ -15,8 +15,11 @@ interface InviteMemberModalProps {
   isOpen: boolean;
   onClose: () => void;
   onInvite: (data: InviteMemberData) => void;
+<<<<<<< HEAD:project/components/modals/invite-member-modal.tsx
   projectName?: string;
   projectDescription?: string | null;
+=======
+>>>>>>> 4016eb6 (Fixed and Initial ui for the system):project/components/team/invite-member-modal.tsx
 }
 
 const ROLE_OPTIONS: { value: InviteMemberData["role"]; label: string; description: string }[] = [
@@ -32,6 +35,7 @@ const ROLE_OPTIONS: { value: InviteMemberData["role"]; label: string; descriptio
   },
 ];
 
+<<<<<<< HEAD:project/components/modals/invite-member-modal.tsx
 export function InviteMemberModal({
   isOpen,
   onClose,
@@ -39,6 +43,9 @@ export function InviteMemberModal({
   projectName,
   projectDescription,
 }: InviteMemberModalProps) {
+=======
+export function InviteMemberModal({ isOpen, onClose, onInvite }: InviteMemberModalProps) {
+>>>>>>> 4016eb6 (Fixed and Initial ui for the system):project/components/team/invite-member-modal.tsx
   const [email, setEmail] = useState("");
   const [role, setRole] = useState<InviteMemberData["role"]>("Member");
   const [emailError, setEmailError] = useState<string | null>(null);

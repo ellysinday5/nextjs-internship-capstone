@@ -1,6 +1,7 @@
 "use client";
 
 import { Modal } from "@/components/modals/BaseModal";
+<<<<<<< HEAD
 import { BackButton } from "@/components/ui/back-button";
 import { PROJECT_ICON_LIST } from "@/lib/project-meta";
 import { sileo } from "@/utils/alerts";
@@ -15,6 +16,31 @@ import {
   Share2,
   Star,
   User,
+=======
+import { sileo } from "@/utils/alerts";
+import {
+  Bug,
+  Calendar,
+  Check,
+  ChevronDown,
+  ChevronLeft,
+  Circle,
+  Columns,
+  Copy,
+  Globe,
+  Kanban,
+  Lightbulb,
+  ListTodo,
+  MessageSquare,
+  Pencil,
+  Rocket,
+  Settings,
+  Share2,
+  Star,
+  TrendingUp,
+  User,
+  Users,
+>>>>>>> 4016eb6 (Fixed and Initial ui for the system)
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import type React from "react";
@@ -242,7 +268,17 @@ export function ProjectHeader({
       <header className="px-6 pt-4 pb-2 border-b border-slate-200 dark:border-slate-800 bg-white dark:bg-[#0f1d31]">
         <div className="flex flex-wrap items-center justify-between gap-3 mb-3">
           <div className="flex items-center gap-2 relative flex-wrap">
+<<<<<<< HEAD
             <BackButton href="/projects" title="Back to Projects" className="mr-1" />
+=======
+            <button
+              onClick={() => router.push("/projects")}
+              className="p-1.5 rounded-lg text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-800 dark:hover:text-white transition-colors mr-1"
+              title="Back to Projects"
+            >
+              <ChevronLeft size={20} />
+            </button>
+>>>>>>> 4016eb6 (Fixed and Initial ui for the system)
 
             <button
               onClick={() => setIsCustomizeOpen(!isCustomizeOpen)}

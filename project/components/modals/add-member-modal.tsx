@@ -1,5 +1,6 @@
 "use client";
 
+<<<<<<< HEAD
 import { inviteTeamMember } from "@/actions/invite-member";
 import { Modal } from "@/components/modals/BaseModal";
 import { ConfirmationModal } from "@/components/modals/ConfirmationModal";
@@ -12,6 +13,15 @@ interface ProjectOption {
   id: string;
   name: string;
 }
+=======
+import { addProjectMemberAction } from "@/app/actions/member-actions";
+import { Modal } from "@/components/modals/BaseModal";
+import { ConfirmationModal } from "@/components/modals/ConfirmationModal";
+import { sileo } from "@/utils/alerts";
+import { Mail, Shield, UserPlus, Users } from "lucide-react";
+import type React from "react";
+import { useState } from "react";
+>>>>>>> 4016eb6 (Fixed and Initial ui for the system)
 
 interface AddMemberModalProps {
   isOpen: boolean;
@@ -42,6 +52,14 @@ const ROLE_OPTIONS = [
   },
 ];
 
+<<<<<<< HEAD
+=======
+function formatNameFromEmail(email: string): string {
+  const prefix = email.split("@")[0] || "";
+  return prefix.replace(/[._]/g, " ").replace(/\b\w/g, (char) => char.toUpperCase());
+}
+
+>>>>>>> 4016eb6 (Fixed and Initial ui for the system)
 export function AddMemberModal({
   isOpen,
   projectOptions,
@@ -108,12 +126,18 @@ export function AddMemberModal({
     const res = await inviteTeamMember(targetProjectId, trimmedEmail, role);
     setIsSubmitting(false);
 
+<<<<<<< HEAD
     if (res.success) {
       sileo.success(
         `Invitation sent to ${trimmedEmail} as ${role}. They'll appear in the team list once they accept.`,
         "Invitation Sent",
       );
       onSuccess?.();
+=======
+    if (res.success && res.member) {
+      sileo.success(`Invitation sent to ${trimmedEmail} as ${role}!`, "Member Invited");
+      onSuccess?.(res.member);
+>>>>>>> 4016eb6 (Fixed and Initial ui for the system)
       resetAndClose();
     } else {
       setServerError(res.error || "Failed to send invite.");

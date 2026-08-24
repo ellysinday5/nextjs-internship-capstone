@@ -8,7 +8,10 @@ export interface ProjectCardData {
   memberCount: number;
   dueDate?: Date;
   status: ProjectCardStatus;
+<<<<<<< HEAD
   accentColor?: string;
   isFavorite?: boolean;
   iconIndex?: number;
+=======
+>>>>>>> 4016eb6 (Fixed and Initial ui for the system)
 }

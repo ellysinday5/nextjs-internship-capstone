@@ -6,7 +6,11 @@ import {
   deleteProjectAction,
   getProjectsAction,
   updateProjectAction,
+<<<<<<< HEAD
 } from "@/actions/project-actions";
+=======
+} from "@/app/actions/project-actions";
+>>>>>>> 4016eb6 (Fixed and Initial ui for the system)
 import type { CreateProjectFormValues, UpdateProjectFormValues } from "@/lib/project-schemas";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 

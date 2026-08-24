@@ -186,9 +186,13 @@ export default function ProjectPage({ params }: { params: Promise<{ id: string }
       title: updatedTask.title,
       description: updatedTask.description ?? null,
       priority: updatedTask.priority,
+<<<<<<< HEAD
       status: safeStatus,
       assigneeId: updatedTask.assignee?.id || null,
       dueDate: updatedTask.dueDateISO || null,
+=======
+      status: updatedTask.status === "Completed" ? "Complete" : updatedTask.status,
+>>>>>>> 4016eb6 (Fixed and Initial ui for the system)
     });
 
     const freshRecord = useBoardStore.getState().tasks.find((t) => t.id === updatedTask.id);

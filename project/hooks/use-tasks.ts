@@ -28,7 +28,7 @@ export function useTasks(projectId: string) {
   /* ── Create ── */
   const createMutation = useMutation({
     mutationFn: (data: CreateTaskFormValues) => createTaskAction(data),
-    onMutate: async (newTaskData) => {
+    onMutate: async (newTaskData: CreateTaskFormValues) => {
       await queryClient.cancelQueries({ queryKey });
       const previousTasks = queryClient.getQueryData<TaskRecord[]>(queryKey);
 
@@ -40,18 +40,24 @@ export function useTasks(projectId: string) {
         assigneeId: newTaskData.assigneeId ?? null,
         assignee: null,
         priority: newTaskData.priority ?? null,
+<<<<<<< HEAD
         status: null,
         dueDate: newTaskData.dueDate ? new Date(newTaskData.dueDate) : null,
         position: previousTasks?.filter((t) => t.listId === newTaskData.listId).length ?? 0,
+=======
+        status: newTaskData.status ?? null,
+        dueDate: newTaskData.dueDate ? new Date(newTaskData.dueDate) : null,
+        position: (previousTasks?.filter((t: TaskRecord) => t.listId === newTaskData.listId).length ?? 0),
+>>>>>>> 4016eb6 (Fixed and Initial ui for the system)
         commentsCount: 0,
         createdAt: new Date(),
         updatedAt: new Date(),
       };
 
-      queryClient.setQueryData<TaskRecord[]>(queryKey, (old = []) => [...old, optimisticTask]);
+      queryClient.setQueryData<TaskRecord[]>(queryKey, (old: TaskRecord[] | undefined = []) => [...old, optimisticTask]);
       return { previousTasks };
     },
-    onError: (_err, _newTask, context) => {
+    onError: (_err: unknown, _newTask: CreateTaskFormValues, context?: { previousTasks?: TaskRecord[] }) => {
       if (context?.previousTasks) queryClient.setQueryData(queryKey, context.previousTasks);
     },
     onSettled: () => {
@@ -63,12 +69,12 @@ export function useTasks(projectId: string) {
   const updateMutation = useMutation({
     mutationFn: ({ id, data }: { id: string; data: Omit<UpdateTaskFormValues, "id"> }) =>
       updateTaskAction({ id, ...data }),
-    onMutate: async ({ id, data }) => {
+    onMutate: async ({ id, data }: { id: string; data: Omit<UpdateTaskFormValues, "id"> }) => {
       await queryClient.cancelQueries({ queryKey });
       const previousTasks = queryClient.getQueryData<TaskRecord[]>(queryKey);
 
-      queryClient.setQueryData<TaskRecord[]>(queryKey, (old = []) =>
-        old.map((t) =>
+      queryClient.setQueryData<TaskRecord[]>(queryKey, (old: TaskRecord[] | undefined = []) =>
+        old.map((t: TaskRecord) =>
           t.id === id
             ? {
                 ...t,
@@ -85,7 +91,7 @@ export function useTasks(projectId: string) {
       );
       return { previousTasks };
     },
-    onError: (_err, _vars, context) => {
+    onError: (_err: unknown, _vars: { id: string; data: Omit<UpdateTaskFormValues, "id"> }, context?: { previousTasks?: TaskRecord[] }) => {
       if (context?.previousTasks) queryClient.setQueryData(queryKey, context.previousTasks);
     },
     onSettled: () => {
@@ -96,16 +102,20 @@ export function useTasks(projectId: string) {
   /* ── Delete ── */
   const deleteMutation = useMutation({
     mutationFn: (taskId: string) => deleteTaskAction(taskId),
-    onMutate: async (taskId) => {
+    onMutate: async (taskId: string) => {
       await queryClient.cancelQueries({ queryKey });
       const previousTasks = queryClient.getQueryData<TaskRecord[]>(queryKey);
 
+<<<<<<< HEAD
       queryClient.setQueryData<TaskRecord[]>(queryKey, (old = []) =>
         old.filter((t) => t.id !== taskId),
       );
+=======
+      queryClient.setQueryData<TaskRecord[]>(queryKey, (old: TaskRecord[] | undefined = []) => old.filter((t: TaskRecord) => t.id !== taskId));
+>>>>>>> 4016eb6 (Fixed and Initial ui for the system)
       return { previousTasks };
     },
-    onError: (_err, _taskId, context) => {
+    onError: (_err: unknown, _taskId: string, context?: { previousTasks?: TaskRecord[] }) => {
       if (context?.previousTasks) queryClient.setQueryData(queryKey, context.previousTasks);
     },
     onSettled: () => {

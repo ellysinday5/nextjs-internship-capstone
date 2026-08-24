@@ -1,9 +1,17 @@
 "use client";
 
+<<<<<<< HEAD
 import type { ListWithTasks } from "@/actions/list-actions";
 import type { TaskRecord } from "@/actions/task-actions";
 import { BoardTabSkeleton } from "@/components/projects/details/skeleton-loading";
 import { createKanbanCoordinateGetter } from "@/lib/kanban-keyboard";
+=======
+import type { TaskRecord } from "@/app/actions/task-actions";
+import {
+  BoardTabSkeleton,
+  ProjectDetailSkeleton,
+} from "@/components/projects/details/skeleton-loading";
+>>>>>>> 4016eb6 (Fixed and Initial ui for the system)
 import { useBoardStore } from "@/stores/board-store";
 import {
   DndContext,
@@ -15,12 +23,16 @@ import {
   useSensor,
   useSensors,
 } from "@dnd-kit/core";
+<<<<<<< HEAD
 import {
   SortableContext,
   arrayMove,
   horizontalListSortingStrategy,
   verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
+=======
+import { SortableContext, verticalListSortingStrategy } from "@dnd-kit/sortable";
+>>>>>>> 4016eb6 (Fixed and Initial ui for the system)
 import { Loader2, Plus } from "lucide-react";
 import { useEffect, useState } from "react";
 import { KanbanColumn } from "./kanban-column";
@@ -54,11 +66,14 @@ export function KanbanBoard({ projectId, onSelectTask }: KanbanBoardProps) {
     loadProject(projectId);
   }, [projectId, loadProject]);
 
+<<<<<<< HEAD
   const keyboardCoordinateGetter = createKanbanCoordinateGetter(() => ({
     tasks: tasks.map((t) => ({ id: t.id, listId: t.listId, position: t.position })),
     lists: lists.map((l) => ({ id: l.id })),
   }));
 
+=======
+>>>>>>> 4016eb6 (Fixed and Initial ui for the system)
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 8 } }));
 
   function tasksForList(listId: string) {
@@ -180,6 +195,7 @@ export function KanbanBoard({ projectId, onSelectTask }: KanbanBoardProps) {
       >
         {/* Board scroll container */}
         <div className="flex flex-1 items-start gap-3 overflow-x-auto overflow-y-auto p-5 pb-8">
+<<<<<<< HEAD
           <SortableContext items={lists.map((l) => l.id)} strategy={horizontalListSortingStrategy}>
             {lists.map((list) => (
               <SortableContext
@@ -195,6 +211,17 @@ export function KanbanBoard({ projectId, onSelectTask }: KanbanBoardProps) {
               </SortableContext>
             ))}
           </SortableContext>
+=======
+          {lists.map((list) => (
+            <SortableContext
+              key={list.id}
+              items={tasksForList(list.id).map((t) => t.id)}
+              strategy={verticalListSortingStrategy}
+            >
+              <KanbanColumn list={list} tasks={tasksForList(list.id)} onSelectTask={onSelectTask} />
+            </SortableContext>
+          ))}
+>>>>>>> 4016eb6 (Fixed and Initial ui for the system)
 
           {/* ── Add section column ── */}
           <div className="w-[272px] flex-shrink-0">

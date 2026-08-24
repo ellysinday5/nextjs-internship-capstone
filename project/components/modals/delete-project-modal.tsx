@@ -1,7 +1,12 @@
 "use client";
 
+<<<<<<< HEAD
 import { type ProjectWithStats, deleteProjectAction } from "@/actions/project-actions";
 import { ConfirmationModal } from "@/components/modals/ConfirmationModal";
+=======
+import { type ProjectWithStats, deleteProjectAction } from "@/app/actions/project-actions";
+import { Modal } from "@/components/modals/BaseModal";
+>>>>>>> 4016eb6 (Fixed and Initial ui for the system)
 import { sileo } from "@/utils/alerts";
 import React, { useState } from "react";
 

@@ -4,6 +4,7 @@ import { Footer } from "@/components/layout/footer";
 import { Navbar } from "@/components/layout/navbar";
 import {
   BarChart3,
+<<<<<<< HEAD
   Calendar,
   CheckCircle2,
   ChevronLeft,
@@ -21,6 +22,18 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { useCallback, useEffect, useRef, useState } from "react";
+=======
+  CheckCircle2,
+  ChevronRight,
+  Hand,
+  LayoutDashboard,
+  ShieldCheck,
+  Sparkles,
+  Users,
+} from "lucide-react";
+import Link from "next/link";
+import { useEffect, useRef, useState } from "react";
+>>>>>>> 4016eb6 (Fixed and Initial ui for the system)
 
 /* ─── Scroll-reveal hook ─────────────────────────────────────── */
 function useReveal(threshold = 0.1) {
@@ -36,7 +49,11 @@ function useReveal(threshold = 0.1) {
           obs.disconnect();
         }
       },
+<<<<<<< HEAD
       { threshold },
+=======
+      { threshold: 0.1 },
+>>>>>>> 4016eb6 (Fixed and Initial ui for the system)
     );
     obs.observe(el);
     return () => obs.disconnect();
@@ -502,6 +519,7 @@ export default function HomePage() {
   const features = [
     {
       icon: Hand,
+<<<<<<< HEAD
       title: "Drag & drop boards",
       description: "Rearrange without friction.",
       color: "bg-blue-100 dark:bg-blue-950/60",
@@ -547,6 +565,29 @@ export default function HomePage() {
       color: "bg-rose-100 dark:bg-rose-950/60",
       iconColor: "text-rose-600 dark:text-rose-400",
       border: "hover:border-rose-200 dark:hover:border-rose-800",
+=======
+      title: "Drag & Drop Workspaces",
+      description:
+        "Fluid Kanban boards — rearrange cards, rename columns, and set custom workflows without friction.",
+    },
+    {
+      icon: Users,
+      title: "Real-Time Collaboration",
+      description:
+        "Assign tasks, share feedback, and monitor progress across team members instantly.",
+    },
+    {
+      icon: BarChart3,
+      title: "Progress Analytics",
+      description:
+        "Velocity metrics, burndown charts, and milestone tracking to keep sprints on schedule.",
+    },
+    {
+      icon: ShieldCheck,
+      title: "Role-Based Access",
+      description:
+        "Granular permissions for owners, members, and collaborators across all projects.",
+>>>>>>> 4016eb6 (Fixed and Initial ui for the system)
     },
   ];
 
@@ -635,8 +676,49 @@ export default function HomePage() {
                 {/* mini feature tags — removed */}
               </div>
 
+<<<<<<< HEAD
               {/* right — feature carousel */}
               <FeatureCarousel visible={heroReveal.visible} />
+=======
+              <h1 className="text-4xl sm:text-6xl font-black text-[#0d1b2e] dark:text-white tracking-tight leading-[1.1] mb-6">
+                Project Management System
+              </h1>
+
+              <p className="text-base sm:text-xl text-slate-600 dark:text-slate-300 mb-9 leading-relaxed max-w-2xl mx-auto">
+                Kanban boards, team collaboration, and real-time task tracking — in one focused
+                workspace.
+              </p>
+              <div className="flex justify-center mb-10">
+                <Link
+                  href="/dashboard"
+                  className="group inline-flex items-center gap-3 px-8 py-4 rounded-xl bg-[#142843] hover:bg-[#1c3960] dark:bg-sky-500 dark:hover:bg-sky-400 text-white font-bold text-base shadow-md hover:shadow-lg hover:-translate-y-0.5 transition-all duration-200"
+                >
+                  <LayoutDashboard size={20} />
+                  <span>Start Managing Projects</span>
+                  <ChevronRight
+                    size={20}
+                    className="group-hover:translate-x-1 transition-transform"
+                  />
+                </Link>
+              </div>
+
+              <div className="flex flex-wrap items-center justify-center gap-4 text-xs font-medium text-slate-500 dark:text-slate-400">
+                <span className="inline-flex items-center gap-1.5">
+                  <Hand size={14} className="text-[#142843] dark:text-sky-400" />
+                  Drag & Drop Kanban
+                </span>
+                <span className="text-slate-300 dark:text-slate-700">•</span>
+                <span className="inline-flex items-center gap-1.5">
+                  <Users size={14} className="text-[#142843] dark:text-sky-400" />
+                  Team Workspaces
+                </span>
+                <span className="text-slate-300 dark:text-slate-700">•</span>
+                <span className="inline-flex items-center gap-1.5">
+                  <CheckCircle2 size={14} className="text-[#142843] dark:text-sky-400" />
+                  Task Tracking
+                </span>
+              </div>
+>>>>>>> 4016eb6 (Fixed and Initial ui for the system)
             </div>
           </div>
         </section>
@@ -648,6 +730,7 @@ export default function HomePage() {
               ref={featReveal.ref}
               className={`transition-all duration-700 ${featReveal.visible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-6"}`}
             >
+<<<<<<< HEAD
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
                 {features.map((feat, idx) => (
                   <div
@@ -655,10 +738,60 @@ export default function HomePage() {
                     className={`group flex items-start gap-4 p-5 rounded-2xl border border-slate-100 dark:border-slate-800 bg-white dark:bg-[#0e1e35] hover:shadow-md hover:-translate-y-1 transition-all duration-300 ${feat.border}`}
                     style={{ transitionDelay: `${idx * 50}ms` }}
                   >
+=======
+              <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-16 items-center">
+                <div className="lg:col-span-5">
+                  <p className="text-xs font-bold uppercase tracking-widest text-[#142843] dark:text-sky-400 mb-2 flex items-center gap-1.5">
+                    <CheckCircle2 size={13} />
+                    Platform Capabilities
+                  </p>
+                  <h2 className="text-2xl sm:text-3xl font-extrabold text-[#0d1b2e] dark:text-white tracking-tight mb-4 leading-snug">
+                    Everything your team needs to ship faster.
+                  </h2>
+                  <p className="text-slate-600 dark:text-slate-300 text-sm sm:text-base leading-relaxed mb-6">
+                    SyntraFlow is a production-grade Kanban workspace built end-to-end with Next.js
+                    16, TypeScript, Drizzle ORM, and Clerk — designed to keep distributed teams
+                    aligned.
+                  </p>
+
+                  <div className="flex flex-wrap gap-2">
+                    {[
+                      "Next.js 16",
+                      "TypeScript",
+                      "Tailwind CSS",
+                      "Drizzle ORM",
+                      "Clerk Auth",
+                      "PostgreSQL",
+                    ].map((t) => (
+                      <span
+                        key={t}
+                        className="px-3 py-1 text-xs font-semibold rounded-lg bg-white dark:bg-white/10 border border-slate-200 dark:border-white/10 text-slate-700 dark:text-slate-200 shadow-xs"
+                      >
+                        {t}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="lg:col-span-7 grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  {features.map((feat, idx) => (
+>>>>>>> 4016eb6 (Fixed and Initial ui for the system)
                     <div
                       className={`w-10 h-10 rounded-xl ${feat.color} flex items-center justify-center shrink-0 ${feat.iconColor} group-hover:scale-110 transition-transform duration-200`}
                     >
+<<<<<<< HEAD
                       <feat.icon size={18} />
+=======
+                      <div className="w-9 h-9 rounded-xl bg-[#142843]/8 dark:bg-sky-500/10 text-[#142843] dark:text-sky-400 flex items-center justify-center mb-3 group-hover:scale-110 transition-transform">
+                        <feat.icon size={18} />
+                      </div>
+                      <h3 className="text-sm font-bold text-slate-900 dark:text-white mb-1">
+                        {feat.title}
+                      </h3>
+                      <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
+                        {feat.description}
+                      </p>
+>>>>>>> 4016eb6 (Fixed and Initial ui for the system)
                     </div>
                     <div>
                       <h3 className="text-sm font-bold text-slate-900 dark:text-white mb-1">

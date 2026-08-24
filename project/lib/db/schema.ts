@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 import { relations } from "drizzle-orm";
 import {
   type AnyPgColumn,
@@ -12,6 +13,9 @@ import {
   uniqueIndex,
   uuid,
 } from "drizzle-orm/pg-core";
+=======
+import { integer, pgTable, text, timestamp, uuid } from "drizzle-orm/pg-core";
+>>>>>>> 4016eb6 (Fixed and Initial ui for the system)
 
 // ============================================
 // ENUMS
@@ -185,6 +189,7 @@ export const comments = pgTable("comments", {
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });
+<<<<<<< HEAD
 
 // ============================================
 // INVITES (new: team/project invite by email)
@@ -352,3 +357,5 @@ export const notificationsRelations = relations(notifications, ({ one }) => ({
     relationName: "actorNotifications",
   }),
 }));
+=======
+>>>>>>> 4016eb6 (Fixed and Initial ui for the system)

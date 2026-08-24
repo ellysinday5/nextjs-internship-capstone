@@ -2,9 +2,13 @@
 
 import type { ProjectCardData } from "@/lib/project-card-types";
 import { toSlug } from "@/lib/project-data";
+<<<<<<< HEAD
 import { PROJECT_ICON_LIST } from "@/lib/project-meta";
 import { Calendar, MoreVertical, Pencil, Star, Trash2, Users } from "lucide-react";
 import { ListTodo } from "lucide-react";
+=======
+import { Calendar, MoreVertical, Pencil, Trash2, Users } from "lucide-react";
+>>>>>>> 4016eb6 (Fixed and Initial ui for the system)
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 

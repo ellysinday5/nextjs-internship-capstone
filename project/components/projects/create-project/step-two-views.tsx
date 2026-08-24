@@ -1,5 +1,6 @@
 "use client";
 
+<<<<<<< HEAD
 import { SUGGESTED_TECH } from "@/lib/project-edit-types";
 import {
   Activity,
@@ -12,11 +13,28 @@ import {
   Plus,
   Tag,
   X,
+=======
+import {
+  Activity,
+  BarChart3,
+  Calendar,
+  Check,
+  ChevronDown,
+  Clock,
+  FileText,
+  Kanban,
+  LayoutList,
+  Users,
+>>>>>>> 4016eb6 (Fixed and Initial ui for the system)
 } from "lucide-react";
 import type React from "react";
 import { useState } from "react";
 import {
   type CreateProjectFormValues,
+<<<<<<< HEAD
+=======
+  POPULAR_VIEWS,
+>>>>>>> 4016eb6 (Fixed and Initial ui for the system)
   RECOMMENDED_VIEWS,
   type ViewId,
 } from "./types";

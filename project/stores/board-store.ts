@@ -5,9 +5,13 @@ import {
   createListAction,
   deleteListAction,
   getListsAction,
+<<<<<<< HEAD
   reorderListsAction,
   updateListAction,
 } from "@/actions/list-actions";
+=======
+} from "@/app/actions/list-actions";
+>>>>>>> 4016eb6 (Fixed and Initial ui for the system)
 import {
   type TaskRecord,
   createTaskAction,
@@ -15,9 +19,14 @@ import {
   getProjectTasksAction,
   moveTaskAction,
   updateTaskAction,
+<<<<<<< HEAD
 } from "@/actions/task-actions";
 import type { CreateTaskFormValues, UpdateTaskFormValues } from "@/lib/db/task-schemas";
 import { deriveStatusForList } from "@/lib/task-status";
+=======
+} from "@/app/actions/task-actions";
+import type { CreateTaskFormValues, UpdateTaskFormValues } from "@/lib/task-schemas";
+>>>>>>> 4016eb6 (Fixed and Initial ui for the system)
 import { create } from "zustand";
 import { subscribeWithSelector } from "zustand/middleware";
 
@@ -131,6 +140,7 @@ export const useBoardStore = create<BoardState>()(
         tasks: state.tasks.map((t) =>
           t.id === taskId
             ? {
+<<<<<<< HEAD
               ...t,
               ...updates,
               dueDate:
@@ -140,6 +150,17 @@ export const useBoardStore = create<BoardState>()(
                     ? new Date(updates.dueDate)
                     : null,
             }
+=======
+                ...t,
+                ...updates,
+                dueDate:
+                  updates.dueDate === undefined
+                    ? t.dueDate
+                    : updates.dueDate
+                      ? new Date(updates.dueDate)
+                      : null,
+              }
+>>>>>>> 4016eb6 (Fixed and Initial ui for the system)
             : t,
         ),
         isSaving: true,
@@ -147,6 +168,7 @@ export const useBoardStore = create<BoardState>()(
 
       const result = await updateTaskAction({ id: taskId, ...updates });
 
+<<<<<<< HEAD
         if(!result.success) {
     set({
       tasks: previousTasks,
@@ -154,6 +176,15 @@ export const useBoardStore = create<BoardState>()(
       error: result.error ?? "Failed to update task.",
   });
 return;
+=======
+      if (!result.success) {
+        set({
+          tasks: previousTasks,
+          isSaving: false,
+          error: result.error ?? "Failed to update task.",
+        });
+        return;
+>>>>>>> 4016eb6 (Fixed and Initial ui for the system)
       }
 set({ isSaving: false });
     },
@@ -185,11 +216,19 @@ set({ isSaving: false });
         toPosition: newPosition,
       });
 
+<<<<<<< HEAD
       if (!moveResult.success) {
         set({
           tasks: previousTasks,
           isSaving: false,
           error: moveResult.error ?? "Failed to move task.",
+=======
+      if (!result.success) {
+        set({
+          tasks: previousTasks,
+          isSaving: false,
+          error: result.error ?? "Failed to move task.",
+>>>>>>> 4016eb6 (Fixed and Initial ui for the system)
         });
         return;
       }
@@ -215,6 +254,7 @@ set({ isSaving: false });
     toPosition: newPosition,
   });
 
+<<<<<<< HEAD
   if (!moveResult.success) {
     set({
       tasks: previousTasks,
@@ -223,6 +263,18 @@ set({ isSaving: false });
     });
     return;
   }
+=======
+      if (!result.success) {
+        set({
+          tasks: previousTasks,
+          isSaving: false,
+          error: result.error ?? "Failed to delete task.",
+        });
+        return;
+      }
+      set({ isSaving: false });
+    },
+>>>>>>> 4016eb6 (Fixed and Initial ui for the system)
 
   if (derivedStatus) {
     const statusResult = await updateTaskAction({ id: taskId, status: derivedStatus });
@@ -264,7 +316,15 @@ set({ isSaving: false });
 
       const result = await updateListAction({ id: listId, name });
       if (!result.success) {
+<<<<<<< HEAD
         set({ lists: previousLists, error: result.error ?? "Failed to rename section." });
+=======
+        set({
+          lists: previousLists,
+          tasks: previousTasks,
+          error: result.error ?? "Failed to delete list.",
+        });
+>>>>>>> 4016eb6 (Fixed and Initial ui for the system)
       }
     },
 

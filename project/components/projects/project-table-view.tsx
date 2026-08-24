@@ -102,7 +102,11 @@ function ActionMenu({
                 name: project.name,
                 description: project.description || null,
                 ownerId: "demo",
+<<<<<<< HEAD
                 ownerName: "Unknown",
+=======
+                ownerName: project.owner || "Demo User",
+>>>>>>> 4016eb6 (Fixed and Initial ui for the system)
                 dueDate: null,
                 categories: [project.category],
                 techStack: project.techStack || [],

@@ -1,5 +1,10 @@
+<<<<<<< HEAD
 import { neon } from "@neondatabase/serverless";
 import { drizzle } from "drizzle-orm/neon-http";
+=======
+import { Pool } from "@neondatabase/serverless";
+import { drizzle } from "drizzle-orm/neon-serverless";
+>>>>>>> 4016eb6 (Fixed and Initial ui for the system)
 import * as schema from "./schema";
 
 const sql = neon(process.env.DATABASE_URL!);

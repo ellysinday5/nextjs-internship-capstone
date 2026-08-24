@@ -1,7 +1,11 @@
 "use client";
 
 import { Modal } from "@/components/modals/BaseModal";
+<<<<<<< HEAD:project/components/modals/create-team-modal.tsx
 import { type CreateTeamFormValues, createTeamSchema } from "@/lib/db/team-schemas";
+=======
+import { type CreateTeamFormValues, createTeamSchema } from "@/lib/team-schemas";
+>>>>>>> 4016eb6 (Fixed and Initial ui for the system):project/components/team/create-team-modal.tsx
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 

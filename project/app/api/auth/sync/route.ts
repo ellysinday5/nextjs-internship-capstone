@@ -1,4 +1,8 @@
+<<<<<<< HEAD
 import { syncUser } from "@/lib/db/auth";
+=======
+import { syncUser } from "@/lib/auth";
+>>>>>>> 4016eb6 (Fixed and Initial ui for the system)
 import { NextResponse } from "next/server";
 
 export async function GET() {

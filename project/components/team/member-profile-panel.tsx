@@ -1,5 +1,6 @@
 "use client";
 
+<<<<<<< HEAD
 import { getMemberCommentsAction, getMemberTasksAction } from "@/actions/member-actions";
 import { useUserProfile } from "@/context/user-profile-context";
 import type { TeamMember } from "@/lib/team-data";
@@ -13,13 +14,25 @@ interface MemberProfilePanelProps {
   projectId: string;
   projectOwnerName: string;
   projectDescription?: string | null;
+=======
+import type { TeamMember } from "@/lib/team-data";
+import { Clock, Filter, MessageSquare, Plus, Search, X } from "lucide-react";
+import { useState } from "react";
+
+interface MemberProfilePanelProps {
+  member: TeamMember | null;
+>>>>>>> 4016eb6 (Fixed and Initial ui for the system)
   onClose: () => void;
 }
 
 const STATUS_DOT: Record<TeamMember["status"], string> = {
   Online: "bg-green-500",
   Away: "bg-amber-500",
+<<<<<<< HEAD
   Offline: "bg-slate-300 dark:bg-slate-500",
+=======
+  Offline: "bg-slate-300",
+>>>>>>> 4016eb6 (Fixed and Initial ui for the system)
 };
 
 function initials(name: string) {
@@ -31,6 +44,7 @@ function initials(name: string) {
     .toUpperCase();
 }
 
+<<<<<<< HEAD
 const TABS = ["Activity", "Task", "Comments"] as const;
 
 export function MemberProfilePanel({
@@ -192,6 +206,14 @@ export function MemberProfilePanel({
       /* ignore */
     }
   };
+=======
+const TABS = ["Activity", "Task", "Comments", "Calendar"] as const;
+
+export function MemberProfilePanel({ member, onClose }: MemberProfilePanelProps) {
+  const [activeTab, setActiveTab] = useState<(typeof TABS)[number]>("Activity");
+
+  if (!member) return null;
+>>>>>>> 4016eb6 (Fixed and Initial ui for the system)
 
   return (
     <>
@@ -264,6 +286,7 @@ export function MemberProfilePanel({
                 </div>
               )}
             </div>
+<<<<<<< HEAD
 
             {/* Name, role, message button */}
             <div className="min-w-0 flex-1">
@@ -278,6 +301,12 @@ export function MemberProfilePanel({
               <button className="inline-flex items-center gap-1 text-xs text-slate-400 hover:text-[#00b4d8] dark:hover:text-sky-400 transition-colors">
                 <MessageSquare size={14} />
                 <span>Message</span>
+=======
+            <div>
+              <h2 className="text-base font-bold text-slate-800 dark:text-white">{member.name}</h2>
+              <button className="mb-1 text-xs text-slate-400 hover:text-slate-600 dark:hover:text-slate-300">
+                Add description...
+>>>>>>> 4016eb6 (Fixed and Initial ui for the system)
               </button>
               <div className="flex items-center gap-1.5 text-xs font-medium text-slate-500 dark:text-slate-400 mt-1">
                 <span className={`h-2 w-2 rounded-full ${STATUS_DOT[member.status]}`} />

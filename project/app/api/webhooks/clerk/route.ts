@@ -1,7 +1,13 @@
 import { db } from "@/lib/db";
+<<<<<<< HEAD
 import { projectMembers, projects, users, workspaceMembers } from "@/lib/db/schema";
 import type { WebhookEvent } from "@clerk/nextjs/server";
 import { and, eq } from "drizzle-orm";
+=======
+import { users } from "@/lib/db/schema";
+import type { WebhookEvent } from "@clerk/nextjs/server";
+import { eq } from "drizzle-orm";
+>>>>>>> 4016eb6 (Fixed and Initial ui for the system)
 import { headers } from "next/headers";
 import { NextResponse } from "next/server";
 import { Webhook } from "svix";

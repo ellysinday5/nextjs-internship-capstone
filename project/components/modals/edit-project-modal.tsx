@@ -1,6 +1,10 @@
 "use client";
 
+<<<<<<< HEAD
 import { type ProjectWithStats, updateProjectAction } from "@/actions/project-actions";
+=======
+import { type ProjectWithStats, updateProjectAction } from "@/app/actions/project-actions";
+>>>>>>> 4016eb6 (Fixed and Initial ui for the system)
 import { Modal } from "@/components/modals/BaseModal";
 import { ConfirmationModal } from "@/components/modals/ConfirmationModal";
 import { type UpdateProjectFormValues, updateProjectSchema } from "@/lib/project-schemas";
