@@ -139,7 +139,7 @@ export const useBoardStore = create<BoardState>()(
         isSaving: true,
       }));
 
-      const result = await updateTaskAction({ id: taskId, ...updates });.
+      const result = await updateTaskAction({ id: taskId, ...updates });
 
         if(!result.success) {
     set({
