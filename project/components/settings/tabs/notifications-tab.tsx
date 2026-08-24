@@ -13,6 +13,7 @@ import {
   CheckCheck,
   Info,
   Loader2,
+  RefreshCw,
   Star,
   UserPlus,
   X,
@@ -258,45 +259,46 @@ export function NotificationsTab() {
       {/* ── Notifications List ─────────────────────────────────────────────── */}
       <div>
         <div className="flex items-center justify-between mb-4">
-          <div className="flex items-center gap-2">
-            <h2 className="text-xl font-extrabold text-[#142843] dark:text-white tracking-tight">
-              Notifications &amp; Activity
-            </h2>
-            {unreadCount > 0 && (
-              <span className="px-2.5 py-0.5 rounded-full text-xs font-black bg-[#0052cc] text-white animate-pulse">
-                {unreadCount} new
-              </span>
-            )}
+          <div>
+            <div className="flex items-center gap-2">
+              <h2 className="text-xl font-extrabold text-[#142843] dark:text-white tracking-tight">
+                Notifications &amp; Activity
+              </h2>
+              {unreadCount > 0 && (
+                <span className="px-2.5 py-0.5 rounded-full text-xs font-black bg-[#0052cc] text-white animate-pulse">
+                  {unreadCount} new
+                </span>
+              )}
+            </div>
+            <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
+              Real-time feed of task updates, team mentions, invitations, and alerts.
+            </p>
           </div>
-          <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
-            Real-time feed of task updates, team mentions, invitations, and alerts.
-          </p>
-        </div>
 
-        <div className="flex items-center gap-2">
-          <button
-            type="button"
-            onClick={() => fetchRealNotifications(false)}
-            disabled={isRefreshing}
-            className="p-2 text-slate-500 hover:text-[#0052cc] dark:hover:text-sky-400 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 transition-all cursor-pointer"
-            title="Refresh notifications"
-          >
-            <RefreshCw size={15} className={isRefreshing ? "animate-spin text-[#0052cc]" : ""} />
-          </button>
-
-          {unreadCount > 0 && (
+          <div className="flex items-center gap-2">
             <button
               type="button"
-              onClick={handleMarkAllRead}
-              disabled={isMarkingAll}
-              className="text-xs font-semibold text-[#0052cc] hover:underline cursor-pointer disabled:opacity-50 flex items-center gap-1"
+              onClick={() => fetchNotifications(page)}
+              disabled={loading}
+              className="p-2 text-slate-500 hover:text-[#0052cc] dark:hover:text-sky-400 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 transition-all cursor-pointer"
+              title="Refresh notifications"
             >
-              {isMarkingAll && <Loader2 size={11} className="animate-spin" />}
-              Mark all as read
+              <RefreshCw size={15} className={loading ? "animate-spin text-[#0052cc]" : ""} />
             </button>
-          )}
+
+            {unreadCount > 0 && (
+              <button
+                type="button"
+                onClick={handleMarkAllRead}
+                disabled={isMarkingAll}
+                className="text-xs font-semibold text-[#0052cc] hover:underline cursor-pointer disabled:opacity-50 flex items-center gap-1"
+              >
+                {isMarkingAll && <Loader2 size={11} className="animate-spin" />}
+                Mark all as read
+              </button>
+            )}
+          </div>
         </div>
-      </div>
 
         {/* Category tabs */}
         <div className="flex items-center gap-1 border-b border-slate-100 dark:border-slate-800 mb-3 overflow-x-auto">
@@ -320,12 +322,20 @@ export function NotificationsTab() {
                     : "border-transparent text-slate-500 hover:text-slate-800 dark:hover:text-white"
                 }`}
               >
-                {count}
-              </span>
-            </button>
-          );
-        })}
-      </div>
+                {tab.label}
+                <span
+                  className={`px-1.5 py-0.5 rounded-full text-[10px] ${
+                    notifCategory === tab.key
+                      ? "bg-[#0052cc] text-white"
+                      : "bg-slate-100 dark:bg-slate-800 text-slate-500"
+                  }`}
+                >
+                  {count}
+                </span>
+              </button>
+            );
+          })}
+        </div>
 
         {/* List items */}
         <div className="space-y-2 min-h-[120px]">
@@ -374,14 +384,13 @@ export function NotificationsTab() {
                       <span className="text-xs font-bold text-[#142843] dark:text-white">
                         {notif.title}
                       </span>
-                      {isUnread && <span className="w-2 h-2 rounded-full bg-[#0052cc] shrink-0" />}
+                      {!notif.isRead && (
+                        <span className="w-2 h-2 rounded-full bg-[#0052cc] shrink-0" />
+                      )}
                     </div>
                     <span className="text-[10px] text-slate-400 dark:text-slate-500 whitespace-nowrap">
-                      {timeFormatted}
+                      {formatTime(notif.createdAt)}
                     </span>
-                    {!notif.isRead && (
-                      <span className="w-2 h-2 rounded-full bg-[#0052cc] shrink-0" />
-                    )}
                   </div>
                   {notif.message && (
                     <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5 line-clamp-2">
@@ -416,10 +425,9 @@ export function NotificationsTab() {
                   <X size={13} />
                 </button>
               </div>
-            );
-          })
-        )}
-      </div>
+            ))
+          )}
+        </div>
 
         {/* Pagination */}
         <div className="flex items-center justify-center gap-3 mt-4">
