@@ -1,12 +1,12 @@
-import type React from "react";
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
+import type React from "react";
 import "./globals.css";
-import { ClerkProvider } from "@clerk/nextjs";
-import { ThemeProvider } from "@/components/ui/theme-provider";
-import { UserProfileProvider } from "@/context/user-profile-context";
 import { AuthToast } from "@/components/auth/auth-toast";
 import { SileoToaster } from "@/components/ui/sileo-toaster";
+import { ThemeProvider } from "@/components/ui/theme-provider";
+import { UserProfileProvider } from "@/context/user-profile-context";
+import { ClerkProvider } from "@clerk/nextjs";
 import { QueryProvider } from "./providers";
 
 const inter = Inter({ subsets: ["latin"] });

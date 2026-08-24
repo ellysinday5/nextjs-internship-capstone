@@ -1,20 +1,21 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import type { TaskItem } from "@/components/tasks/task-details";
 import {
-  Copy,
-  PlusCircle,
   CheckCircle2,
   ChevronRight,
-  Eye,
+  Copy,
   ExternalLink,
+  Eye,
   Link,
-  Trash2,
   Plus,
+  PlusCircle,
+  Trash2,
 } from "lucide-react";
-import { TaskItem } from "@/components/tasks/task-details";
+import type React from "react";
+import { useEffect, useState } from "react";
 import { ProjectToolbar } from "./project-toolbar";
-import { Section } from "./types";
+import type { Section } from "./types";
 
 interface TimelineTabProps {
   sections: Section[];
@@ -29,12 +30,7 @@ interface ContextMenuState {
   task: TaskItem;
 }
 
-export function TimelineTab({
-  sections,
-  onSelectTask,
-  onAddTask,
-  onDeleteTask,
-}: TimelineTabProps) {
+export function TimelineTab({ sections, onSelectTask, onAddTask, onDeleteTask }: TimelineTabProps) {
   const [contextMenu, setContextMenu] = useState<ContextMenuState | null>(null);
 
   // Toolbar state
@@ -61,12 +57,10 @@ export function TimelineTab({
     .flatMap((s) => s.tasks)
     .filter((task) => {
       const matchesSearch =
-        !searchQuery.trim() ||
-        task.title.toLowerCase().includes(searchQuery.toLowerCase());
+        !searchQuery.trim() || task.title.toLowerCase().includes(searchQuery.toLowerCase());
       const matchesPriority =
         selectedPriorityFilter === "All" || task.priority === selectedPriorityFilter;
-      const matchesStatus =
-        selectedStatusFilter === "All" || task.status === selectedStatusFilter;
+      const matchesStatus = selectedStatusFilter === "All" || task.status === selectedStatusFilter;
       return matchesSearch && matchesPriority && matchesStatus;
     })
     .sort((a, b) => {
@@ -105,7 +99,20 @@ export function TimelineTab({
         <div className="min-w-[800px] border border-slate-200 bg-white rounded-2xl p-6 dark:border-slate-800 dark:bg-slate-900 shadow-xs space-y-6">
           {/* Day column headers */}
           <div className="grid grid-cols-12 gap-2 text-center text-xs font-semibold text-slate-400 border-b border-slate-100 pb-3 dark:border-slate-800">
-            {["Jul 20","Jul 21","Jul 22","Jul 23","Jul 24","Jul 25","Jul 26","Jul 27","Jul 28","Jul 29","Jul 30","Jul 31"].map((day) => (
+            {[
+              "Jul 20",
+              "Jul 21",
+              "Jul 22",
+              "Jul 23",
+              "Jul 24",
+              "Jul 25",
+              "Jul 26",
+              "Jul 27",
+              "Jul 28",
+              "Jul 29",
+              "Jul 30",
+              "Jul 31",
+            ].map((day) => (
               <div key={day}>{day}</div>
             ))}
           </div>

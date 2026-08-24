@@ -1,10 +1,10 @@
-"use client"
+"use client";
 
-import { Users } from "lucide-react"
-import type { Team } from "@/lib/team-data"
+import type { Team } from "@/lib/team-data";
+import { Users } from "lucide-react";
 
 interface MyTeamsTabProps {
-  teams: Team[]
+  teams: Team[];
 }
 
 export function MyTeamsTab({ teams }: MyTeamsTabProps) {
@@ -14,12 +14,14 @@ export function MyTeamsTab({ teams }: MyTeamsTabProps) {
         <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-slate-200 text-slate-500 dark:bg-slate-800 dark:text-slate-400">
           <Users size={28} />
         </div>
-        <h2 className="text-lg font-bold text-[#142843] dark:text-white">You&apos;re not on any teams yet</h2>
+        <h2 className="text-lg font-bold text-[#142843] dark:text-white">
+          You&apos;re not on any teams yet
+        </h2>
         <p className="mt-2 max-w-sm text-sm text-slate-500 dark:text-slate-400">
           Teams you join or create will appear here for quick access.
         </p>
       </div>
-    )
+    );
   }
 
   return (
@@ -43,7 +45,9 @@ export function MyTeamsTab({ teams }: MyTeamsTabProps) {
             <div className="min-w-0 flex-1">
               <p className="truncate font-semibold text-[#142843] dark:text-white">{team.name}</p>
               {team.description && (
-                <p className="truncate text-sm text-slate-500 dark:text-slate-400">{team.description}</p>
+                <p className="truncate text-sm text-slate-500 dark:text-slate-400">
+                  {team.description}
+                </p>
               )}
             </div>
             <span className="shrink-0 text-xs font-semibold text-slate-400">
@@ -53,5 +57,5 @@ export function MyTeamsTab({ teams }: MyTeamsTabProps) {
         ))}
       </div>
     </div>
-  )
+  );
 }

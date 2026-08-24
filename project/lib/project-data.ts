@@ -1,4 +1,4 @@
-import { ProjectWithStats } from "@/app/actions/project-actions";
+import type { ProjectWithStats } from "@/actions/project-actions";
 
 export interface ProjectItem {
   id: string;
@@ -31,7 +31,8 @@ export const initialProjects: ProjectItem[] = [
   {
     id: "proj-1",
     name: "Project Title 1",
-    description: "Short description of what this project is about. Replace with actual project details.",
+    description:
+      "Short description of what this project is about. Replace with actual project details.",
     techStack: ["Tech A", "Tech B", "Tech C"],
     category: "Frontend",
     status: "In Progress",
@@ -47,7 +48,8 @@ export const initialProjects: ProjectItem[] = [
   {
     id: "proj-2",
     name: "Project Title 2",
-    description: "Short description of what this project is about. Replace with actual project details.",
+    description:
+      "Short description of what this project is about. Replace with actual project details.",
     techStack: ["Tech A", "Tech B", "Tech C"],
     category: "Backend",
     status: "In Progress",
@@ -63,7 +65,8 @@ export const initialProjects: ProjectItem[] = [
   {
     id: "proj-3",
     name: "Project Title 3",
-    description: "Short description of what this project is about. Replace with actual project details.",
+    description:
+      "Short description of what this project is about. Replace with actual project details.",
     techStack: ["Tech A", "Tech B", "Tech C"],
     category: "AI & Data",
     status: "Review",
@@ -93,4 +96,3 @@ export const priorities = ["All", "High", "Medium", "Low"];
 export const owners = ["All", "Owner Name"];
 export const teamsList = ["All", "Team Name"];
 export const membersFilterOptions = ["All", "1 Dev", "2-4 Devs", "5+ Devs"];
-

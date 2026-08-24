@@ -1,4 +1,4 @@
-import { CheckCircle, Clock, AlertCircle, Users } from "lucide-react";
+import { AlertCircle, CheckCircle, Clock, Users } from "lucide-react";
 
 const taskStats = [
   {

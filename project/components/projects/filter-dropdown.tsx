@@ -1,7 +1,7 @@
 "use client";
 
-import React from "react";
 import { Check } from "lucide-react";
+import type React from "react";
 
 interface FilterDropdownProps {
   label: string;

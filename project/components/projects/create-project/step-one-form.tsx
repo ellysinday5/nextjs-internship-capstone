@@ -1,9 +1,10 @@
 "use client";
 
-import React, { useState } from "react";
-import { Lock, X, ChevronDown, Users, Globe } from "lucide-react";
-import { CreateProjectFormValues } from "./types";
 import { createProjectSchema } from "@/lib/project-schemas";
+import { ChevronDown, Globe, Lock, Users, X } from "lucide-react";
+import type React from "react";
+import { useState } from "react";
+import type { CreateProjectFormValues } from "./types";
 
 interface StepOneFormProps {
   formData: CreateProjectFormValues;
@@ -43,15 +44,15 @@ export function StepOneForm({ formData, setFormData, onContinue }: StepOneFormPr
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     // Zod Validation
     const result = createProjectSchema.pick({ name: true }).safeParse({ name: formData.name });
-    
+
     if (!result.success) {
       setError(result.error.issues[0]?.message || "Invalid project name.");
       return;
     }
-    
+
     setError(null);
     onContinue();
   };
@@ -148,7 +149,9 @@ export function StepOneForm({ formData, setFormData, onContinue }: StepOneFormPr
                 value={tagInput}
                 onChange={(e) => setTagInput(e.target.value)}
                 onKeyDown={handleAddTag}
-                placeholder={formData.shareWith.length === 0 ? "Type team name & press Enter..." : ""}
+                placeholder={
+                  formData.shareWith.length === 0 ? "Type team name & press Enter..." : ""
+                }
                 className="flex-1 min-w-[120px] bg-transparent px-1 text-sm text-slate-800 outline-none placeholder:text-slate-400 dark:text-slate-100"
               />
             </div>

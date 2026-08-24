@@ -1,9 +1,9 @@
 "use client";
 
-import React, { useState } from "react";
+import { type ProjectWithStats, deleteProjectAction } from "@/actions/project-actions";
+import { ConfirmationModal } from "@/components/modals/ConfirmationModal";
 import { sileo } from "@/utils/alerts";
-import { deleteProjectAction, ProjectWithStats } from "@/app/actions/project-actions";
-import { Modal } from "@/components/modals/BaseModal";
+import React, { useState } from "react";
 
 interface DeleteProjectModalProps {
   isOpen: boolean;
@@ -48,32 +48,15 @@ export function DeleteProjectModal({
   };
 
   return (
-    <Modal
+    <ConfirmationModal
       isOpen={isOpen}
       onClose={handleClose}
+      onConfirm={handleDelete}
+      variant="delete"
       title="Delete Project"
+      confirmLabel="Delete Permanently"
+      isLoading={isDeleting}
       showCloseButton={false}
-      maxWidthClassName="max-w-lg"
-      footer={
-        <>
-          <button
-            type="button"
-            onClick={handleClose}
-            disabled={isDeleting}
-            className="rounded-lg border border-slate-200 px-5 py-2.5 text-sm font-semibold text-slate-700 transition-colors hover:bg-slate-100 disabled:opacity-50 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800"
-          >
-            Cancel
-          </button>
-          <button
-            type="button"
-            onClick={handleDelete}
-            disabled={isDeleting}
-            className="rounded-lg bg-red-600 px-5 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-red-700 disabled:cursor-not-allowed disabled:opacity-60"
-          >
-            {isDeleting ? "Deleting..." : "Delete Permanently"}
-          </button>
-        </>
-      }
     >
       <p className="mb-4 text-sm font-medium leading-relaxed text-slate-700 dark:text-slate-200">
         Are you sure you want to delete{" "}
@@ -94,6 +77,6 @@ export function DeleteProjectModal({
           {serverError}
         </p>
       )}
-    </Modal>
+    </ConfirmationModal>
   );
 }

@@ -1,10 +1,10 @@
-import { Webhook } from "svix";
-import { headers } from "next/headers";
-import { WebhookEvent } from "@clerk/nextjs/server";
-import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
-import { users } from "@/lib/db/schema";
-import { eq } from "drizzle-orm";
+import { projectMembers, projects, users, workspaceMembers } from "@/lib/db/schema";
+import type { WebhookEvent } from "@clerk/nextjs/server";
+import { and, eq } from "drizzle-orm";
+import { headers } from "next/headers";
+import { NextResponse } from "next/server";
+import { Webhook } from "svix";
 
 export async function POST(req: Request) {
   const WEBHOOK_SECRET = process.env.CLERK_WEBHOOK_SECRET || process.env.WEBHOOK_SECRET;
@@ -14,7 +14,6 @@ export async function POST(req: Request) {
     return new Response("Error: Missing webhook secret", { status: 500 });
   }
 
-  // Retrieve svix headers for signature verification
   const headerPayload = await headers();
   const svix_id = headerPayload.get("svix-id");
   const svix_timestamp = headerPayload.get("svix-timestamp");
@@ -24,7 +23,6 @@ export async function POST(req: Request) {
     return new Response("Error: Missing svix headers", { status: 400 });
   }
 
-  // Get raw body as text for verification
   const body = await req.text();
 
   const wh = new Webhook(WEBHOOK_SECRET);
@@ -44,8 +42,15 @@ export async function POST(req: Request) {
   const eventType = evt.type;
 
   if (eventType === "user.created" || eventType === "user.updated") {
-    const { id, email_addresses, primary_email_address_id, first_name, last_name, username } =
-      evt.data;
+    const {
+      id,
+      email_addresses,
+      primary_email_address_id,
+      first_name,
+      last_name,
+      username,
+      public_metadata,
+    } = evt.data;
 
     const primaryEmail =
       email_addresses?.find((e: any) => e.id === primary_email_address_id)?.email_address ||
@@ -60,6 +65,8 @@ export async function POST(req: Request) {
 
     const existing = await db.select().from(users).where(eq(users.clerkId, id));
 
+    let internalUserId: string;
+
     if (existing.length > 0) {
       await db
         .update(users)
@@ -69,14 +76,98 @@ export async function POST(req: Request) {
           updatedAt: new Date(),
         })
         .where(eq(users.clerkId, id));
+      internalUserId = existing[0].id;
       console.log(`[Webhook] Updated user ${id} in database`);
     } else {
-      await db.insert(users).values({
-        clerkId: id,
-        email: primaryEmail,
-        name,
-      });
+      const [inserted] = await db
+        .insert(users)
+        .values({
+          clerkId: id,
+          email: primaryEmail,
+          name,
+        })
+        .returning({ id: users.id });
+      internalUserId = inserted.id;
       console.log(`[Webhook] Inserted user ${id} into database`);
+    }
+
+    console.log("=== FULL EVENT PAYLOAD ===");
+    console.log(JSON.stringify(evt, null, 2));
+
+    if (eventType === "user.created") {
+      const { projectId, role, workspaceId } = (public_metadata ?? {}) as {
+        projectId?: string;
+        role?: string;
+        workspaceId?: string;
+      };
+
+      if (projectId) {
+        try {
+          await db.transaction(async (tx) => {
+            // 1. Idempotent project membership insert
+            const [existingMember] = await tx
+              .select({ id: projectMembers.id })
+              .from(projectMembers)
+              .where(
+                and(
+                  eq(projectMembers.projectId, projectId),
+                  eq(projectMembers.userId, internalUserId),
+                ),
+              );
+
+            if (!existingMember) {
+              await tx.insert(projectMembers).values({
+                projectId,
+                userId: internalUserId,
+                name,
+                role: role ?? "member",
+              });
+              console.log(
+                `[Webhook] Added user ${internalUserId} to project ${projectId} via invite`,
+              );
+            }
+
+            // 2. Idempotent workspace membership insert
+            // Use workspaceId from metadata; fall back to looking it up from the project row
+            let targetWorkspaceId = workspaceId;
+            if (!targetWorkspaceId) {
+              const [proj] = await tx
+                .select({ workspaceId: projects.workspaceId })
+                .from(projects)
+                .where(eq(projects.id, projectId));
+              targetWorkspaceId = proj?.workspaceId ?? undefined;
+            }
+
+            if (targetWorkspaceId) {
+              const [existingWsMember] = await tx
+                .select({ id: workspaceMembers.id })
+                .from(workspaceMembers)
+                .where(
+                  and(
+                    eq(workspaceMembers.workspaceId, targetWorkspaceId),
+                    eq(workspaceMembers.userId, internalUserId),
+                  ),
+                );
+
+              if (!existingWsMember) {
+                await tx.insert(workspaceMembers).values({
+                  workspaceId: targetWorkspaceId,
+                  userId: internalUserId,
+                  role: "member",
+                });
+                console.log(
+                  `[Webhook] Added user ${internalUserId} to workspace ${targetWorkspaceId} as member`,
+                );
+              }
+            }
+          });
+        } catch (err) {
+          console.error(
+            "[Webhook] Failed to insert projectMember/workspaceMember from invite:",
+            err,
+          );
+        }
+      }
     }
   } else if (eventType === "user.deleted") {
     const { id } = evt.data;

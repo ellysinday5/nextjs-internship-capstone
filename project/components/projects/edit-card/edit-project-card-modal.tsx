@@ -1,26 +1,20 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
-import {
-  Save,
-  X,
-  ChevronDown,
-  Pencil,
-  Gauge,
-} from "lucide-react";
 import { Modal } from "@/components/modals/BaseModal";
+import type { ProjectItem } from "@/lib/project-data";
+import {
+  ALL_CATEGORIES,
+  ALL_PRIORITIES,
+  ALL_STATUSES,
+  type EditableProjectData,
+  SUGGESTED_DEVS,
+  type TeamMember,
+} from "@/lib/project-edit-types";
+import { sileo } from "@/utils/alerts";
+import { ChevronDown, Gauge, Pencil, Save, X } from "lucide-react";
+import React, { useState, useEffect } from "react";
 import { MembersPanel } from "./members-panel";
 import { TechStackEditor } from "./tech-stack-editor";
-import {
-  TeamMember,
-  EditableProjectData,
-  ALL_CATEGORIES,
-  ALL_STATUSES,
-  ALL_PRIORITIES,
-  SUGGESTED_DEVS,
-} from "@/lib/project-edit-types";
-import { ProjectItem } from "@/lib/project-data";
-import { sileo } from "@/utils/alerts";
 
 interface EditProjectCardModalProps {
   isOpen: boolean;
@@ -45,9 +39,7 @@ const PRIORITY_COLORS: Record<string, string> = {
 
 function buildInitialMembers(project: ProjectItem): TeamMember[] {
   // Build from SUGGESTED_DEVS based on owner name
-  const owner = SUGGESTED_DEVS.find(
-    (d) => d.name.toLowerCase() === project.owner.toLowerCase()
-  );
+  const owner = SUGGESTED_DEVS.find((d) => d.name.toLowerCase() === project.owner.toLowerCase());
   if (owner) {
     return [
       {
@@ -114,10 +106,8 @@ export function EditProjectCardModal({
     onClose();
   };
 
-  const set = <K extends keyof EditableProjectData>(
-    key: K,
-    value: EditableProjectData[K]
-  ) => setForm((prev) => ({ ...prev, [key]: value }));
+  const set = <K extends keyof EditableProjectData>(key: K, value: EditableProjectData[K]) =>
+    setForm((prev) => ({ ...prev, [key]: value }));
 
   return (
     <Modal
@@ -127,7 +117,9 @@ export function EditProjectCardModal({
       maxWidthClassName="max-w-2xl"
       footer={
         <div className="flex items-center gap-2 w-full justify-between">
-          <span className="text-xs text-slate-400">{form.members.length} member(s) · {form.techStack.length} tech</span>
+          <span className="text-xs text-slate-400">
+            {form.members.length} member(s) · {form.techStack.length} tech
+          </span>
           <div className="flex gap-2">
             <button
               onClick={onClose}
@@ -176,7 +168,10 @@ export function EditProjectCardModal({
                 onChange={(e) => set("name", e.target.value)}
                 className="w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 px-3 py-2 text-sm font-semibold text-slate-900 dark:text-white outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500/30 pr-8"
               />
-              <Pencil size={12} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
+              <Pencil
+                size={12}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none"
+              />
             </div>
           </div>
 
@@ -207,10 +202,15 @@ export function EditProjectCardModal({
                   className="w-full appearance-none rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 px-3 py-2 text-xs font-semibold text-slate-800 dark:text-slate-100 outline-none focus:border-blue-500 cursor-pointer pr-7"
                 >
                   {ALL_CATEGORIES.map((c) => (
-                    <option key={c} value={c}>{c}</option>
+                    <option key={c} value={c}>
+                      {c}
+                    </option>
                   ))}
                 </select>
-                <ChevronDown size={13} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
+                <ChevronDown
+                  size={13}
+                  className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none"
+                />
               </div>
             </div>
 
@@ -225,10 +225,15 @@ export function EditProjectCardModal({
                   className={`w-full appearance-none rounded-xl border px-3 py-2 text-xs font-bold outline-none focus:border-blue-500 cursor-pointer pr-7 ${STATUS_COLORS[form.status] || "border-slate-300 bg-white text-slate-800"}`}
                 >
                   {ALL_STATUSES.map((s) => (
-                    <option key={s} value={s}>{s}</option>
+                    <option key={s} value={s}>
+                      {s}
+                    </option>
                   ))}
                 </select>
-                <ChevronDown size={13} className="absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none opacity-60" />
+                <ChevronDown
+                  size={13}
+                  className="absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none opacity-60"
+                />
               </div>
             </div>
 
@@ -243,10 +248,15 @@ export function EditProjectCardModal({
                   className={`w-full appearance-none rounded-xl border px-3 py-2 text-xs font-bold outline-none focus:border-blue-500 cursor-pointer pr-7 ${PRIORITY_COLORS[form.priority] || "border-slate-300 bg-white text-slate-800"}`}
                 >
                   {ALL_PRIORITIES.map((p) => (
-                    <option key={p} value={p}>{p}</option>
+                    <option key={p} value={p}>
+                      {p}
+                    </option>
                   ))}
                 </select>
-                <ChevronDown size={13} className="absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none opacity-60" />
+                <ChevronDown
+                  size={13}
+                  className="absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none opacity-60"
+                />
               </div>
             </div>
           </div>
@@ -279,7 +289,7 @@ export function EditProjectCardModal({
               max={100}
               step={1}
               value={form.progress}
-              onChange={(e) => set("progress", parseInt(e.target.value))}
+              onChange={(e) => set("progress", Number.parseInt(e.target.value))}
               className="w-full h-2 accent-blue-600 cursor-pointer"
             />
             <div className="flex justify-between text-[10px] text-slate-400 mt-0.5">

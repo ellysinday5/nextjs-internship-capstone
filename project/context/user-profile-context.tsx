@@ -1,7 +1,8 @@
 "use client";
 
-import React, { createContext, useContext, useState, useEffect } from "react";
 import { useUser } from "@clerk/nextjs";
+import type React from "react";
+import { createContext, useContext, useEffect, useState } from "react";
 
 export interface UserProfile {
   fullName: string;

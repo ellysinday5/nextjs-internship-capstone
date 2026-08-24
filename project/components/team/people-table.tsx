@@ -1,18 +1,18 @@
-"use client"
+"use client";
 
-import { MoreHorizontal } from "lucide-react"
-import type { TeamMember } from "@/lib/team-data"
+import type { TeamMember } from "@/lib/team-data";
+import { MoreHorizontal } from "lucide-react";
 
 interface PeopleTableProps {
-  members: TeamMember[]
-  onSelectMember: (member: TeamMember) => void
+  members: TeamMember[];
+  onSelectMember: (member: TeamMember) => void;
 }
 
 const STATUS_DOT: Record<TeamMember["status"], string> = {
   Online: "bg-green-500",
   Away: "bg-amber-500",
   Offline: "bg-slate-300",
-}
+};
 
 export function PeopleTable({ members, onSelectMember }: PeopleTableProps) {
   return (
@@ -65,5 +65,5 @@ export function PeopleTable({ members, onSelectMember }: PeopleTableProps) {
         </tbody>
       </table>
     </div>
-  )
+  );
 }

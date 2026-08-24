@@ -1,12 +1,15 @@
 "use client";
 
-import React, { createContext, useContext, useState, useEffect } from "react";
-import { PROJECT_CATEGORIES } from "@/lib/project-schemas"; // Use as defaults
+import { PROJECT_CATEGORIES } from "@/lib/validations/project"; // Use as defaults
+import type React from "react";
+import { createContext, useContext, useEffect, useState } from "react";
 
 interface CategoryContextType {
   categories: string[];
   addCategory: (name: string) => void;
   removeCategory: (name: string) => void;
+  updateCategory: (oldName: string, newName: string) => void;
+  resetCategories: () => void;
 }
 
 const CategoryContext = createContext<CategoryContextType | undefined>(undefined);
@@ -32,7 +35,7 @@ export function CategoryProvider({ children }: { children: React.ReactNode }) {
   const addCategory = (name: string) => {
     const trimmed = name.trim();
     if (!trimmed) return;
-    
+
     setCategories((prev) => {
       if (prev.includes(trimmed)) return prev;
       const next = [...prev, trimmed];
@@ -49,10 +52,25 @@ export function CategoryProvider({ children }: { children: React.ReactNode }) {
     });
   };
 
-  // Prevent hydration mismatch by not rendering children until loaded, or just render with defaults.
-  // We'll render with defaults (initial state) to avoid flickering, hydration handles the rest.
+  const updateCategory = (oldName: string, newName: string) => {
+    const trimmed = newName.trim();
+    if (!trimmed) return;
+    setCategories((prev) => {
+      const next = prev.map((c) => (c === oldName ? trimmed : c));
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
+      return next;
+    });
+  };
+
+  const resetCategories = () => {
+    setCategories([...PROJECT_CATEGORIES]);
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(PROJECT_CATEGORIES));
+  };
+
   return (
-    <CategoryContext.Provider value={{ categories, addCategory, removeCategory }}>
+    <CategoryContext.Provider
+      value={{ categories, addCategory, removeCategory, updateCategory, resetCategories }}
+    >
       {children}
     </CategoryContext.Provider>
   );

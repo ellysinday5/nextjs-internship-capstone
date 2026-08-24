@@ -1,10 +1,20 @@
 "use client";
 
-import React, { useState, useRef, useEffect } from "react";
+import type { ProjectWithStats } from "@/actions/project-actions";
+import { type ProjectItem, toSlug } from "@/lib/project-data";
+import {
+  ChevronLeft,
+  ChevronRight,
+  ClipboardList,
+  Edit3,
+  Eye,
+  MoreHorizontal,
+  Trash2,
+  User,
+  Users,
+} from "lucide-react";
 import { useRouter } from "next/navigation";
-import { MoreHorizontal, Eye, Edit3, Trash2, Users, ClipboardList, User, ChevronLeft, ChevronRight } from "lucide-react";
-import { ProjectItem, toSlug } from "@/lib/project-data";
-import { ProjectWithStats } from "@/app/actions/project-actions";
+import React, { useState, useRef, useEffect } from "react";
 
 interface ProjectTableViewProps {
   projects: ProjectItem[];
@@ -92,6 +102,7 @@ function ActionMenu({
                 name: project.name,
                 description: project.description || null,
                 ownerId: "demo",
+                ownerName: "Unknown",
                 dueDate: null,
                 categories: [project.category],
                 techStack: project.techStack || [],
@@ -101,7 +112,9 @@ function ActionMenu({
                 updatedAt: null,
                 listCount: 0,
                 taskCount: project.tasksCount || 0,
-                completedTaskCount: Math.round(((project.tasksCount || 0) * (project.progress || 0)) / 100),
+                completedTaskCount: Math.round(
+                  ((project.tasksCount || 0) * (project.progress || 0)) / 100,
+                ),
                 memberCount: project.members || 1,
                 members: [],
               };
@@ -138,17 +151,39 @@ export function ProjectTableView({ projects, onEdit, onDelete }: ProjectTableVie
           <table className="w-full text-sm text-left">
             <thead className="bg-[#142843] text-white">
               <tr>
-                <th className="px-5 py-3.5 text-xs font-bold uppercase tracking-wider text-slate-100">Project</th>
-                <th className="px-5 py-3.5 text-xs font-bold uppercase tracking-wider text-slate-100">Category</th>
-                <th className="px-5 py-3.5 text-xs font-bold uppercase tracking-wider text-slate-100">Status</th>
-                <th className="px-5 py-3.5 text-xs font-bold uppercase tracking-wider text-slate-100">Priority</th>
-                <th className="px-5 py-3.5 text-xs font-bold uppercase tracking-wider text-slate-100">Owner</th>
-                <th className="px-5 py-3.5 text-xs font-bold uppercase tracking-wider text-slate-100">Team</th>
-                <th className="px-5 py-3.5 text-xs font-bold uppercase tracking-wider text-slate-100">Progress</th>
-                <th className="px-5 py-3.5 text-xs font-bold uppercase tracking-wider text-slate-100">Devs</th>
-                <th className="px-5 py-3.5 text-xs font-bold uppercase tracking-wider text-slate-100">Tasks</th>
-                <th className="px-5 py-3.5 text-xs font-bold uppercase tracking-wider text-slate-100">Updated</th>
-                <th className="px-5 py-3.5 text-xs font-bold uppercase tracking-wider text-slate-100 text-right">Actions</th>
+                <th className="px-5 py-3.5 text-xs font-bold uppercase tracking-wider text-slate-100">
+                  Project
+                </th>
+                <th className="px-5 py-3.5 text-xs font-bold uppercase tracking-wider text-slate-100">
+                  Category
+                </th>
+                <th className="px-5 py-3.5 text-xs font-bold uppercase tracking-wider text-slate-100">
+                  Status
+                </th>
+                <th className="px-5 py-3.5 text-xs font-bold uppercase tracking-wider text-slate-100">
+                  Priority
+                </th>
+                <th className="px-5 py-3.5 text-xs font-bold uppercase tracking-wider text-slate-100">
+                  Owner
+                </th>
+                <th className="px-5 py-3.5 text-xs font-bold uppercase tracking-wider text-slate-100">
+                  Team
+                </th>
+                <th className="px-5 py-3.5 text-xs font-bold uppercase tracking-wider text-slate-100">
+                  Progress
+                </th>
+                <th className="px-5 py-3.5 text-xs font-bold uppercase tracking-wider text-slate-100">
+                  Devs
+                </th>
+                <th className="px-5 py-3.5 text-xs font-bold uppercase tracking-wider text-slate-100">
+                  Tasks
+                </th>
+                <th className="px-5 py-3.5 text-xs font-bold uppercase tracking-wider text-slate-100">
+                  Updated
+                </th>
+                <th className="px-5 py-3.5 text-xs font-bold uppercase tracking-wider text-slate-100 text-right">
+                  Actions
+                </th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
@@ -162,9 +197,13 @@ export function ProjectTableView({ projects, onEdit, onDelete }: ProjectTableVie
                     <div className="flex items-center gap-2.5">
                       <span className={`w-2.5 h-2.5 rounded-full shrink-0 ${project.color}`} />
                       <div className="min-w-0">
-                        <p className="font-bold text-[#142843] dark:text-white truncate">{project.name}</p>
+                        <p className="font-bold text-[#142843] dark:text-white truncate">
+                          {project.name}
+                        </p>
                         {project.isDb && (
-                          <span className="text-[10px] font-extrabold text-[#00b4d8]">Database</span>
+                          <span className="text-[10px] font-extrabold text-[#00b4d8]">
+                            Database
+                          </span>
                         )}
                       </div>
                     </div>
@@ -180,10 +219,10 @@ export function ProjectTableView({ projects, onEdit, onDelete }: ProjectTableVie
                         project.status === "In Progress"
                           ? "bg-blue-50 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300"
                           : project.status === "Review"
-                          ? "bg-purple-50 text-purple-700 dark:bg-purple-900/40 dark:text-purple-300"
-                          : project.status === "Completed"
-                          ? "bg-emerald-50 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300"
-                          : "bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300"
+                            ? "bg-purple-50 text-purple-700 dark:bg-purple-900/40 dark:text-purple-300"
+                            : project.status === "Completed"
+                              ? "bg-emerald-50 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300"
+                              : "bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300"
                       }`}
                     >
                       {project.status}
@@ -195,8 +234,8 @@ export function ProjectTableView({ projects, onEdit, onDelete }: ProjectTableVie
                         project.priority === "High"
                           ? "bg-rose-500/10 text-rose-500 border border-rose-500/20"
                           : project.priority === "Medium"
-                          ? "bg-amber-500/10 text-amber-500 border border-amber-500/20"
-                          : "bg-slate-500/10 text-slate-400 border border-slate-500/20"
+                            ? "bg-amber-500/10 text-amber-500 border border-amber-500/20"
+                            : "bg-slate-500/10 text-slate-400 border border-slate-500/20"
                       }`}
                     >
                       {project.priority}

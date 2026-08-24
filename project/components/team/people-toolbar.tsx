@@ -1,34 +1,34 @@
-"use client"
+"use client";
 
-import { useState, useMemo } from "react"
-import { Search, X, Filter, ArrowUpDown, ChevronDown, LayoutGrid, List } from "lucide-react"
-import type { TeamMember } from "@/lib/team-data"
+import type { TeamMember } from "@/lib/team-data";
+import { ArrowUpDown, ChevronDown, Filter, LayoutGrid, List, Search, X } from "lucide-react";
+import { useMemo, useState } from "react";
 
-type StatusFilter = "All" | "Online" | "Away" | "Offline"
-type SortOption = "name-asc" | "name-desc" | "role"
-type AccountTypeFilter = "All" | "Admin" | "Member"
+type StatusFilter = "All" | "Online" | "Away" | "Offline";
+type SortOption = "name-asc" | "name-desc" | "role";
+type AccountTypeFilter = "All" | "Admin" | "Member";
 
 interface PeopleToolbarProps {
-  search: string
-  onSearchChange: (value: string) => void
-  viewMode: "list" | "grid"
-  onViewModeChange: (mode: "list" | "grid") => void
-  statusFilter: StatusFilter
-  onStatusFilterChange: (v: StatusFilter) => void
-  sortBy: SortOption
-  onSortChange: (v: SortOption) => void
-  accountType: AccountTypeFilter
-  onAccountTypeChange: (v: AccountTypeFilter) => void
+  search: string;
+  onSearchChange: (value: string) => void;
+  viewMode: "list" | "grid";
+  onViewModeChange: (mode: "list" | "grid") => void;
+  statusFilter: StatusFilter;
+  onStatusFilterChange: (v: StatusFilter) => void;
+  sortBy: SortOption;
+  onSortChange: (v: SortOption) => void;
+  accountType: AccountTypeFilter;
+  onAccountTypeChange: (v: AccountTypeFilter) => void;
 }
 
 const btnBase =
-  "inline-flex items-center justify-between gap-2 px-3.5 py-2 min-w-[108px] rounded-xl border-2 text-xs font-bold transition-all duration-200 cursor-pointer whitespace-nowrap hover:shadow-md hover:-translate-y-0.5 active:scale-95"
+  "inline-flex items-center justify-between gap-2 px-3.5 py-2 min-w-[108px] rounded-xl border-2 text-xs font-bold transition-all duration-200 cursor-pointer whitespace-nowrap hover:shadow-md hover:-translate-y-0.5 active:scale-95";
 
 const btnDefault =
-  "border-[#142843]/70 dark:border-slate-500 text-[#142843] dark:text-slate-100 bg-white dark:bg-[#14263e] hover:border-[#00b4d8] hover:bg-slate-50 dark:hover:bg-[#1c304a] hover:text-[#00b4d8]"
+  "border-[#142843]/70 dark:border-slate-500 text-[#142843] dark:text-slate-100 bg-white dark:bg-[#14263e] hover:border-[#00b4d8] hover:bg-slate-50 dark:hover:bg-[#1c304a] hover:text-[#00b4d8]";
 
 const btnActive =
-  "border-[#142843] bg-[#142843] text-white dark:border-[#00b4d8] dark:bg-[#00b4d8] dark:text-[#08131f]"
+  "border-[#142843] bg-[#142843] text-white dark:border-[#00b4d8] dark:bg-[#00b4d8] dark:text-[#08131f]";
 
 export function PeopleToolbar({
   search,
@@ -42,20 +42,19 @@ export function PeopleToolbar({
   accountType,
   onAccountTypeChange,
 }: PeopleToolbarProps) {
-  const [openDropdown, setOpenDropdown] = useState<"status" | "sort" | "account" | null>(null)
+  const [openDropdown, setOpenDropdown] = useState<"status" | "sort" | "account" | null>(null);
 
   const toggle = (key: "status" | "sort" | "account") => {
-    setOpenDropdown((prev) => (prev === key ? null : key))
-  }
+    setOpenDropdown((prev) => (prev === key ? null : key));
+  };
 
   const SORT_LABELS: Record<SortOption, string> = {
-  "name-asc": "Name (A–Z)",
-  "name-desc": "Name (Z–A)",
-  role: "Role",
-};
+    "name-asc": "Name (A–Z)",
+    "name-desc": "Name (Z–A)",
+    role: "Role",
+  };
 
-const SORT_BUTTON_LABEL =
-  sortBy === "name-asc" ? "Sort By" : SORT_LABELS[sortBy];
+  const SORT_BUTTON_LABEL = sortBy === "name-asc" ? "Sort By" : SORT_LABELS[sortBy];
 
   return (
     <div className="flex flex-wrap items-center gap-2.5">
@@ -76,7 +75,10 @@ const SORT_BUTTON_LABEL =
             <X size={13} />
           </button>
         ) : (
-          <Search size={13} className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-slate-400" />
+          <Search
+            size={13}
+            className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-slate-400"
+          />
         )}
       </div>
 
@@ -96,7 +98,10 @@ const SORT_BUTTON_LABEL =
               <button
                 key={opt}
                 type="button"
-                onClick={() => { onStatusFilterChange(opt); setOpenDropdown(null) }}
+                onClick={() => {
+                  onStatusFilterChange(opt);
+                  setOpenDropdown(null);
+                }}
                 className={`w-full text-left px-3 py-2 text-xs font-bold rounded-lg transition-all ${
                   statusFilter === opt
                     ? "bg-[#00b4d8]/15 text-[#00b4d8]"
@@ -126,7 +131,10 @@ const SORT_BUTTON_LABEL =
               <button
                 key={val}
                 type="button"
-                onClick={() => { onSortChange(val); setOpenDropdown(null) }}
+                onClick={() => {
+                  onSortChange(val);
+                  setOpenDropdown(null);
+                }}
                 className={`w-full text-left px-3 py-2 text-xs font-bold rounded-lg transition-all ${
                   sortBy === val
                     ? "bg-[#00b4d8]/15 text-[#00b4d8]"
@@ -156,7 +164,10 @@ const SORT_BUTTON_LABEL =
               <button
                 key={opt}
                 type="button"
-                onClick={() => { onAccountTypeChange(opt); setOpenDropdown(null) }}
+                onClick={() => {
+                  onAccountTypeChange(opt);
+                  setOpenDropdown(null);
+                }}
                 className={`w-full text-left px-3 py-2 text-xs font-bold rounded-lg transition-all ${
                   accountType === opt
                     ? "bg-[#00b4d8]/15 text-[#00b4d8]"
@@ -199,5 +210,5 @@ const SORT_BUTTON_LABEL =
         </button>
       </div>
     </div>
-  )
+  );
 }

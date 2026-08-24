@@ -1,20 +1,21 @@
 "use client";
 
-import { useState } from "react";
-import Link from "next/link";
-import Image from "next/image";
-import { usePathname } from "next/navigation";
+import { WorkspaceSwitcher } from "@/components/layout/workspace-switcher";
 import {
-  Home,
-  FolderOpen,
-  Users,
-  Settings,
-  X,
   BarChart2,
   Calendar,
   ChevronLeft,
   ChevronRight,
+  FolderOpen,
+  Home,
+  Settings,
+  Users,
+  X,
 } from "lucide-react";
+import Image from "next/image";
+import Link from "next/link";
+import { usePathname } from "next/navigation";
+import { useState } from "react";
 
 const navigation = [
   { name: "Dashboard", href: "/dashboard", icon: Home },
@@ -66,10 +67,7 @@ export function DashboardSidebar({
     <>
       {/* Mobile sidebar overlay */}
       {mobileSidebarOpen && (
-        <div
-          className="fixed inset-0 z-40 bg-black/60 lg:hidden"
-          onClick={onMobileSidebarClose}
-        />
+        <div className="fixed inset-0 z-40 bg-black/60 lg:hidden" onClick={onMobileSidebarClose} />
       )}
 
       {/* Mobile Sidebar */}
@@ -96,7 +94,10 @@ export function DashboardSidebar({
             <X size={20} />
           </button>
         </div>
-        <nav className="flex-1 px-3 py-5 space-y-1.5 overflow-y-auto">
+        <div className="pt-2 pb-1 border-b border-white/10">
+          <WorkspaceSwitcher isCollapsed={false} />
+        </div>
+        <nav className="flex-1 px-3 py-4 space-y-1.5 overflow-y-auto">
           {navigation.map((item) => {
             const isActive =
               pathname === item.href ||
@@ -121,7 +122,9 @@ export function DashboardSidebar({
       </aside>
 
       {/* Desktop Sidebar (Collapsible with Hover Expansion) */}
-      <div className={`hidden lg:block relative flex-shrink-0 transition-all duration-300 ease-in-out ${sidebarWidth}`}>
+      <div
+        className={`hidden lg:block relative flex-shrink-0 transition-all duration-300 ease-in-out ${sidebarWidth}`}
+      >
         <aside
           onMouseEnter={handleMouseEnter}
           onMouseLeave={handleMouseLeave}
@@ -186,7 +189,11 @@ export function DashboardSidebar({
             )}
           </div>
 
-          <nav className="flex-1 px-3 py-5 space-y-2 overflow-y-auto">
+          <div className="pt-2 pb-1 border-b border-white/10">
+            <WorkspaceSwitcher isCollapsed={!isExpandedView} />
+          </div>
+
+          <nav className="flex-1 px-3 py-4 space-y-2 overflow-y-auto">
             {navigation.map((item) => {
               const isActive =
                 pathname === item.href ||
@@ -207,7 +214,9 @@ export function DashboardSidebar({
                   <item.icon
                     size={20}
                     className={`shrink-0 transition-transform duration-200 ${
-                      isActive ? "text-white scale-110" : "text-slate-400 group-hover:text-white group-hover:scale-110"
+                      isActive
+                        ? "text-white scale-110"
+                        : "text-slate-400 group-hover:text-white group-hover:scale-110"
                     }`}
                   />
                   {isExpandedView && (

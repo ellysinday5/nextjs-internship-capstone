@@ -1,14 +1,14 @@
 "use client";
 
+import { AuthIllustration } from "@/components/auth/auth-illustration";
+import { type SignUpFormValues, signUpSchema } from "@/lib/db/auth-schemas";
+import { useSignUp } from "@clerk/nextjs/legacy";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { AlertCircle, CheckCircle2, Eye, EyeOff } from "lucide-react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { useSignUp } from "@clerk/nextjs/legacy";
-import { useRouter } from "next/navigation";
-import Link from "next/link";
-import { Eye, EyeOff, AlertCircle, CheckCircle2 } from "lucide-react";
-import { signUpSchema, SignUpFormValues } from "@/lib/auth-schemas";
-import { AuthIllustration } from "@/components/auth/auth-illustration";
 
 function RequiredLabel({ htmlFor, children }: { htmlFor: string; children: React.ReactNode }) {
   return (
@@ -45,8 +45,9 @@ function PasswordStrength({ password }: { password: string }) {
       {checks.map((c) => (
         <div key={c.label} className="flex items-center gap-1">
           <CheckCircle2
-            className={`w-3 h-3 shrink-0 transition-colors ${c.pass ? "text-green-500" : "text-slate-300"
-              }`}
+            className={`w-3 h-3 shrink-0 transition-colors ${
+              c.pass ? "text-green-500" : "text-slate-300"
+            }`}
           />
           <span
             className={`text-[10px] font-medium truncate ${c.pass ? "text-green-600" : "text-slate-400"}`}
@@ -159,6 +160,7 @@ export default function SignUpPage() {
 
   return (
     <div className="min-h-screen w-full bg-[url('/bg-logo.png')] bg-cover bg-center bg-no-repeat flex items-center justify-center p-4 sm:p-6 md:p-10 font-sans relative">
+      <div id="clerk-captcha" />
       <div className="w-full max-w-[1040px] bg-white rounded-2xl shadow-2xl border border-slate-100 p-6 sm:p-8 md:p-10 flex flex-col md:flex-row items-center justify-between gap-8 md:gap-12 min-h-[500px]">
         <div className="w-full md:w-[380px] lg:w-[420px] h-[300px] sm:h-[340px] md:h-[400px] shrink-0 flex items-center justify-center">
           <AuthIllustration />
@@ -294,10 +296,11 @@ export default function SignUpPage() {
                       placeholder="First name"
                       suppressHydrationWarning
                       {...register("firstName")}
-                      className={`w-full bg-slate-100 border text-[#1e293b] placeholder:text-[#94a3b8] rounded-full px-4 py-2.5 text-sm font-medium outline-none transition-all focus:ring-2 focus:ring-[#00b4d8] focus:border-transparent ${errors.firstName
+                      className={`w-full bg-slate-100 border text-[#1e293b] placeholder:text-[#94a3b8] rounded-full px-4 py-2.5 text-sm font-medium outline-none transition-all focus:ring-2 focus:ring-[#00b4d8] focus:border-transparent ${
+                        errors.firstName
                           ? "border-red-400 bg-red-50 focus:ring-red-400"
                           : "border-slate-200"
-                        }`}
+                      }`}
                     />
                     <FieldError message={errors.firstName?.message} />
                   </div>
@@ -310,10 +313,11 @@ export default function SignUpPage() {
                       placeholder="Last name"
                       suppressHydrationWarning
                       {...register("lastName")}
-                      className={`w-full bg-slate-100 border text-[#1e293b] placeholder:text-[#94a3b8] rounded-full px-4 py-2.5 text-sm font-medium outline-none transition-all focus:ring-2 focus:ring-[#00b4d8] focus:border-transparent ${errors.lastName
+                      className={`w-full bg-slate-100 border text-[#1e293b] placeholder:text-[#94a3b8] rounded-full px-4 py-2.5 text-sm font-medium outline-none transition-all focus:ring-2 focus:ring-[#00b4d8] focus:border-transparent ${
+                        errors.lastName
                           ? "border-red-400 bg-red-50 focus:ring-red-400"
                           : "border-slate-200"
-                        }`}
+                      }`}
                     />
                     <FieldError message={errors.lastName?.message} />
                   </div>
@@ -335,10 +339,11 @@ export default function SignUpPage() {
                     placeholder="Enter your email address"
                     suppressHydrationWarning
                     {...register("email")}
-                    className={`w-full bg-slate-100 border text-[#1e293b] placeholder:text-[#94a3b8] rounded-full px-4 py-2.5 text-sm font-medium outline-none transition-all focus:ring-2 focus:ring-[#00b4d8] focus:border-transparent ${errors.email
+                    className={`w-full bg-slate-100 border text-[#1e293b] placeholder:text-[#94a3b8] rounded-full px-4 py-2.5 text-sm font-medium outline-none transition-all focus:ring-2 focus:ring-[#00b4d8] focus:border-transparent ${
+                      errors.email
                         ? "border-red-400 bg-red-50 focus:ring-red-400"
                         : "border-slate-200"
-                      }`}
+                    }`}
                   />
                   <FieldError message={errors.email?.message} />
                 </div>
@@ -353,10 +358,11 @@ export default function SignUpPage() {
                       placeholder="Create a password"
                       suppressHydrationWarning
                       {...register("password")}
-                      className={`w-full bg-slate-100 border text-[#1e293b] placeholder:text-[#94a3b8] rounded-full px-4 py-2.5 pr-11 text-sm font-medium outline-none transition-all focus:ring-2 focus:ring-[#00b4d8] focus:border-transparent ${errors.password
+                      className={`w-full bg-slate-100 border text-[#1e293b] placeholder:text-[#94a3b8] rounded-full px-4 py-2.5 pr-11 text-sm font-medium outline-none transition-all focus:ring-2 focus:ring-[#00b4d8] focus:border-transparent ${
+                        errors.password
                           ? "border-red-400 bg-red-50 focus:ring-red-400"
                           : "border-slate-200"
-                        }`}
+                      }`}
                     />
                     <button
                       type="button"
@@ -382,10 +388,11 @@ export default function SignUpPage() {
                       placeholder="Confirm your password"
                       suppressHydrationWarning
                       {...register("confirmPassword")}
-                      className={`w-full bg-slate-100 border text-[#1e293b] placeholder:text-[#94a3b8] rounded-full px-4 py-2.5 pr-11 text-sm font-medium outline-none transition-all focus:ring-2 focus:ring-[#00b4d8] focus:border-transparent ${errors.confirmPassword
+                      className={`w-full bg-slate-100 border text-[#1e293b] placeholder:text-[#94a3b8] rounded-full px-4 py-2.5 pr-11 text-sm font-medium outline-none transition-all focus:ring-2 focus:ring-[#00b4d8] focus:border-transparent ${
+                        errors.confirmPassword
                           ? "border-red-400 bg-red-50 focus:ring-red-400"
                           : "border-slate-200"
-                        }`}
+                      }`}
                     />
                     <button
                       type="button"

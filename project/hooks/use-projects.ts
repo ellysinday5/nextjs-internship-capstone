@@ -1,14 +1,14 @@
 "use client";
 
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
-  getProjectsAction,
-  createProjectAction,
-  updateProjectAction,
-  deleteProjectAction,
   type ProjectWithStats,
-} from "@/app/actions/project-actions";
+  createProjectAction,
+  deleteProjectAction,
+  getProjectsAction,
+  updateProjectAction,
+} from "@/actions/project-actions";
 import type { CreateProjectFormValues, UpdateProjectFormValues } from "@/lib/project-schemas";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 export function useProjects() {
   const queryClient = useQueryClient();

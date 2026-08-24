@@ -1,21 +1,20 @@
 "use client";
 
-import { useState } from "react";
+import type { TaskRecord } from "@/actions/task-actions";
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import {
-  CheckCircle2,
-  MessageSquare,
   Calendar,
-  GripVertical,
-  User,
-  CirclePlus,
-  Pencil,
-  MoreHorizontal,
-  Trash2,
+  CheckCircle2,
   Flag,
+  GripVertical,
+  MessageSquare,
+  MoreHorizontal,
+  Pencil,
+  Trash2,
+  User,
 } from "lucide-react";
-import type { TaskRecord } from "@/app/actions/task-actions";
+import { useState } from "react";
 
 type CardPriority = "low" | "medium" | "high";
 
@@ -30,7 +29,8 @@ export interface TaskCardProps {
 
 const PRIORITY_BADGE: Record<CardPriority, string> = {
   high: "bg-rose-50 text-rose-600 border border-rose-200 dark:bg-rose-950/30 dark:text-rose-400 dark:border-rose-900",
-  medium: "bg-amber-50 text-amber-600 border border-amber-200 dark:bg-amber-950/30 dark:text-amber-400 dark:border-amber-900",
+  medium:
+    "bg-amber-50 text-amber-600 border border-amber-200 dark:bg-amber-950/30 dark:text-amber-400 dark:border-amber-900",
   low: "bg-emerald-50 text-emerald-600 border border-emerald-200 dark:bg-emerald-950/30 dark:text-emerald-400 dark:border-emerald-900",
 };
 
@@ -51,7 +51,14 @@ function isOverdue(d: Date | null) {
 }
 
 /* ─── Plain display card ──────────────────────────────────────────────────── */
-export function TaskCard({ task, isDragging, onSelect, onDelete, onMarkComplete, onAddSubtask }: TaskCardProps) {
+export function TaskCard({
+  task,
+  isDragging,
+  onSelect,
+  onDelete,
+  onMarkComplete,
+  onAddSubtask,
+}: TaskCardProps) {
   const priority = normalizePriority(task.priority);
   const overdue = isOverdue(task.dueDate);
   const [moreOpen, setMoreOpen] = useState(false);
@@ -60,9 +67,10 @@ export function TaskCard({ task, isDragging, onSelect, onDelete, onMarkComplete,
     <div
       className={`group relative cursor-pointer rounded-xl border bg-white p-3.5 transition-all
         dark:bg-[#0f1d31]
-        ${isDragging
-          ? "rotate-1 scale-[1.02] opacity-80 shadow-2xl border-[#00b4d8]/60 dark:border-[#00b4d8]/40"
-          : "border-slate-200 shadow-sm hover:shadow-md hover:border-[#00b4d8]/40 dark:border-slate-700/60 dark:hover:border-[#00b4d8]/40"
+        ${
+          isDragging
+            ? "rotate-1 scale-[1.02] opacity-80 shadow-2xl border-[#00b4d8]/60 dark:border-[#00b4d8]/40"
+            : "border-slate-200 shadow-sm hover:shadow-md hover:border-[#00b4d8]/40 dark:border-slate-700/60 dark:hover:border-[#00b4d8]/40"
         }`}
       onClick={() => onSelect?.(task)}
     >
@@ -79,16 +87,6 @@ export function TaskCard({ task, isDragging, onSelect, onDelete, onMarkComplete,
           className="flex h-6 w-6 items-center justify-center rounded-md text-slate-400 hover:bg-emerald-50 hover:text-emerald-600 dark:hover:bg-emerald-950/30 transition-colors"
         >
           <CheckCircle2 size={14} />
-        </button>
-
-        {/* Add subtask */}
-        <button
-          type="button"
-          title="Add subtask"
-          onClick={() => onAddSubtask?.(task)}
-          className="flex h-6 w-6 items-center justify-center rounded-md text-slate-400 hover:bg-blue-50 hover:text-blue-600 dark:hover:bg-blue-950/30 transition-colors"
-        >
-          <CirclePlus size={14} />
         </button>
 
         {/* Edit (open detail pane) */}
@@ -115,7 +113,10 @@ export function TaskCard({ task, isDragging, onSelect, onDelete, onMarkComplete,
             <div className="absolute right-0 top-full mt-1 w-36 rounded-xl border border-slate-200 bg-white py-1 shadow-xl dark:border-slate-700 dark:bg-[#1a2f4a] z-30">
               <button
                 type="button"
-                onClick={() => { setMoreOpen(false); onDelete?.(task.id); }}
+                onClick={() => {
+                  setMoreOpen(false);
+                  onDelete?.(task.id);
+                }}
                 className="flex w-full items-center gap-2 px-3 py-2 text-xs font-semibold text-red-500 hover:bg-red-50 dark:hover:bg-red-950/30"
               >
                 <Trash2 size={12} /> Delete task
@@ -148,7 +149,9 @@ export function TaskCard({ task, isDragging, onSelect, onDelete, onMarkComplete,
       {/* Priority badge */}
       {priority && (
         <div className="mb-2 ml-[23px]">
-          <span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-bold ${PRIORITY_BADGE[priority]}`}>
+          <span
+            className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-bold ${PRIORITY_BADGE[priority]}`}
+          >
             <Flag size={9} className={PRIORITY_FLAG[priority]} />
             {priority.charAt(0).toUpperCase() + priority.slice(1)}
           </span>
@@ -172,9 +175,13 @@ export function TaskCard({ task, isDragging, onSelect, onDelete, onMarkComplete,
 
         <div className="flex items-center gap-2 text-[11px]">
           {task.dueDate && (
-            <span className={`flex items-center gap-1 font-semibold ${overdue ? "text-rose-500" : "text-slate-400 dark:text-slate-500"}`}>
+            <span
+              className={`flex items-center gap-1 font-semibold ${overdue ? "text-rose-500" : "text-slate-400 dark:text-slate-500"}`}
+            >
               <Calendar size={11} />
-              {new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric" }).format(new Date(task.dueDate))}
+              {new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric" }).format(
+                new Date(task.dueDate),
+              )}
             </span>
           )}
           {task.commentsCount > 0 && (
@@ -193,24 +200,18 @@ export function TaskCard({ task, isDragging, onSelect, onDelete, onMarkComplete,
 export function SortableTaskCard(props: TaskCardProps) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: props.task.id,
+    data: { type: "task", listId: props.task.listId },
   });
 
   return (
     <div
       ref={setNodeRef}
+      data-task-id={props.task.id}
       style={{ transform: CSS.Transform.toString(transform), transition }}
+      {...attributes}
+      {...listeners}
       className="relative group"
     >
-      {/* Drag grip */}
-      <div
-        {...attributes}
-        {...listeners}
-        className="absolute -left-2 top-1/2 -translate-y-1/2 z-10 cursor-grab rounded-md p-0.5 text-slate-300 opacity-0 transition-all hover:text-slate-500 group-hover:opacity-100 active:cursor-grabbing dark:text-slate-600 dark:hover:text-slate-400"
-        aria-label="Drag to reorder"
-        onClick={(e) => e.stopPropagation()}
-      >
-        <GripVertical size={14} />
-      </div>
       <TaskCard {...props} isDragging={isDragging} />
     </div>
   );

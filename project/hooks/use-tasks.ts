@@ -1,15 +1,15 @@
 "use client";
 
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
-  getProjectTasksAction,
-  createTaskAction,
-  updateTaskAction,
-  moveTaskAction,
-  deleteTaskAction,
   type TaskRecord,
-} from "@/app/actions/task-actions";
-import type { CreateTaskFormValues, UpdateTaskFormValues } from "@/lib/task-schemas";
+  createTaskAction,
+  deleteTaskAction,
+  getProjectTasksAction,
+  moveTaskAction,
+  updateTaskAction,
+} from "@/actions/task-actions";
+import type { CreateTaskFormValues, UpdateTaskFormValues } from "@/lib/db/task-schemas";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 export function useTasks(projectId: string) {
   const queryClient = useQueryClient();
@@ -32,7 +32,7 @@ export function useTasks(projectId: string) {
       await queryClient.cancelQueries({ queryKey });
       const previousTasks = queryClient.getQueryData<TaskRecord[]>(queryKey);
 
-     const optimisticTask: TaskRecord = {
+      const optimisticTask: TaskRecord = {
         id: `temp-${Date.now()}`,
         title: newTaskData.title,
         description: newTaskData.description ?? null,
@@ -40,8 +40,9 @@ export function useTasks(projectId: string) {
         assigneeId: newTaskData.assigneeId ?? null,
         assignee: null,
         priority: newTaskData.priority ?? null,
+        status: null,
         dueDate: newTaskData.dueDate ? new Date(newTaskData.dueDate) : null,
-        position: (previousTasks?.filter((t) => t.listId === newTaskData.listId).length ?? 0),
+        position: previousTasks?.filter((t) => t.listId === newTaskData.listId).length ?? 0,
         commentsCount: 0,
         createdAt: new Date(),
         updatedAt: new Date(),
@@ -73,7 +74,11 @@ export function useTasks(projectId: string) {
                 ...t,
                 ...data,
                 dueDate:
-                  data.dueDate === undefined ? t.dueDate : data.dueDate ? new Date(data.dueDate) : null,
+                  data.dueDate === undefined
+                    ? t.dueDate
+                    : data.dueDate
+                      ? new Date(data.dueDate)
+                      : null,
               }
             : t,
         ),
@@ -95,7 +100,9 @@ export function useTasks(projectId: string) {
       await queryClient.cancelQueries({ queryKey });
       const previousTasks = queryClient.getQueryData<TaskRecord[]>(queryKey);
 
-      queryClient.setQueryData<TaskRecord[]>(queryKey, (old = []) => old.filter((t) => t.id !== taskId));
+      queryClient.setQueryData<TaskRecord[]>(queryKey, (old = []) =>
+        old.filter((t) => t.id !== taskId),
+      );
       return { previousTasks };
     },
     onError: (_err, _taskId, context) => {

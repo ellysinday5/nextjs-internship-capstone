@@ -9,5 +9,3 @@ export function Footer() {
     </footer>
   );
 }
-
-

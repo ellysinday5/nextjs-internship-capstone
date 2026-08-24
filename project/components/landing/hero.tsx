@@ -1,5 +1,5 @@
-import Link from "next/link";
 import { ArrowRight, CheckCircle, Users, Zap } from "lucide-react";
+import Link from "next/link";
 
 export function Hero() {
   return (

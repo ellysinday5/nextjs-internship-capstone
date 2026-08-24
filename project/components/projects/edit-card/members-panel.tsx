@@ -1,24 +1,24 @@
 "use client";
 
-import React, { useState } from "react";
 import {
-  Plus,
-  X,
-  ChevronDown,
-  UserPlus,
-  ClipboardList,
-  Trash2,
-  Check,
-  GripVertical,
-} from "lucide-react";
-import {
-  TeamMember,
-  MemberRole,
-  MEMBER_ROLES,
-  SUGGESTED_DEVS,
   EditableProjectData,
+  MEMBER_ROLES,
+  type MemberRole,
+  SUGGESTED_DEVS,
+  type TeamMember,
 } from "@/lib/project-edit-types";
 import { sileo } from "@/utils/alerts";
+import {
+  Check,
+  ChevronDown,
+  ClipboardList,
+  GripVertical,
+  Plus,
+  Trash2,
+  UserPlus,
+  X,
+} from "lucide-react";
+import React, { useState } from "react";
 
 interface MembersPanelProps {
   members: TeamMember[];
@@ -62,9 +62,7 @@ export function MembersPanel({ members, setMembers, projectName }: MembersPanelP
   };
 
   const updateRole = (memberId: string, role: MemberRole) => {
-    setMembers(
-      members.map((m) => (m.id === memberId ? { ...m, role } : m))
-    );
+    setMembers(members.map((m) => (m.id === memberId ? { ...m, role } : m)));
   };
 
   const addTask = (memberId: string) => {
@@ -72,10 +70,8 @@ export function MembersPanel({ members, setMembers, projectName }: MembersPanelP
     if (!taskTitle) return;
     setMembers(
       members.map((m) =>
-        m.id === memberId
-          ? { ...m, assignedTasks: [...m.assignedTasks, taskTitle] }
-          : m
-      )
+        m.id === memberId ? { ...m, assignedTasks: [...m.assignedTasks, taskTitle] } : m,
+      ),
     );
     setNewTaskInputs((prev) => ({ ...prev, [memberId]: "" }));
     sileo.success(`Task assigned!`, "Task Assigned");
@@ -86,8 +82,8 @@ export function MembersPanel({ members, setMembers, projectName }: MembersPanelP
       members.map((m) =>
         m.id === memberId
           ? { ...m, assignedTasks: m.assignedTasks.filter((_, i) => i !== taskIdx) }
-          : m
-      )
+          : m,
+      ),
     );
   };
 
@@ -125,11 +121,15 @@ export function MembersPanel({ members, setMembers, projectName }: MembersPanelP
                       : "border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 hover:border-blue-400 hover:bg-blue-50 dark:hover:bg-blue-950/30 cursor-pointer"
                   }`}
                 >
-                  <span className={`w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold ${AVATAR_COLORS[0]}`}>
+                  <span
+                    className={`w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold ${AVATAR_COLORS[0]}`}
+                  >
                     {dev.initials}
                   </span>
                   <span className="truncate text-slate-800 dark:text-slate-100">{dev.name}</span>
-                  {alreadyAdded && <Check size={12} className="ml-auto text-emerald-500 shrink-0" />}
+                  {alreadyAdded && (
+                    <Check size={12} className="ml-auto text-emerald-500 shrink-0" />
+                  )}
                 </button>
               );
             })}
@@ -180,7 +180,10 @@ export function MembersPanel({ members, setMembers, projectName }: MembersPanelP
                           </option>
                         ))}
                       </select>
-                      <ChevronDown size={10} className="absolute right-0 top-0.5 text-blue-400 pointer-events-none" />
+                      <ChevronDown
+                        size={10}
+                        className="absolute right-0 top-0.5 text-blue-400 pointer-events-none"
+                      />
                     </div>
                   </div>
 

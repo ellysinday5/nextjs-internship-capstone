@@ -1,10 +1,10 @@
 "use client";
 
+import type { TaskItem } from "@/components/tasks/task-details";
+import { ChevronLeft, ChevronRight, Plus } from "lucide-react";
 import React, { useState } from "react";
-import { Plus, ChevronLeft, ChevronRight } from "lucide-react";
-import { TaskItem } from "@/components/tasks/task-details";
 import { ProjectToolbar } from "./project-toolbar";
-import { Section } from "./types";
+import type { Section } from "./types";
 
 interface CalendarTabProps {
   sections: Section[];
@@ -36,17 +36,14 @@ function buildCalendarDays(year: number, month: number, allTasks: TaskItem[]) {
       if (!t.dueDate) return false;
       const parts = t.dueDate.split("–");
       const endStr = (parts[1] || parts[0]).trim();
-      const endNum = parseInt(endStr);
+      const endNum = Number.parseInt(endStr);
       return endNum === d;
     });
 
     cells.push({
       num: d,
       isCurrentMonth: true,
-      isToday:
-        today.getFullYear() === year &&
-        today.getMonth() === month &&
-        today.getDate() === d,
+      isToday: today.getFullYear() === year && today.getMonth() === month && today.getDate() === d,
       task: matchingTask,
     });
   }
@@ -60,11 +57,7 @@ function buildCalendarDays(year: number, month: number, allTasks: TaskItem[]) {
   return cells;
 }
 
-export function CalendarTab({
-  sections,
-  onSelectTask,
-  onAddTask,
-}: CalendarTabProps) {
+export function CalendarTab({ sections, onSelectTask, onAddTask }: CalendarTabProps) {
   const now = new Date();
   const [viewYear, setViewYear] = useState(now.getFullYear());
   const [viewMonth, setViewMonth] = useState(now.getMonth());
@@ -75,12 +68,16 @@ export function CalendarTab({
   const [selectedStatusFilter, setSelectedStatusFilter] = useState("All");
   const [sortBy, setSortBy] = useState<"default" | "name" | "priority">("default");
 
-  const allTasks = sections.flatMap((s) => s.tasks).filter((task) => {
-    const matchesSearch = !searchQuery.trim() || task.title.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesPriority = selectedPriorityFilter === "All" || task.priority === selectedPriorityFilter;
-    const matchesStatus = selectedStatusFilter === "All" || task.status === selectedStatusFilter;
-    return matchesSearch && matchesPriority && matchesStatus;
-  });
+  const allTasks = sections
+    .flatMap((s) => s.tasks)
+    .filter((task) => {
+      const matchesSearch =
+        !searchQuery.trim() || task.title.toLowerCase().includes(searchQuery.toLowerCase());
+      const matchesPriority =
+        selectedPriorityFilter === "All" || task.priority === selectedPriorityFilter;
+      const matchesStatus = selectedStatusFilter === "All" || task.status === selectedStatusFilter;
+      return matchesSearch && matchesPriority && matchesStatus;
+    });
 
   const daysOfWeek = ["SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"];
   const calendarDays = buildCalendarDays(viewYear, viewMonth, allTasks);
@@ -187,8 +184,8 @@ export function CalendarTab({
                       day.isToday
                         ? "flex h-6 w-6 items-center justify-center rounded-full bg-blue-600 text-white"
                         : day.isCurrentMonth
-                        ? "text-slate-700 dark:text-slate-200"
-                        : "text-slate-300 dark:text-slate-700"
+                          ? "text-slate-700 dark:text-slate-200"
+                          : "text-slate-300 dark:text-slate-700"
                     }`}
                   >
                     {day.num}
