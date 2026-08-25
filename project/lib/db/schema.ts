@@ -164,10 +164,33 @@ export const tasks = pgTable("tasks", {
   status: text("status").default("On track"),
   dueDate: timestamp("due_date"),
   position: integer("position").notNull(),
+  isPublic: boolean("is_public").notNull().default(false),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
   completedAt: timestamp("completed_at"),
 });
+
+// ============================================
+// TASK SHARED TEAMS (Private task sharing with specific teams)
+// ============================================
+export const taskSharedTeams = pgTable(
+  "task_shared_teams",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    taskId: uuid("task_id")
+      .references(() => tasks.id, { onDelete: "cascade" })
+      .notNull(),
+    teamId: uuid("team_id")
+      .references(() => projects.id, { onDelete: "cascade" })
+      .notNull(),
+    createdAt: timestamp("created_at").defaultNow(),
+  },
+  (t) => [
+    uniqueIndex("task_shared_teams_task_team_uidx").on(t.taskId, t.teamId),
+    index("task_shared_teams_task_id_idx").on(t.taskId),
+    index("task_shared_teams_team_id_idx").on(t.teamId),
+  ],
+);
 
 // ============================================
 // ============================================
@@ -309,6 +332,7 @@ export const projectsRelations = relations(projects, ({ one, many }) => ({
   members: many(projectMembers),
   lists: many(lists),
   invites: many(invites),
+  sharedTasks: many(taskSharedTeams),
 }));
 
 export const projectMembersRelations = relations(projectMembers, ({ one }) => ({
@@ -340,6 +364,18 @@ export const tasksRelations = relations(tasks, ({ one, many }) => ({
     references: [users.id],
   }),
   comments: many(comments),
+  sharedTeams: many(taskSharedTeams),
+}));
+
+export const taskSharedTeamsRelations = relations(taskSharedTeams, ({ one }) => ({
+  task: one(tasks, {
+    fields: [taskSharedTeams.taskId],
+    references: [tasks.id],
+  }),
+  team: one(projects, {
+    fields: [taskSharedTeams.teamId],
+    references: [projects.id],
+  }),
 }));
 
 export const commentsRelations = relations(comments, ({ one, many }) => ({

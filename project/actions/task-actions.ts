@@ -8,6 +8,7 @@ import {
   lists,
   projectMembers,
   projects,
+  taskSharedTeams,
   tasks,
   users,
   workspaces,
@@ -21,13 +22,18 @@ import {
   updateTaskSchema,
 } from "@/lib/db/task-schemas";
 import { isTaskCompleted } from "@/lib/project-stats";
-import { and, asc, eq, inArray, sql } from "drizzle-orm";
+import { and, asc, eq, inArray, isNotNull, ne, or, sql } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 
 export interface TaskAssignee {
   id: string;
   name: string;
   email: string;
+}
+
+export interface SharedTeamRecord {
+  id: string;
+  name: string;
 }
 
 export interface TaskRecord {
@@ -42,6 +48,8 @@ export interface TaskRecord {
   dueDate: Date | null;
   position: number;
   commentsCount: number;
+  isPublic: boolean;
+  sharedTeams?: SharedTeamRecord[];
   createdAt: Date | null;
   updatedAt: Date | null;
   /** Set when status transitions TO "Complete"; cleared when reopened. */
@@ -83,7 +91,45 @@ async function assertProjectAccess(projectId: string, userId: string): Promise<b
   return false;
 }
 
-/* Get all tasks for a project — joined with assignee + comment counts */
+export async function assertTaskReadAccess(taskId: string, userId: string): Promise<boolean> {
+  const [task] = await db
+    .select({
+      id: tasks.id,
+      isPublic: tasks.isPublic,
+      listId: tasks.listId,
+    })
+    .from(tasks)
+    .where(eq(tasks.id, taskId));
+
+  if (!task) return false;
+  if (task.isPublic) return true;
+
+  const projectId = await getProjectIdForList(task.listId);
+  if (projectId) {
+    const hasProjectAccess = await assertProjectAccess(projectId, userId);
+    if (hasProjectAccess) return true;
+  }
+
+  // Check if user belongs to any explicitly shared team
+  const sharedMemberships = await db
+    .select({ id: taskSharedTeams.id })
+    .from(taskSharedTeams)
+    .innerJoin(projects, eq(taskSharedTeams.teamId, projects.id))
+    .leftJoin(
+      projectMembers,
+      and(eq(projectMembers.projectId, projects.id), eq(projectMembers.userId, userId)),
+    )
+    .where(
+      and(
+        eq(taskSharedTeams.taskId, taskId),
+        or(eq(projects.ownerId, userId), isNotNull(projectMembers.id)),
+      ),
+    );
+
+  return sharedMemberships.length > 0;
+}
+
+/* Get all tasks for a project — joined with assignee, comment counts, and shared teams */
 export async function getProjectTasksAction(projectId: string): Promise<TaskRecord[]> {
   try {
     const user = await syncUser();
@@ -103,6 +149,7 @@ export async function getProjectTasksAction(projectId: string): Promise<TaskReco
         status: tasks.status,
         dueDate: tasks.dueDate,
         position: tasks.position,
+        isPublic: tasks.isPublic,
         createdAt: tasks.createdAt,
         updatedAt: tasks.updatedAt,
         completedAt: tasks.completedAt,
@@ -117,6 +164,27 @@ export async function getProjectTasksAction(projectId: string): Promise<TaskReco
       .leftJoin(users, eq(tasks.assigneeId, users.id))
       .where(eq(lists.projectId, projectId))
       .orderBy(asc(tasks.position));
+
+    const taskIds = rows.map((r) => r.id);
+    const sharedTeamsMap = new Map<string, SharedTeamRecord[]>();
+
+    if (taskIds.length > 0) {
+      const sharedRows = await db
+        .select({
+          taskId: taskSharedTeams.taskId,
+          teamId: projects.id,
+          teamName: projects.name,
+        })
+        .from(taskSharedTeams)
+        .innerJoin(projects, eq(taskSharedTeams.teamId, projects.id))
+        .where(inArray(taskSharedTeams.taskId, taskIds));
+
+      for (const sr of sharedRows) {
+        const list = sharedTeamsMap.get(sr.taskId) || [];
+        list.push({ id: sr.teamId, name: sr.teamName });
+        sharedTeamsMap.set(sr.taskId, list);
+      }
+    }
 
     return rows.map((r) => ({
       id: r.id,
@@ -133,6 +201,8 @@ export async function getProjectTasksAction(projectId: string): Promise<TaskReco
       dueDate: r.dueDate,
       position: r.position,
       commentsCount: r.commentsCount,
+      isPublic: r.isPublic ?? false,
+      sharedTeams: sharedTeamsMap.get(r.id) || [],
       createdAt: r.createdAt,
       updatedAt: r.updatedAt,
       completedAt: r.completedAt,
@@ -364,3 +434,315 @@ export async function deleteTaskAction(taskId: string) {
     return { success: false, error: "Failed to delete task." };
   }
 }
+
+export interface BatchedProjectTaskRecord extends TaskRecord {
+  projectId: string;
+  projectName: string;
+}
+
+/* Batched query to fetch tasks across multiple project IDs in a single query */
+export async function getTasksForProjectsAction(
+  projectIds: string[],
+): Promise<BatchedProjectTaskRecord[]> {
+  try {
+    if (!projectIds || projectIds.length === 0) return [];
+
+    const user = await syncUser();
+    if (!user) return [];
+
+    const rows = await db
+      .select({
+        id: tasks.id,
+        title: tasks.title,
+        description: tasks.description,
+        listId: tasks.listId,
+        assigneeId: tasks.assigneeId,
+        priority: tasks.priority,
+        status: tasks.status,
+        dueDate: tasks.dueDate,
+        position: tasks.position,
+        createdAt: tasks.createdAt,
+        updatedAt: tasks.updatedAt,
+        completedAt: tasks.completedAt,
+        assigneeName: users.name,
+        assigneeEmail: users.email,
+        commentsCount: sql<number>`(
+          select count(*)::int from ${comments} where ${comments.taskId} = ${tasks.id}
+        )`,
+        projectId: projects.id,
+        projectName: projects.name,
+      })
+      .from(tasks)
+      .innerJoin(lists, eq(tasks.listId, lists.id))
+      .innerJoin(projects, eq(lists.projectId, projects.id))
+      .leftJoin(users, eq(tasks.assigneeId, users.id))
+      .where(inArray(projects.id, projectIds))
+      .orderBy(asc(tasks.dueDate), asc(tasks.position));
+
+    return rows.map((r) => ({
+      id: r.id,
+      title: r.title,
+      description: r.description,
+      listId: r.listId,
+      assigneeId: r.assigneeId,
+      assignee:
+        r.assigneeId && r.assigneeName && r.assigneeEmail
+          ? { id: r.assigneeId, name: r.assigneeName, email: r.assigneeEmail }
+          : null,
+      priority: r.priority,
+      status: r.status,
+      dueDate: r.dueDate,
+      position: r.position,
+      commentsCount: r.commentsCount,
+      isPublic: false,
+      createdAt: r.createdAt,
+      updatedAt: r.updatedAt,
+      completedAt: r.completedAt,
+      projectId: r.projectId,
+      projectName: r.projectName,
+    }));
+  } catch (error) {
+    console.error("[getTasksForProjectsAction] Error fetching batched tasks:", error);
+    return [];
+  }
+}
+
+/* Toggle task visibility between Public and Private */
+export async function toggleTaskVisibilityAction(taskId: string, makePublic?: boolean) {
+  try {
+    const user = await syncUser();
+    if (!user) return { success: false, error: "Unauthorized. Please sign in." };
+
+    const [task] = await db
+      .select({ id: tasks.id, listId: tasks.listId, isPublic: tasks.isPublic })
+      .from(tasks)
+      .where(eq(tasks.id, taskId));
+
+    if (!task) return { success: false, error: "Task not found." };
+
+    const projectId = await getProjectIdForList(task.listId);
+    if (!projectId) return { success: false, error: "Project not found." };
+
+    const hasAccess = await assertProjectAccess(projectId, user.id);
+    if (!hasAccess) return { success: false, error: "Access denied." };
+
+    const nextIsPublic = makePublic !== undefined ? makePublic : !task.isPublic;
+
+    const [updated] = await db
+      .update(tasks)
+      .set({ isPublic: nextIsPublic, updatedAt: new Date() })
+      .where(eq(tasks.id, taskId))
+      .returning({ isPublic: tasks.isPublic });
+
+    revalidatePath(`/projects/${projectId}`);
+    return { success: true, isPublic: updated?.isPublic ?? nextIsPublic };
+  } catch (error: unknown) {
+    console.error("[toggleTaskVisibilityAction] Error:", error);
+    return { success: false, error: "Failed to update task visibility." };
+  }
+}
+
+export interface TaskPrivacyResult {
+  success: boolean;
+  error?: string;
+  isPublic?: boolean;
+  sharedTeams?: SharedTeamRecord[];
+  availableTeams?: SharedTeamRecord[];
+}
+
+/* Get current privacy state, shared teams, and candidate teams in the workspace */
+export async function getTaskPrivacyAction(taskId: string): Promise<TaskPrivacyResult> {
+  try {
+    const user = await syncUser();
+    if (!user) return { success: false, error: "Unauthorized." };
+
+    const [task] = await db
+      .select({ id: tasks.id, listId: tasks.listId, isPublic: tasks.isPublic })
+      .from(tasks)
+      .where(eq(tasks.id, taskId));
+
+    if (!task) return { success: false, error: "Task not found." };
+
+    const projectId = await getProjectIdForList(task.listId);
+    if (!projectId) return { success: false, error: "Project not found." };
+
+    const hasAccess = await assertProjectAccess(projectId, user.id);
+    if (!hasAccess) return { success: false, error: "Access denied." };
+
+    // Get current shared teams
+    const shared = await db
+      .select({
+        id: projects.id,
+        name: projects.name,
+      })
+      .from(taskSharedTeams)
+      .innerJoin(projects, eq(taskSharedTeams.teamId, projects.id))
+      .where(eq(taskSharedTeams.taskId, taskId));
+
+    // Get project's workspace to find other teams in the same workspace
+    const [currProject] = await db
+      .select({ workspaceId: projects.workspaceId })
+      .from(projects)
+      .where(eq(projects.id, projectId));
+
+    let availableTeams: SharedTeamRecord[] = [];
+    if (currProject?.workspaceId) {
+      availableTeams = await db
+        .select({ id: projects.id, name: projects.name })
+        .from(projects)
+        .where(
+          and(
+            eq(projects.workspaceId, currProject.workspaceId),
+            ne(projects.id, projectId),
+          ),
+        )
+        .orderBy(asc(projects.name));
+    } else {
+      // Fallback: other projects user owns/belongs to
+      availableTeams = await db
+        .select({ id: projects.id, name: projects.name })
+        .from(projects)
+        .where(and(eq(projects.ownerId, user.id), ne(projects.id, projectId)))
+        .orderBy(asc(projects.name));
+    }
+
+    return {
+      success: true,
+      isPublic: task.isPublic,
+      sharedTeams: shared,
+      availableTeams,
+    };
+  } catch (error) {
+    console.error("[getTaskPrivacyAction] Error:", error);
+    return { success: false, error: "Failed to fetch task privacy data." };
+  }
+}
+
+/* Update the teams that this private task is explicitly shared with */
+export async function setTaskSharedTeamsAction(taskId: string, teamIds: string[]) {
+  try {
+    const user = await syncUser();
+    if (!user) return { success: false, error: "Unauthorized. Please sign in." };
+
+    const [task] = await db
+      .select({ id: tasks.id, listId: tasks.listId })
+      .from(tasks)
+      .where(eq(tasks.id, taskId));
+
+    if (!task) return { success: false, error: "Task not found." };
+
+    const projectId = await getProjectIdForList(task.listId);
+    if (!projectId) return { success: false, error: "Project not found." };
+
+    const hasAccess = await assertProjectAccess(projectId, user.id);
+    if (!hasAccess) return { success: false, error: "Access denied." };
+
+    await db.transaction(async (tx) => {
+      await tx.delete(taskSharedTeams).where(eq(taskSharedTeams.taskId, taskId));
+
+      const validTeamIds = Array.from(new Set(teamIds.filter((t) => t && t.trim()))).filter(
+        (t) => t !== projectId,
+      );
+
+      if (validTeamIds.length > 0) {
+        await tx.insert(taskSharedTeams).values(
+          validTeamIds.map((teamId) => ({
+            taskId,
+            teamId,
+          })),
+        );
+      }
+    });
+
+    const updatedShared = await db
+      .select({
+        id: projects.id,
+        name: projects.name,
+      })
+      .from(taskSharedTeams)
+      .innerJoin(projects, eq(taskSharedTeams.teamId, projects.id))
+      .where(eq(taskSharedTeams.taskId, taskId));
+
+    revalidatePath(`/projects/${projectId}`);
+    return { success: true, sharedTeams: updatedShared };
+  } catch (error) {
+    console.error("[setTaskSharedTeamsAction] Error:", error);
+    return { success: false, error: "Failed to update shared teams." };
+  }
+}
+
+/* Get single task details with permissions & privacy check */
+export async function getTaskDetailsAction(taskId: string) {
+  try {
+    const user = await syncUser();
+    if (!user) return { success: false, error: "Unauthorized." };
+
+    const hasReadAccess = await assertTaskReadAccess(taskId, user.id);
+    if (!hasReadAccess) return { success: false, error: "Access denied." };
+
+    const [r] = await db
+      .select({
+        id: tasks.id,
+        title: tasks.title,
+        description: tasks.description,
+        listId: tasks.listId,
+        assigneeId: tasks.assigneeId,
+        priority: tasks.priority,
+        status: tasks.status,
+        dueDate: tasks.dueDate,
+        position: tasks.position,
+        isPublic: tasks.isPublic,
+        createdAt: tasks.createdAt,
+        updatedAt: tasks.updatedAt,
+        completedAt: tasks.completedAt,
+        assigneeName: users.name,
+        assigneeEmail: users.email,
+        commentsCount: sql<number>`(
+          select count(*)::int from ${comments} where ${comments.taskId} = ${tasks.id}
+        )`,
+      })
+      .from(tasks)
+      .leftJoin(users, eq(tasks.assigneeId, users.id))
+      .where(eq(tasks.id, taskId));
+
+    if (!r) return { success: false, error: "Task not found." };
+
+    const shared = await db
+      .select({
+        id: projects.id,
+        name: projects.name,
+      })
+      .from(taskSharedTeams)
+      .innerJoin(projects, eq(taskSharedTeams.teamId, projects.id))
+      .where(eq(taskSharedTeams.taskId, taskId));
+
+    return {
+      success: true,
+      task: {
+        id: r.id,
+        title: r.title,
+        description: r.description,
+        listId: r.listId,
+        assigneeId: r.assigneeId,
+        assignee:
+          r.assigneeId && r.assigneeName && r.assigneeEmail
+            ? { id: r.assigneeId, name: r.assigneeName, email: r.assigneeEmail }
+            : null,
+        priority: r.priority,
+        status: r.status,
+        dueDate: r.dueDate,
+        position: r.position,
+        commentsCount: r.commentsCount,
+        isPublic: r.isPublic ?? false,
+        sharedTeams: shared,
+        createdAt: r.createdAt,
+        updatedAt: r.updatedAt,
+        completedAt: r.completedAt,
+      },
+    };
+  } catch (error) {
+    console.error("[getTaskDetailsAction] Error:", error);
+    return { success: false, error: "Failed to fetch task details." };
+  }
+}
+

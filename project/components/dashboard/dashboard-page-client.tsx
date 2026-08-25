@@ -1,146 +1,227 @@
 "use client";
 
+import { getRecentNotificationsAction } from "@/actions/notification-actions";
 import { type ProjectWithStats, getProjectsAction } from "@/actions/project-actions";
+import {
+  type BatchedProjectTaskRecord,
+  getTasksForProjectsAction,
+} from "@/actions/task-actions";
 import { AddMemberModal } from "@/components/modals/add-member-modal";
 import { CreateProjectModal } from "@/components/modals/create-project-modal";
 import { CreateTaskModal } from "@/components/modals/create-task-modal";
+import { isTaskCompleted } from "@/lib/project-stats";
 import { useUser } from "@clerk/nextjs";
 import {
   Activity,
   AlertCircle,
   ArrowUpRight,
+  Calendar,
+  CalendarPlus,
   CheckCircle2,
   Clock,
-  Plus,
-  Search,
+  FolderPlus,
+  ListPlus,
   TrendingUp,
-  Upload,
+  UserPlus,
   Users,
 } from "lucide-react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 
-const STATS = [
-  {
-    name: "Active Projects",
-    value: "12",
-    change: "+2.5%",
-    icon: TrendingUp,
-    color: "bg-[#54c5d0]",
-  },
-  { name: "Team Members", value: "24", change: "+4.1%", icon: Users, color: "bg-[#6c7fd8]" },
-  {
-    name: "Completed Tasks",
-    value: "156",
-    change: "+12.3%",
-    icon: CheckCircle2,
-    color: "bg-[#52cba3]",
-  },
-  {
-    name: "Pending Tasks",
-    value: "43",
-    change: "-2.1%",
-    icon: Clock,
-    color: "bg-[#e98c6a]",
-    highlight: true,
-  },
-];
-
-const RECENT_PROJECTS = [
-  {
-    id: 1,
-    name: "Website Redesign",
-    updated: "2 hours ago",
-    progress: 75,
-    members: 4,
-    status: "In Progress",
-  },
-  {
-    id: 2,
-    name: "Mobile App v2.0",
-    updated: "5 hours ago",
-    progress: 85,
-    members: 6,
-    status: "In Progress",
-  },
-  {
-    id: 3,
-    name: "API Integration",
-    updated: "1 day ago",
-    progress: 60,
-    members: 3,
-    status: "In Progress",
-  },
-];
-
-const ACTIVITIES = [
-  {
-    id: 1,
-    user: "Alice",
-    action: "created task",
-    target: "Fix login bug",
-    time: "5 min ago",
-    color: "bg-blue-500",
-  },
-  {
-    id: 2,
-    user: "Bob",
-    action: "completed",
-    target: "API docs update",
-    time: "20 min ago",
-    color: "bg-green-500",
-  },
-  {
-    id: 3,
-    user: "Clara",
-    action: "joined project",
-    target: "Mobile App v2.0",
-    time: "1 hr ago",
-    color: "bg-purple-500",
-  },
-  {
-    id: 4,
-    user: "Dave",
-    action: "commented on",
-    target: "Website Redesign",
-    time: "2 hr ago",
-    color: "bg-orange-500",
-  },
-];
-
-const DEADLINES = [
-  { id: 1, task: "Q3 Report Draft", due: "Jul 30", priority: "High", overdue: false },
-  { id: 2, task: "Design Review", due: "Jul 28", priority: "Medium", overdue: false },
-  { id: 3, task: "API Endpoint Specs", due: "Jul 26", priority: "High", overdue: true },
-];
-
 const PRIORITY_COLOR: Record<string, string> = {
-  High: "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400",
-  Medium: "bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400",
-  Low: "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400",
+  High: "bg-red-50 text-red-700 border-red-200 dark:bg-red-950/40 dark:text-red-400 dark:border-red-800",
+  Urgent: "bg-rose-50 text-rose-700 border-rose-200 dark:bg-rose-950/40 dark:text-rose-400 dark:border-rose-800",
+  Medium: "bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-950/40 dark:text-amber-400 dark:border-amber-800",
+  Low: "bg-slate-50 text-slate-700 border-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:border-slate-700",
 };
+
+const AVATAR_COLORS = [
+  "bg-[#0033a0] text-white",
+  "bg-emerald-600 text-white",
+  "bg-violet-600 text-white",
+  "bg-amber-600 text-white",
+  "bg-cyan-600 text-white",
+  "bg-rose-600 text-white",
+];
+
+function getAvatarColor(name: string): string {
+  let hash = 0;
+  for (let i = 0; i < name.length; i++) {
+    hash = name.charCodeAt(i) + ((hash << 5) - hash);
+  }
+  return AVATAR_COLORS[Math.abs(hash) % AVATAR_COLORS.length];
+}
+
+function formatRelativeTime(dateInput: Date | string | null | undefined): string {
+  if (!dateInput) return "Recently";
+  const date = new Date(dateInput);
+  const now = new Date();
+  const diffInSeconds = Math.floor((now.getTime() - date.getTime()) / 1000);
+
+  if (diffInSeconds < 60) return "Just now";
+  const diffInMinutes = Math.floor(diffInSeconds / 60);
+  if (diffInMinutes < 60) return `${diffInMinutes}m ago`;
+  const diffInHours = Math.floor(diffInMinutes / 60);
+  if (diffInHours < 24) return `${diffInHours}h ago`;
+  const diffInDays = Math.floor(diffInHours / 24);
+  if (diffInDays === 1) return "Yesterday";
+  if (diffInDays < 7) return `${diffInDays}d ago`;
+  return date.toLocaleDateString("en-US", { month: "short", day: "numeric" });
+}
+
+function formatDueDate(dueDateInput: Date | string): { text: string; overdue: boolean } {
+  const due = new Date(dueDateInput);
+  const now = new Date();
+  // Set both to start of day for comparison
+  const dueMidnight = new Date(due.getFullYear(), due.getMonth(), due.getDate());
+  const todayMidnight = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+
+  const overdue = dueMidnight.getTime() < todayMidnight.getTime();
+  const diffDays = Math.round((dueMidnight.getTime() - todayMidnight.getTime()) / (1000 * 60 * 60 * 24));
+
+  let text = due.toLocaleDateString("en-US", { month: "short", day: "numeric" });
+  if (diffDays === 0) {
+    text = "Due Today";
+  } else if (diffDays === 1) {
+    text = "Due Tomorrow";
+  } else if (overdue) {
+    text = `Overdue · ${text}`;
+  } else {
+    text = `Due ${text}`;
+  }
+
+  return { text, overdue };
+}
 
 interface ProjectOption {
   id: string;
   name: string;
 }
 
+interface ActivityItem {
+  id: string;
+  userName: string;
+  userInitials: string;
+  action: string;
+  target: string;
+  time: string;
+  color: string;
+  href?: string | null;
+}
+
+interface DeadlineItem {
+  id: string;
+  title: string;
+  projectName: string;
+  projectId: string;
+  dueText: string;
+  priority: string;
+  overdue: boolean;
+}
+
 export function DashboardPageClient() {
+  const router = useRouter();
   const { user } = useUser();
-  const [search, setSearch] = useState("");
   const [modal, setModal] = useState<"project" | "member" | "task" | null>(null);
   const [dbProjects, setDbProjects] = useState<ProjectWithStats[]>([]);
   const [projectOptions, setProjectOptions] = useState<ProjectOption[]>([]);
+  const [activities, setActivities] = useState<ActivityItem[]>([]);
+  const [deadlines, setDeadlines] = useState<DeadlineItem[]>([]);
+  const [loadingData, setLoadingData] = useState(true);
 
   const email = user?.primaryEmailAddress?.emailAddress || user?.emailAddresses?.[0]?.emailAddress;
   const emailPrefix = email ? email.split("@")[0] : "";
   const greetingName = user?.firstName || user?.fullName || user?.username || emailPrefix || "User";
 
   useEffect(() => {
-    getProjectsAction().then((projects) => {
-      setDbProjects(projects);
-      setProjectOptions(projects.map((p) => ({ id: p.id, name: p.name })));
-    });
+    let isMounted = true;
+    setLoadingData(true);
+
+    Promise.all([
+      getProjectsAction(),
+      getRecentNotificationsAction(8),
+    ])
+      .then(async ([projects, notificationsRes]) => {
+        if (!isMounted) return;
+
+        setDbProjects(projects);
+        setProjectOptions(projects.map((p) => ({ id: p.id, name: p.name })));
+
+        // 1. Process Real Recent Activity from workspace notifications
+        if (notificationsRes?.success && Array.isArray(notificationsRes.data)) {
+          const mappedActivities: ActivityItem[] = notificationsRes.data.map((n) => {
+            const rawName = n.actor?.name || "Workspace Member";
+            const initials = rawName
+              .split(" ")
+              .map((w) => w[0])
+              .filter(Boolean)
+              .slice(0, 2)
+              .join("")
+              .toUpperCase() || "WM";
+
+            return {
+              id: n.id,
+              userName: rawName,
+              userInitials: initials,
+              action: n.title || "activity in",
+              target: n.message || "workspace updates",
+              time: formatRelativeTime(n.createdAt),
+              color: getAvatarColor(rawName),
+              href: n.href,
+            };
+          });
+          setActivities(mappedActivities);
+        }
+
+        // 2. Process Real Upcoming Deadlines (batched across all workspace projects)
+        const projectIds = projects.map((p) => p.id);
+        if (projectIds.length > 0) {
+          const allTasks: BatchedProjectTaskRecord[] = await getTasksForProjectsAction(projectIds);
+          
+          if (!isMounted) return;
+
+          // Filter out completed tasks using canonical isTaskCompleted helper
+          const activeTasksWithDates = allTasks.filter(
+            (t) => t.dueDate && !isTaskCompleted(t.status)
+          );
+
+          // Sort by due date ascending
+          activeTasksWithDates.sort((a, b) => {
+            const dateA = a.dueDate ? new Date(a.dueDate).getTime() : 0;
+            const dateB = b.dueDate ? new Date(b.dueDate).getTime() : 0;
+            return dateA - dateB;
+          });
+
+          // Top 5 upcoming deadlines
+          const mappedDeadlines: DeadlineItem[] = activeTasksWithDates.slice(0, 5).map((t) => {
+            const { text, overdue } = formatDueDate(t.dueDate!);
+            return {
+              id: t.id,
+              title: t.title,
+              projectName: t.projectName,
+              projectId: t.projectId,
+              dueText: text,
+              priority: t.priority || "Medium",
+              overdue,
+            };
+          });
+
+          setDeadlines(mappedDeadlines);
+        } else {
+          setDeadlines([]);
+        }
+      })
+      .catch((err) => {
+        console.error("[Dashboard] Error loading data:", err);
+      })
+      .finally(() => {
+        if (isMounted) setLoadingData(false);
+      });
+
+    return () => {
+      isMounted = false;
+    };
   }, []);
 
   const totalProjects = dbProjects.length;
@@ -154,7 +235,7 @@ export function DashboardPageClient() {
       value: String(totalProjects),
       change: "+2.5%",
       icon: TrendingUp,
-      color: "bg-[#54c5d0]",
+      color: "bg-[#0033a0]",
     },
     {
       name: "Total Tasks",
@@ -168,14 +249,14 @@ export function DashboardPageClient() {
       value: String(completedTasks),
       change: "+12.3%",
       icon: CheckCircle2,
-      color: "bg-[#52cba3]",
+      color: "bg-[#059669]",
     },
     {
       name: "Pending Tasks",
       value: String(pendingTasks),
       change: "-2.1%",
       icon: Clock,
-      color: "bg-[#e98c6a]",
+      color: "bg-[#d97706]",
       highlight: pendingTasks > 0,
     },
   ];
@@ -190,48 +271,25 @@ export function DashboardPageClient() {
       />
       <CreateTaskModal isOpen={modal === "task"} onClose={() => setModal(null)} />
 
-      <div className="space-y-6 w-full">
-        {/* Header */}
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white dark:bg-[#14263e] p-5 rounded-2xl border-2 border-[#142843]/20 dark:border-slate-700 shadow-sm">
-          <div>
-            <h1 className="text-xl sm:text-2xl font-extrabold text-[#142843] dark:text-white">
-              Hello, {greetingName}!
-            </h1>
-            <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 mt-1">
-              Here is your workspace overview and team activity for today.
-            </p>
-          </div>
-          <div className="flex items-center gap-3">
-            <div className="relative flex-1 sm:w-64">
-              <input
-                type="text"
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                placeholder="Search projects, tasks..."
-                className="w-full pl-4 pr-10 py-2.5 bg-[#f0f4f8] dark:bg-[#1c304a] border border-[#142843]/20 dark:border-slate-600 rounded-xl text-sm text-[#142843] dark:text-slate-100 placeholder-slate-400 focus:outline-none focus:border-[#0052cc] transition-colors"
-                suppressHydrationWarning
-              />
-              <Search
-                size={17}
-                className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none"
-              />
-            </div>
-            <button
-              className="inline-flex items-center gap-2 px-4 py-2.5 bg-[#142843] hover:bg-[#1c304a] text-white rounded-xl text-sm font-bold transition-colors shadow-xs shrink-0"
-              suppressHydrationWarning
-            >
-              <Upload size={15} />
-              Export
-            </button>
-          </div>
+      <div className="space-y-6 w-full max-w-7xl mx-auto">
+        {/* ── 1. Clean Header (search & export removed) ── */}
+        <div className="bg-white dark:bg-[#14263e] p-5 sm:p-6 rounded-2xl border border-slate-200 dark:border-slate-700/80 shadow-xs">
+          <h1 className="text-xl sm:text-2xl font-extrabold text-[#142843] dark:text-white tracking-tight">
+            Hello, {greetingName}!
+          </h1>
+          <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 mt-1">
+            Here is your workspace overview and team activity for today.
+          </p>
         </div>
 
-        {/* Stat Cards */}
+        {/* ── 2. Stat Cards ── */}
         <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
           {dynamicStats.map((stat) => (
             <div
               key={stat.name}
-              className={`group bg-white dark:bg-[#14263e] border-2 border-[#142843]/20 dark:border-slate-700 rounded-2xl p-5 flex items-center justify-between shadow-sm cursor-default transition-all duration-200 ease-out hover:scale-[1.03] hover:shadow-lg hover:-translate-y-0.5 ${stat.highlight ? "ring-2 ring-purple-400/50" : ""}`}
+              className={`group bg-white dark:bg-[#14263e] border border-slate-200 dark:border-slate-700/80 rounded-2xl p-5 flex items-center justify-between shadow-xs transition-all duration-200 ease-out hover:shadow-md hover:-translate-y-0.5 ${
+                stat.highlight ? "ring-1 ring-amber-400/40" : ""
+              }`}
             >
               <div className="space-y-1.5">
                 <p className="text-xs sm:text-sm font-semibold text-slate-500 dark:text-slate-400">
@@ -242,7 +300,9 @@ export function DashboardPageClient() {
                     {stat.value}
                   </span>
                   <span
-                    className={`text-xs font-bold flex items-center gap-0.5 ${stat.change.startsWith("+") ? "text-emerald-500" : "text-red-400"}`}
+                    className={`text-xs font-bold flex items-center gap-0.5 ${
+                      stat.change.startsWith("+") ? "text-emerald-500" : "text-amber-500"
+                    }`}
                   >
                     <ArrowUpRight
                       size={13}
@@ -253,165 +313,278 @@ export function DashboardPageClient() {
                 </div>
               </div>
               <div
-                className={`w-13 h-13 rounded-2xl ${stat.color} flex items-center justify-center shadow-md shrink-0 ml-3 transition-transform duration-200 group-hover:scale-110`}
+                className={`w-12 h-12 rounded-2xl ${stat.color} flex items-center justify-center shadow-xs shrink-0 ml-3 transition-transform duration-200 group-hover:scale-105`}
               >
-                <stat.icon size={24} className="text-white" />
+                <stat.icon size={22} className="text-white" />
               </div>
             </div>
           ))}
         </div>
 
-        {/* Projects + Quick Actions */}
+        {/* ── 3. Projects + Quick Actions ── */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
-          <div className="lg:col-span-2 bg-white dark:bg-[#14263e] border-2 border-[#142843]/20 dark:border-slate-700 rounded-2xl p-5 shadow-sm">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-lg font-bold text-[#142843] dark:text-white">Recent Projects</h2>
-              <Link
-                href="/projects"
-                className="text-xs font-bold text-[#0052cc] dark:text-[#54c5d0] hover:underline flex items-center gap-1"
-              >
-                View All <ArrowUpRight size={13} />
-              </Link>
-            </div>
-            <div className="space-y-3">
-              {dbProjects.length === 0 ? (
-                <div className="py-8 text-center text-xs text-slate-400 font-semibold bg-[#263852] rounded-xl">
-                  No projects yet. Create your first project to get started!
-                </div>
-              ) : (
-                dbProjects.slice(0, 3).map((p) => {
-                  const percent = p.completionPercentage ?? 0;
-                  const updatedText = p.updatedAt
-                    ? new Date(p.updatedAt).toLocaleDateString()
-                    : "Recently";
-                  return (
-                    <Link
-                      key={p.id}
-                      href={`/projects/${p.id}`}
-                      className="bg-[#263852] rounded-xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 hover:bg-[#2e4264] transition-colors cursor-pointer block"
-                    >
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2 mb-1">
-                          <span className="font-bold text-white text-sm truncate">{p.name}</span>
-                          <span className="text-[10px] px-2 py-0.5 rounded-full bg-[#3151b7]/50 text-[#a5b4fc] font-semibold shrink-0">
-                            {p.status || "In Progress"}
+          {/* Recent Projects (Refined compact container & palette) */}
+          <div className="lg:col-span-2 bg-white dark:bg-[#14263e] border border-slate-200 dark:border-slate-700/80 rounded-2xl p-5 shadow-xs flex flex-col justify-between">
+            <div>
+              <div className="flex items-center justify-between mb-3.5">
+                <h2 className="text-base font-bold text-[#142843] dark:text-white">
+                  Recent Projects
+                </h2>
+                <Link
+                  href="/projects"
+                  className="text-xs font-bold text-[#0033a0] dark:text-sky-400 hover:underline flex items-center gap-1"
+                >
+                  View All <ArrowUpRight size={13} />
+                </Link>
+              </div>
+
+              <div className="space-y-2.5">
+                {dbProjects.length === 0 ? (
+                  <div className="py-7 text-center text-xs text-slate-400 font-semibold bg-slate-50 dark:bg-[#182c47] rounded-xl border border-dashed border-slate-200 dark:border-slate-700">
+                    No projects yet. Create your first project to get started!
+                  </div>
+                ) : (
+                  dbProjects.slice(0, 3).map((p) => {
+                    const percent = p.completionPercentage ?? 0;
+                    const updatedText = p.updatedAt
+                      ? new Date(p.updatedAt).toLocaleDateString("en-US", {
+                          month: "short",
+                          day: "numeric",
+                        })
+                      : "Recently";
+
+                    return (
+                      <Link
+                        key={p.id}
+                        href={`/projects/${p.id}`}
+                        className="bg-slate-50/80 dark:bg-[#182c47] border border-slate-200/80 dark:border-slate-700/80 rounded-xl p-3 sm:p-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-3 hover:border-[#0033a0]/40 dark:hover:border-sky-500/40 hover:bg-white dark:hover:bg-[#1f3757] transition-all cursor-pointer block group shadow-2xs"
+                      >
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 mb-1">
+                            <span className="font-bold text-[#142843] dark:text-white text-sm truncate group-hover:text-[#0033a0] dark:group-hover:text-sky-300 transition-colors">
+                              {p.name}
+                            </span>
+                            <span className="text-[10px] px-2 py-0.5 rounded-full bg-[#0033a0]/10 text-[#0033a0] dark:bg-[#0033a0]/30 dark:text-sky-300 font-bold shrink-0">
+                              {p.status || "In Progress"}
+                            </span>
+                          </div>
+                          <p className="text-xs text-slate-500 dark:text-slate-400">
+                            Updated {updatedText} · {p.memberCount || 1} members · {p.taskCount || 0} tasks
+                          </p>
+                        </div>
+                        <div className="flex items-center gap-3 shrink-0">
+                          <span className="text-xs font-bold text-[#0033a0] dark:text-sky-400">
+                            {percent}%
                           </span>
+                          <div className="w-24 sm:w-28 bg-slate-200 dark:bg-slate-700 h-2 rounded-full overflow-hidden">
+                            <div
+                              className="bg-gradient-to-r from-[#0033a0] to-[#0066cc] dark:from-sky-500 dark:to-blue-400 h-full rounded-full transition-all duration-500"
+                              style={{ width: `${percent}%` }}
+                            />
+                          </div>
                         </div>
-                        <p className="text-xs text-slate-400">
-                          Updated {updatedText} · {p.memberCount || 1} members · {p.taskCount || 0} tasks
-                        </p>
-                      </div>
-                      <div className="flex items-center gap-3 shrink-0">
-                        <span className="text-xs font-bold text-[#54c5d0]">{percent}%</span>
-                        <div className="w-28 bg-[#142843] h-2.5 rounded-full overflow-hidden border border-white/10">
-                          <div
-                            className="bg-gradient-to-r from-[#00b4d8] to-[#54c5d0] h-full rounded-full transition-all duration-500"
-                            style={{ width: `${percent}%` }}
-                          />
-                        </div>
-                      </div>
-                    </Link>
-                  );
-                })
-              )}
+                      </Link>
+                    );
+                  })
+                )}
+              </div>
             </div>
           </div>
 
-          <div className="bg-white dark:bg-[#14263e] border-2 border-[#142843]/20 dark:border-slate-700 rounded-2xl p-5 shadow-sm flex flex-col gap-4">
-            <h2 className="text-lg font-bold text-[#142843] dark:text-white">Quick Actions</h2>
-            <div className="space-y-3 flex-1">
+          {/* Quick Actions Redesign (2x2 Grid with + Add Event) */}
+          <div className="bg-white dark:bg-[#14263e] border border-slate-200 dark:border-slate-700/80 rounded-2xl p-5 shadow-xs flex flex-col justify-between">
+            <div className="flex items-center justify-between mb-3.5">
+              <h2 className="text-base font-bold text-[#142843] dark:text-white">Quick Actions</h2>
+              <span className="text-[11px] font-semibold text-slate-400">Shortcuts</span>
+            </div>
+
+            <div className="grid grid-cols-2 gap-2.5 flex-1">
+              {/* Action 1: Create Project */}
               <Link
                 href="/projects/create"
-                className="w-full py-3.5 px-4 bg-[#0052cc] hover:bg-[#003d99] text-white rounded-xl font-bold text-sm flex items-center justify-center gap-2 shadow-md transition-all hover:scale-[1.02] active:scale-[0.98]"
-                suppressHydrationWarning
+                className="p-3.5 rounded-xl border border-slate-200 dark:border-slate-700/80 bg-slate-50/80 dark:bg-[#182c47] hover:border-[#0033a0]/50 hover:bg-[#0033a0]/5 dark:hover:bg-[#0033a0]/15 transition-all flex flex-col justify-between group cursor-pointer"
               >
-                <Plus size={17} /> Create New Project
+                <div className="w-8 h-8 rounded-lg bg-[#0033a0]/10 text-[#0033a0] dark:bg-[#0033a0]/25 dark:text-sky-300 flex items-center justify-center mb-2 group-hover:scale-105 transition-transform">
+                  <FolderPlus size={17} />
+                </div>
+                <div>
+                  <span className="text-xs font-bold text-[#142843] dark:text-white block group-hover:text-[#0033a0] dark:group-hover:text-sky-300 transition-colors">
+                    New Project
+                  </span>
+                  <span className="text-[10px] text-slate-400 block mt-0.5">Start workspace project</span>
+                </div>
               </Link>
+
+              {/* Action 2: Add Team Member */}
               <button
+                type="button"
                 onClick={() => setModal("member")}
-                className="w-full py-3.5 px-4 bg-[#f0f4f8] dark:bg-[#1c304a] border-2 border-[#142843]/20 dark:border-slate-600 text-[#142843] dark:text-slate-100 rounded-xl font-bold text-sm flex items-center justify-center gap-2 hover:bg-[#dce6f0] dark:hover:bg-[#253d5c] transition-all hover:scale-[1.02] active:scale-[0.98]"
-                suppressHydrationWarning
+                className="p-3.5 rounded-xl border border-slate-200 dark:border-slate-700/80 bg-slate-50/80 dark:bg-[#182c47] hover:border-emerald-500/50 hover:bg-emerald-50/50 dark:hover:bg-emerald-950/20 transition-all flex flex-col justify-between group cursor-pointer text-left"
               >
-                <Plus size={16} /> Add Team Member
+                <div className="w-8 h-8 rounded-lg bg-emerald-100 text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-400 flex items-center justify-center mb-2 group-hover:scale-105 transition-transform">
+                  <UserPlus size={17} />
+                </div>
+                <div>
+                  <span className="text-xs font-bold text-[#142843] dark:text-white block group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors">
+                    Add Member
+                  </span>
+                  <span className="text-[10px] text-slate-400 block mt-0.5">Invite teammates</span>
+                </div>
               </button>
+
+              {/* Action 3: Create Task */}
               <button
+                type="button"
                 onClick={() => setModal("task")}
-                className="w-full py-3.5 px-4 bg-[#f0f4f8] dark:bg-[#1c304a] border-2 border-[#142843]/20 dark:border-slate-600 text-[#142843] dark:text-slate-100 rounded-xl font-bold text-sm flex items-center justify-center gap-2 hover:bg-[#dce6f0] dark:hover:bg-[#253d5c] transition-all hover:scale-[1.02] active:scale-[0.98]"
-                suppressHydrationWarning
+                className="p-3.5 rounded-xl border border-slate-200 dark:border-slate-700/80 bg-slate-50/80 dark:bg-[#182c47] hover:border-violet-500/50 hover:bg-violet-50/50 dark:hover:bg-violet-950/20 transition-all flex flex-col justify-between group cursor-pointer text-left"
               >
-                <Plus size={16} /> Create Task
+                <div className="w-8 h-8 rounded-lg bg-violet-100 text-violet-700 dark:bg-violet-950/50 dark:text-violet-400 flex items-center justify-center mb-2 group-hover:scale-105 transition-transform">
+                  <ListPlus size={17} />
+                </div>
+                <div>
+                  <span className="text-xs font-bold text-[#142843] dark:text-white block group-hover:text-violet-600 dark:group-hover:text-violet-400 transition-colors">
+                    Create Task
+                  </span>
+                  <span className="text-[10px] text-slate-400 block mt-0.5">Assign work item</span>
+                </div>
+              </button>
+
+              {/* Action 4: Add Event (Calendar) */}
+              <button
+                type="button"
+                onClick={() => router.push("/calendar/new")}
+                className="p-3.5 rounded-xl border border-slate-200 dark:border-slate-700/80 bg-slate-50/80 dark:bg-[#182c47] hover:border-amber-500/50 hover:bg-amber-50/50 dark:hover:bg-amber-950/20 transition-all flex flex-col justify-between group cursor-pointer text-left"
+              >
+                <div className="w-8 h-8 rounded-lg bg-amber-100 text-amber-700 dark:bg-amber-950/50 dark:text-amber-400 flex items-center justify-center mb-2 group-hover:scale-105 transition-transform">
+                  <CalendarPlus size={17} />
+                </div>
+                <div>
+                  <span className="text-xs font-bold text-[#142843] dark:text-white block group-hover:text-amber-600 dark:group-hover:text-amber-400 transition-colors">
+                    Add Event
+                  </span>
+                  <span className="text-[10px] text-slate-400 block mt-0.5">Schedule calendar</span>
+                </div>
               </button>
             </div>
           </div>
         </div>
 
-        {/* Activity + Deadlines */}
+        {/* ── 4. Real Activity + Real Upcoming Deadlines ── */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
-          <div className="bg-white dark:bg-[#14263e] border-2 border-[#142843]/20 dark:border-slate-700 rounded-2xl p-5 shadow-sm">
+          {/* Recent Activity (Real workspace data) */}
+          <div className="bg-white dark:bg-[#14263e] border border-slate-200 dark:border-slate-700/80 rounded-2xl p-5 shadow-xs flex flex-col">
             <div className="flex items-center gap-2 mb-4">
-              <Activity size={18} className="text-[#0052cc] dark:text-[#54c5d0]" />
-              <h2 className="text-lg font-bold text-[#142843] dark:text-white">Recent Activity</h2>
+              <Activity size={17} className="text-[#0033a0] dark:text-sky-400" />
+              <h2 className="text-base font-bold text-[#142843] dark:text-white">
+                Recent Activity
+              </h2>
             </div>
-            <div className="space-y-4">
-              {ACTIVITIES.map((a) => (
-                <div key={a.id} className="flex items-start gap-3">
+
+            <div className="space-y-3 flex-1">
+              {activities.length > 0 ? (
+                activities.map((a) => (
                   <div
-                    className={`w-8 h-8 rounded-full ${a.color} flex items-center justify-center text-white text-xs font-bold shrink-0 mt-0.5`}
+                    key={a.id}
+                    className="flex items-start gap-3 p-2.5 rounded-xl hover:bg-slate-50 dark:hover:bg-[#182c47] transition-colors"
                   >
-                    {a.user[0]}
+                    <div
+                      className={`w-7 h-7 rounded-lg ${a.color} flex items-center justify-center text-xs font-extrabold shrink-0 mt-0.5 shadow-2xs`}
+                    >
+                      {a.userInitials}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-xs text-[#142843] dark:text-slate-200 leading-relaxed">
+                        <span className="font-bold">{a.userName}</span>{" "}
+                        <span className="text-slate-500 dark:text-slate-400 font-medium">
+                          {a.action}
+                        </span>{" "}
+                        <span className="font-semibold text-[#0033a0] dark:text-sky-300">
+                          {a.target}
+                        </span>
+                      </p>
+                      <p className="text-[11px] text-slate-400 mt-0.5">{a.time}</p>
+                    </div>
                   </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm text-[#142843] dark:text-slate-200">
-                      <span className="font-bold">{a.user}</span>{" "}
-                      <span className="text-slate-500 dark:text-slate-400">{a.action}</span>{" "}
-                      <span className="font-semibold text-[#0052cc] dark:text-[#54c5d0]">
-                        {a.target}
-                      </span>
-                    </p>
-                    <p className="text-xs text-slate-400 mt-0.5">{a.time}</p>
-                  </div>
+                ))
+              ) : (
+                <div className="py-10 text-center rounded-xl bg-slate-50/50 dark:bg-[#182c47]/50 border border-dashed border-slate-200 dark:border-slate-700/70">
+                  <Activity size={22} className="mx-auto mb-1.5 text-slate-400 opacity-60" />
+                  <p className="text-xs font-semibold text-slate-600 dark:text-slate-300">
+                    No recent activity yet
+                  </p>
+                  <p className="text-[11px] text-slate-400 mt-0.5">
+                    Actions taken in this workspace will appear here.
+                  </p>
                 </div>
-              ))}
+              )}
             </div>
           </div>
 
-          <div className="bg-white dark:bg-[#14263e] border-2 border-[#142843]/20 dark:border-slate-700 rounded-2xl p-5 shadow-sm">
+          {/* Upcoming Deadlines (Real task & project dates) */}
+          <div className="bg-white dark:bg-[#14263e] border border-slate-200 dark:border-slate-700/80 rounded-2xl p-5 shadow-xs flex flex-col">
             <div className="flex items-center gap-2 mb-4">
-              <AlertCircle size={18} className="text-[#e98c6a]" />
-              <h2 className="text-lg font-bold text-[#142843] dark:text-white">
+              <AlertCircle size={17} className="text-[#d97706]" />
+              <h2 className="text-base font-bold text-[#142843] dark:text-white">
                 Upcoming Deadlines
               </h2>
             </div>
-            <div className="space-y-3">
-              {DEADLINES.map((d) => (
-                <div
-                  key={d.id}
-                  className={`flex items-center justify-between p-3.5 rounded-xl border-2 transition-colors ${
-                    d.overdue
-                      ? "bg-red-50 dark:bg-red-900/10 border-red-200 dark:border-red-800/50"
-                      : "bg-[#f0f4f8] dark:bg-[#1c304a] border-[#142843]/10 dark:border-slate-700"
-                  }`}
-                >
-                  <div>
-                    <p
-                      className={`text-sm font-bold ${d.overdue ? "text-red-700 dark:text-red-400" : "text-[#142843] dark:text-white"}`}
-                    >
-                      {d.task}
-                    </p>
-                    <p
-                      className={`text-xs mt-0.5 ${d.overdue ? "text-red-500 font-medium" : "text-slate-500 dark:text-slate-400"}`}
-                    >
-                      {d.overdue ? "Overdue · " : ""}
-                      {d.due}
-                    </p>
-                  </div>
-                  <span
-                    className={`text-xs px-2.5 py-1 rounded-full font-bold ${PRIORITY_COLOR[d.priority]}`}
+
+            <div className="space-y-2.5 flex-1">
+              {deadlines.length > 0 ? (
+                deadlines.map((d) => (
+                  <Link
+                    key={d.id}
+                    href={`/projects/${d.projectId}`}
+                    className={`flex items-center justify-between p-3 rounded-xl border transition-all hover:shadow-2xs ${
+                      d.overdue
+                        ? "bg-red-50/70 dark:bg-red-950/20 border-red-200/80 dark:border-red-900/50 hover:border-red-300"
+                        : "bg-slate-50/70 dark:bg-[#182c47] border-slate-200/80 dark:border-slate-700/80 hover:border-slate-300 dark:hover:border-slate-600"
+                    }`}
                   >
-                    {d.priority}
-                  </span>
+                    <div className="min-w-0 flex-1 pr-3">
+                      <p
+                        className={`text-xs font-bold truncate ${
+                          d.overdue ? "text-red-700 dark:text-red-400" : "text-[#142843] dark:text-white"
+                        }`}
+                      >
+                        {d.title}
+                      </p>
+                      <div className="flex items-center gap-1.5 mt-0.5">
+                        <span className="text-[11px] text-slate-400 truncate">
+                          {d.projectName}
+                        </span>
+                        <span className="text-[10px] text-slate-300 dark:text-slate-600">•</span>
+                        <span
+                          className={`text-[11px] font-semibold ${
+                            d.overdue
+                              ? "text-red-600 dark:text-red-400"
+                              : "text-slate-500 dark:text-slate-400"
+                          }`}
+                        >
+                          {d.dueText}
+                        </span>
+                      </div>
+                    </div>
+                    <span
+                      className={`text-[10px] px-2 py-0.5 rounded-md font-bold border shrink-0 ${
+                        PRIORITY_COLOR[d.priority] || PRIORITY_COLOR.Medium
+                      }`}
+                    >
+                      {d.priority}
+                    </span>
+                  </Link>
+                ))
+              ) : (
+                <div className="py-10 text-center rounded-xl bg-slate-50/50 dark:bg-[#182c47]/50 border border-dashed border-slate-200 dark:border-slate-700/70">
+                  <Calendar size={22} className="mx-auto mb-1.5 text-slate-400 opacity-60" />
+                  <p className="text-xs font-semibold text-slate-600 dark:text-slate-300">
+                    No upcoming deadlines
+                  </p>
+                  <p className="text-[11px] text-slate-400 mt-0.5">
+                    You are all caught up! Scheduled task deadlines will show here.
+                  </p>
                 </div>
-              ))}
+              )}
             </div>
           </div>
         </div>

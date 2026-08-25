@@ -23,6 +23,7 @@ import { loadProjectMeta, saveProjectMeta } from "@/lib/project-meta";
 import { calculateCompletionPercentage, isTaskCompleted } from "@/lib/project-stats";
 import { ProjectNotFoundError } from "@/components/errors/project-not-found-error";
 import { useBoardStore } from "@/stores/board-store";
+import { useSearchParams } from "next/navigation";
 import React, { use, useState, useEffect, useMemo, useCallback } from "react";
 
 function slugToTitle(slug: string): string {
@@ -230,8 +231,23 @@ export default function ProjectPage({ params }: { params: Promise<{ id: string }
       status: (task.status as TaskItem["status"]) ?? undefined,
       subtasks: [],
       sectionId: listName,
+      isPublic: task.isPublic ?? false,
+      sharedTeams: task.sharedTeams ?? [],
     };
   }
+
+  const searchParams = useSearchParams();
+  const urlTaskId = searchParams.get("taskId");
+
+  // Deep-link: automatically open task details when navigated with ?taskId=...
+  useEffect(() => {
+    if (urlTaskId && tasks.length > 0) {
+      const matchingTask = tasks.find((t) => t.id === urlTaskId);
+      if (matchingTask && (!selectedTask || selectedTask.id !== urlTaskId)) {
+        setSelectedTask(taskRecordToItem(matchingTask));
+      }
+    }
+  }, [urlTaskId, tasks, selectedTask]);
 
   const handleSaveDescription = async (newDesc: string) => {
     setProjectDescription(newDesc);
@@ -314,6 +330,8 @@ export default function ProjectPage({ params }: { params: Promise<{ id: string }
 
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
         <ProjectHeader
+          projectId={resolvedProjectId ?? undefined}
+          projectSlug={slug}
           projectTitle={projectTitle}
           setProjectTitle={setProjectTitle}
           onTitleSave={handleSaveTitle}
@@ -328,6 +346,9 @@ export default function ProjectPage({ params }: { params: Promise<{ id: string }
           onStatusSave={handleSaveStatus}
           members={members}
           onAddMember={() => setIsAddMemberOpen(true)}
+          onInviteSuccess={() => {
+            if (resolvedProjectId) fetchMembers(resolvedProjectId);
+          }}
         />
 
         <ProjectTabs

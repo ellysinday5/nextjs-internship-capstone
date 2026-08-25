@@ -10,7 +10,8 @@
  */
 export function isTaskCompleted(status?: string | null): boolean {
   if (!status) return false;
-  return status.trim().toLowerCase() === "complete";
+  const s = status.trim().toLowerCase();
+  return s === "complete" || s === "completed" || s === "done";
 }
 
 /**
