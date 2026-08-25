@@ -47,6 +47,7 @@ interface ProjectHeaderProps {
   status: ProjectStatusType;
   setStatus: (status: ProjectStatusType) => void;
   onStatusSave?: (status: ProjectStatusType) => void | Promise<void>;
+  ownerName?: string;
   members?: HeaderMember[];
   onAddMember?: () => void;
   onInviteSuccess?: () => void;
@@ -155,6 +156,7 @@ export function ProjectHeader({
   status,
   setStatus,
   onStatusSave,
+  ownerName,
   members = [],
   onAddMember,
   onInviteSuccess,
@@ -182,14 +184,17 @@ export function ProjectHeader({
 
   const isEmailValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(shareEmail.trim());
 
-  const ownerMember: HeaderMember = {
-    id: "owner",
-    name: "Ellen Grace Sinday",
-    role: "Project Owner",
-    email: "ellen.sinday@company.com",
-  };
+  const ownerMember: HeaderMember | null = ownerName
+    ? {
+        id: "owner",
+        name: ownerName,
+        role: "Project Owner",
+      }
+    : null;
 
-  const allMembers: HeaderMember[] = [ownerMember, ...members];
+  const allMembers: HeaderMember[] = ownerMember
+    ? [ownerMember, ...members.filter((m) => m.name !== ownerName)]
+    : members;
   const maxVisible = 4;
   const visibleMembers = allMembers.slice(0, maxVisible);
   const overflowCount = allMembers.length - maxVisible;

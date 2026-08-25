@@ -29,6 +29,7 @@ export default function ProjectsPage() {
     setSelectedOwner,
     selectedTeam,
     setSelectedTeam,
+    teamOptions,
     selectedMembers,
     setSelectedMembers,
     openDropdown,
@@ -76,6 +77,7 @@ export default function ProjectsPage() {
             setSelectedOwner={setSelectedOwner}
             selectedTeam={selectedTeam}
             setSelectedTeam={setSelectedTeam}
+            teamOptions={teamOptions}
             selectedMembers={selectedMembers}
             setSelectedMembers={setSelectedMembers}
             openDropdown={openDropdown}

@@ -47,10 +47,7 @@ export function useProjectFilters() {
   }, [fetchProjects]);
 
   const allProjectItems = useMemo<ProjectItem[]>(() => {
-    const ownerOptions = ["Ellen Grace Sinday", "Aj Lopez", "John Doe"];
-    const teamOptions = ["Core Platform", "Frontend Squad", "AI & Mobile", "DevOps Team"];
-
-    return dbProjects.map((p, idx) => {
+    return dbProjects.map((p) => {
       const completionPercent =
         p.completionPercentage ??
         calculateCompletionPercentage(p.completedTaskCount || 0, p.taskCount || 0);
@@ -64,8 +61,8 @@ export function useProjectFilters() {
         priority: p.priority || "Medium",
         progress: completionPercent,
         members: p.memberCount || 1,
-        owner: p.ownerName || ownerOptions[idx % ownerOptions.length],
-        teamName: teamOptions[idx % teamOptions.length],
+        owner: p.ownerName || "Unassigned",
+        teamName: "General",
         tasksCount: p.taskCount,
         updatedAt: p.updatedAt ? new Date(p.updatedAt).toLocaleDateString() : "Just now",
         color: "bg-[#00b4d8]",
@@ -136,6 +133,14 @@ export function useProjectFilters() {
     setOpenDropdown((prev) => (prev === key ? null : key));
   };
 
+  const teamOptions = useMemo(() => {
+    const teams = new Set<string>();
+    for (const p of allProjectItems) {
+      if (p.teamName) teams.add(p.teamName);
+    }
+    return ["All", ...(teams.size > 0 ? Array.from(teams) : ["General"])];
+  }, [allProjectItems]);
+
   return {
     loading,
     filteredProjects,
@@ -150,6 +155,7 @@ export function useProjectFilters() {
     setSelectedOwner,
     selectedTeam,
     setSelectedTeam,
+    teamOptions,
     selectedMembers,
     setSelectedMembers,
     openDropdown,

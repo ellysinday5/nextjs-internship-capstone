@@ -5,13 +5,11 @@ import { type ProjectItem, toSlug } from "@/lib/project-data";
 import {
   ChevronLeft,
   ChevronRight,
-  ClipboardList,
   Edit3,
   Eye,
   MoreHorizontal,
   Trash2,
   User,
-  Users,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import React, { useState, useRef, useEffect } from "react";
@@ -24,6 +22,8 @@ interface ProjectTableViewProps {
 
 const PAGE_SIZE = 8;
 
+import { createPortal } from "react-dom";
+
 function ActionMenu({
   project,
   onDelete,
@@ -33,26 +33,58 @@ function ActionMenu({
 }) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
-  const ref = useRef<HTMLDivElement>(null);
+  const [coords, setCoords] = useState<{ top: number; left: number } | null>(null);
+  const buttonRef = useRef<HTMLButtonElement>(null);
+  const menuRef = useRef<HTMLDivElement>(null);
+
+  const toggleMenu = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (open) {
+      setOpen(false);
+      return;
+    }
+    const rect = buttonRef.current?.getBoundingClientRect();
+    if (rect) {
+      const menuWidth = 176;
+      // Align menu to the right edge of the button
+      const left = Math.max(12, rect.right - menuWidth);
+      const top = rect.bottom + 6;
+      setCoords({ top, left });
+      setOpen(true);
+    }
+  };
 
   useEffect(() => {
-    function handleClick(e: MouseEvent) {
-      if (ref.current && !ref.current.contains(e.target as Node)) {
+    if (!open) return;
+    function handleClickOutside(e: MouseEvent) {
+      if (
+        menuRef.current &&
+        !menuRef.current.contains(e.target as Node) &&
+        buttonRef.current &&
+        !buttonRef.current.contains(e.target as Node)
+      ) {
         setOpen(false);
       }
     }
-    document.addEventListener("mousedown", handleClick);
-    return () => document.removeEventListener("mousedown", handleClick);
-  }, []);
+    function handleScroll() {
+      setOpen(false);
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    window.addEventListener("scroll", handleScroll, true);
+    window.addEventListener("resize", handleScroll);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+      window.removeEventListener("scroll", handleScroll, true);
+      window.removeEventListener("resize", handleScroll);
+    };
+  }, [open]);
 
   return (
-    <div ref={ref} className="relative flex justify-center items-center">
+    <div className="relative flex justify-center items-center">
       <button
+        ref={buttonRef}
         type="button"
-        onClick={(e) => {
-          e.stopPropagation();
-          setOpen((v) => !v);
-        }}
+        onClick={toggleMenu}
         className="p-1.5 rounded-lg text-slate-400 hover:text-[#142843] dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
         aria-label="Actions"
         suppressHydrationWarning
@@ -60,74 +92,87 @@ function ActionMenu({
         <MoreHorizontal size={16} />
       </button>
 
-      {open && (
-        <div className="absolute left-1/2 -translate-x-1/2 top-8 z-50 w-44 bg-white dark:bg-[#1c304a] border border-slate-200 dark:border-slate-700 rounded-xl shadow-xl overflow-hidden animate-in fade-in slide-in-from-top-1">
-          {/* View */}
-          <button
-            type="button"
-            onClick={(e) => {
-              e.stopPropagation();
-              setOpen(false);
-              router.push(`/projects/${toSlug(project.name)}`);
+      {open &&
+        coords &&
+        typeof document !== "undefined" &&
+        createPortal(
+          <div
+            ref={menuRef}
+            style={{
+              position: "fixed",
+              top: `${coords.top}px`,
+              left: `${coords.left}px`,
             }}
-            className="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm font-medium text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors cursor-pointer"
-            suppressHydrationWarning
+            className="z-[9999] w-44 bg-white dark:bg-[#1c304a] border border-slate-200 dark:border-slate-700 rounded-xl shadow-xl overflow-hidden animate-in fade-in slide-in-from-top-1"
+            onClick={(e) => e.stopPropagation()}
           >
-            <Eye size={14} className="text-[#00b4d8]" />
-            View
-          </button>
-          {/* Edit */}
-          <button
-            type="button"
-            onClick={(e) => {
-              e.stopPropagation();
-              setOpen(false);
-              router.push(`/projects/${project.id}/edit`);
-            }}
-            className="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm font-medium text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors cursor-pointer"
-            suppressHydrationWarning
-          >
-            <Edit3 size={14} className="text-[#0052cc]" />
-            Edit
-          </button>
-          {/* Delete */}
-          <div className="border-t border-slate-100 dark:border-slate-700" />
-          <button
-            type="button"
-            onClick={(e) => {
-              e.stopPropagation();
-              setOpen(false);
-              const target: ProjectWithStats = project.dbProject || {
-                id: project.id,
-                name: project.name,
-                description: project.description || null,
-                ownerId: "demo",
-                ownerName: "Unknown",
-                dueDate: null,
-                techStack: project.techStack || [],
-                status: project.status,
-                priority: project.priority,
-                createdAt: null,
-                updatedAt: null,
-                listCount: 0,
-                taskCount: project.tasksCount || 0,
-                completedTaskCount: Math.round(
-                  ((project.tasksCount || 0) * (project.progress || 0)) / 100,
-                ),
-                completionPercentage: project.progress || 0,
-                memberCount: project.members || 1,
-                members: [],
-              };
-              onDelete(target);
-            }}
-            className="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm font-medium text-red-500 hover:bg-red-50 dark:hover:bg-red-950/30 transition-colors cursor-pointer"
-            suppressHydrationWarning
-          >
-            <Trash2 size={14} />
-            Delete
-          </button>
-        </div>
-      )}
+            {/* View */}
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                setOpen(false);
+                router.push(`/projects/${toSlug(project.name)}`);
+              }}
+              className="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm font-medium text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+              suppressHydrationWarning
+            >
+              <Eye size={14} className="text-[#00b4d8]" />
+              View
+            </button>
+            {/* Edit */}
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                setOpen(false);
+                router.push(`/projects/${project.id}/edit`);
+              }}
+              className="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm font-medium text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+              suppressHydrationWarning
+            >
+              <Edit3 size={14} className="text-[#0052cc]" />
+              Edit
+            </button>
+            {/* Delete */}
+            <div className="border-t border-slate-100 dark:border-slate-700" />
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                setOpen(false);
+                const target: ProjectWithStats = project.dbProject || {
+                  id: project.id,
+                  name: project.name,
+                  description: project.description || null,
+                  ownerId: "demo",
+                  ownerName: "Unknown",
+                  dueDate: null,
+                  techStack: project.techStack || [],
+                  status: project.status,
+                  priority: project.priority,
+                  createdAt: null,
+                  updatedAt: null,
+                  listCount: 0,
+                  taskCount: project.tasksCount || 0,
+                  completedTaskCount: Math.round(
+                    ((project.tasksCount || 0) * (project.progress || 0)) / 100,
+                  ),
+                  completionPercentage: project.progress || 0,
+                  memberCount: project.members || 1,
+                  members: [],
+                };
+                onDelete(target);
+              }}
+              className="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm font-medium text-red-500 hover:bg-red-50 dark:hover:bg-red-950/30 transition-colors cursor-pointer"
+              suppressHydrationWarning
+            >
+              <Trash2 size={14} />
+              Delete
+            </button>
+          </div>,
+          document.body,
+        )}
     </div>
   );
 }
@@ -148,37 +193,25 @@ export function ProjectTableView({ projects, onEdit, onDelete }: ProjectTableVie
     <div className="flex flex-col gap-0">
       <div className="overflow-hidden rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm bg-white dark:bg-[#14263e]">
         <div className="overflow-x-auto">
-          <table className="w-full text-sm text-left">
+          <table className="w-full text-sm text-left table-fixed">
             <thead className="bg-[#142843] text-white">
               <tr>
-                <th className="px-5 py-3.5 text-xs font-bold uppercase tracking-wider text-slate-100">
+                <th className="px-6 py-4 text-xs font-bold uppercase tracking-wider text-slate-100 w-[35%]">
                   Project
                 </th>
-                <th className="px-5 py-3.5 text-xs font-bold uppercase tracking-wider text-slate-100">
+                <th className="px-6 py-4 text-xs font-bold uppercase tracking-wider text-slate-100 w-[16%]">
                   Status
                 </th>
-                <th className="px-5 py-3.5 text-xs font-bold uppercase tracking-wider text-slate-100">
+                <th className="px-6 py-4 text-xs font-bold uppercase tracking-wider text-slate-100 w-[14%]">
                   Priority
                 </th>
-                <th className="px-5 py-3.5 text-xs font-bold uppercase tracking-wider text-slate-100">
+                <th className="px-6 py-4 text-xs font-bold uppercase tracking-wider text-slate-100 w-[18%]">
                   Owner
                 </th>
-                <th className="px-5 py-3.5 text-xs font-bold uppercase tracking-wider text-slate-100">
+                <th className="px-6 py-4 text-xs font-bold uppercase tracking-wider text-slate-100 w-[17%]">
                   Team
                 </th>
-                <th className="px-5 py-3.5 text-xs font-bold uppercase tracking-wider text-slate-100">
-                  Progress
-                </th>
-                <th className="px-5 py-3.5 text-xs font-bold uppercase tracking-wider text-slate-100">
-                  Devs
-                </th>
-                <th className="px-5 py-3.5 text-xs font-bold uppercase tracking-wider text-slate-100">
-                  Tasks
-                </th>
-                <th className="px-5 py-3.5 text-xs font-bold uppercase tracking-wider text-slate-100">
-                  Updated
-                </th>
-                <th className="px-5 py-3.5 text-xs font-bold uppercase tracking-wider text-slate-100 text-right">
+                <th className="px-4 py-4 text-xs font-bold uppercase tracking-wider text-slate-100 text-center w-[70px]">
                   Actions
                 </th>
               </tr>
@@ -190,24 +223,28 @@ export function ProjectTableView({ projects, onEdit, onDelete }: ProjectTableVie
                   onClick={() => router.push(`/projects/${toSlug(project.name)}`)}
                   className="hover:bg-slate-50 dark:hover:bg-[#1c304a] cursor-pointer transition-colors"
                 >
-                  <td className="px-5 py-3.5">
-                    <div className="flex items-center gap-2.5">
+                  <td className="px-6 py-4">
+                    <div className="flex items-center gap-3">
                       <span className={`w-2.5 h-2.5 rounded-full shrink-0 ${project.color}`} />
                       <div className="min-w-0">
-                        <p className="font-bold text-[#142843] dark:text-white truncate">
+                        <p className="font-bold text-[#142843] dark:text-white truncate text-sm">
                           {project.name}
                         </p>
-                        {project.isDb && (
+                        {project.isDb ? (
                           <span className="text-[10px] font-extrabold text-[#00b4d8]">
                             Database
+                          </span>
+                        ) : (
+                          <span className="text-[10px] font-semibold text-slate-400">
+                            Workspace
                           </span>
                         )}
                       </div>
                     </div>
                   </td>
-                  <td className="px-5 py-3.5">
+                  <td className="px-6 py-4">
                     <span
-                      className={`px-2.5 py-0.5 text-[10px] font-bold rounded-full ${
+                      className={`inline-block px-2.5 py-1 text-xs font-bold rounded-full ${
                         project.status === "In Progress"
                           ? "bg-blue-50 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300"
                           : project.status === "Review"
@@ -220,9 +257,9 @@ export function ProjectTableView({ projects, onEdit, onDelete }: ProjectTableVie
                       {project.status}
                     </span>
                   </td>
-                  <td className="px-5 py-3.5">
+                  <td className="px-6 py-4">
                     <span
-                      className={`text-[10px] font-bold uppercase px-2 py-0.5 rounded-full ${
+                      className={`inline-block text-[11px] font-bold uppercase px-2.5 py-0.5 rounded-full ${
                         project.priority === "High"
                           ? "bg-rose-500/10 text-rose-500 border border-rose-500/20"
                           : project.priority === "Medium"
@@ -233,46 +270,18 @@ export function ProjectTableView({ projects, onEdit, onDelete }: ProjectTableVie
                       {project.priority}
                     </span>
                   </td>
-                  <td className="px-5 py-3.5 text-xs text-slate-600 dark:text-slate-300 font-medium">
-                    <div className="flex items-center gap-1.5">
-                      <User size={13} className="text-[#00b4d8]" />
-                      <span>{project.owner || "Unassigned"}</span>
+                  <td className="px-6 py-4 text-xs text-slate-600 dark:text-slate-300 font-medium">
+                    <div className="flex items-center gap-2">
+                      <User size={14} className="text-[#00b4d8] shrink-0" />
+                      <span className="truncate">{project.owner || "Unassigned"}</span>
                     </div>
                   </td>
-                  <td className="px-5 py-3.5 text-xs text-slate-600 dark:text-slate-300 font-medium">
-                    <span className="px-2 py-0.5 text-[10px] font-semibold rounded-md bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300">
+                  <td className="px-6 py-4 text-xs text-slate-600 dark:text-slate-300 font-medium">
+                    <span className="inline-block px-2.5 py-1 text-xs font-semibold rounded-md bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 truncate max-w-full">
                       {project.teamName || "General"}
                     </span>
                   </td>
-                  <td className="px-5 py-3.5 min-w-[120px]">
-                    <div className="flex items-center gap-2">
-                      <div className="w-16 bg-slate-100 dark:bg-slate-800 rounded-full h-1.5 overflow-hidden">
-                        <div
-                          className={`h-full rounded-full ${project.color}`}
-                          style={{ width: `${project.progress}%` }}
-                        />
-                      </div>
-                      <span className="text-xs font-bold text-[#142843] dark:text-slate-200">
-                        {project.progress}%
-                      </span>
-                    </div>
-                  </td>
-                  <td className="px-5 py-3.5 text-xs text-slate-500 dark:text-slate-400">
-                    <div className="flex items-center gap-1">
-                      <Users size={13} className="text-slate-400" />
-                      {project.members}
-                    </div>
-                  </td>
-                  <td className="px-5 py-3.5 text-xs text-slate-500 dark:text-slate-400">
-                    <div className="flex items-center gap-1">
-                      <ClipboardList size={13} className="text-slate-400" />
-                      {project.tasksCount}
-                    </div>
-                  </td>
-                  <td className="px-5 py-3.5 text-xs text-slate-500 dark:text-slate-400 whitespace-nowrap">
-                    {project.updatedAt}
-                  </td>
-                  <td className="px-5 py-3.5" onClick={(e) => e.stopPropagation()}>
+                  <td className="px-4 py-4 text-center" onClick={(e) => e.stopPropagation()}>
                     <ActionMenu project={project} onDelete={onDelete} />
                   </td>
                 </tr>

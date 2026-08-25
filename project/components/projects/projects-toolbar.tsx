@@ -37,6 +37,7 @@ interface ProjectsToolbarProps {
   setSelectedOwner: (v: string) => void;
   selectedTeam: string;
   setSelectedTeam: (v: string) => void;
+  teamOptions?: string[];
   selectedMembers: string;
   setSelectedMembers: (v: string) => void;
   openDropdown: DropdownKey;
@@ -60,6 +61,7 @@ export function ProjectsToolbar({
   setSelectedOwner,
   selectedTeam,
   setSelectedTeam,
+  teamOptions,
   selectedMembers,
   setSelectedMembers,
   openDropdown,
@@ -90,9 +92,9 @@ export function ProjectsToolbar({
         ref={filterBarRef}
         className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3"
       >
-        <div className="flex flex-wrap items-center gap-2.5">
-          {/* Search Input */}
-          <div className="relative w-56">
+        <div className="flex flex-wrap items-center gap-2.5 flex-1 min-w-0">
+          {/* Search Input — widened to occupy significantly more horizontal space */}
+          <div className="relative flex-1 min-w-[240px] sm:min-w-[280px] max-w-lg">
             <input
               type="text"
               value={searchQuery}
@@ -133,6 +135,19 @@ export function ProjectsToolbar({
           />
 
           <FilterDropdown
+            label="Team"
+            icon={<Users size={14} />}
+            value={selectedTeam}
+            options={teamOptions && teamOptions.length > 0 ? teamOptions : teamsList}
+            isOpen={openDropdown === "team"}
+            onToggle={() => toggleDropdown("team")}
+            onSelect={(val) => {
+              setSelectedTeam(val);
+              setOpenDropdown(null);
+            }}
+          />
+
+          <FilterDropdown
             label="Priority"
             icon={<ArrowUpDown size={14} />}
             value={selectedPriority}
@@ -149,7 +164,7 @@ export function ProjectsToolbar({
             <button
               type="button"
               onClick={clearFilters}
-              className="inline-flex items-center text-xs font-bold text-rose-500 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/30 transition-all cursor-pointer px-2.5 py-1.5 rounded-lg"
+              className="inline-flex items-center text-xs font-bold text-rose-500 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/30 transition-all cursor-pointer px-2.5 py-1.5 rounded-lg shrink-0"
               suppressHydrationWarning
             >
               <X size={13} className="mr-1" />

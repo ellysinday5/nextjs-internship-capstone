@@ -3,10 +3,9 @@
 import type { ProjectCardData } from "@/lib/project-card-types";
 import { toSlug } from "@/lib/project-data";
 import { PROJECT_ICON_LIST } from "@/lib/project-meta";
-import { Calendar, MoreVertical, Pencil, Star, Trash2, Users } from "lucide-react";
+import { Calendar, Star, Users } from "lucide-react";
 import { ListTodo } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
 
 interface ProjectCardItemProps {
   project: ProjectCardData;
@@ -27,9 +26,8 @@ const STATUS_LABELS: Record<ProjectCardData["status"], string> = {
   "on-hold": "On Hold",
 };
 
-export function ProjectCardItem({ project, onEdit, onDelete, isLoading }: ProjectCardItemProps) {
+export function ProjectCardItem({ project, isLoading }: ProjectCardItemProps) {
   const router = useRouter();
-  const [menuOpen, setMenuOpen] = useState(false);
 
   if (isLoading) {
     return <ProjectCardSkeleton />;
@@ -55,7 +53,7 @@ export function ProjectCardItem({ project, onEdit, onDelete, isLoading }: Projec
       <div className="h-1.5 w-full shrink-0" style={{ backgroundColor: accentColor }} />
 
       <div className="p-6 flex flex-col flex-1 gap-0">
-        {/* Header: icon + title + favorite + actions menu */}
+        {/* Header: icon + title + favorite */}
         <div className="mb-3 flex items-start justify-between gap-2">
           <div className="flex items-center gap-3 min-w-0">
             {/* Colored icon badge */}
@@ -79,57 +77,14 @@ export function ProjectCardItem({ project, onEdit, onDelete, isLoading }: Projec
             </div>
           </div>
 
-          <div className="flex items-center gap-1 shrink-0">
-            {/* Favorite star badge */}
-            {isFav && (
+          {/* Favorite star badge */}
+          {isFav && (
+            <div className="flex items-center shrink-0">
               <span title="Favorite">
                 <Star size={14} className="fill-amber-400 text-amber-400 shrink-0" />
               </span>
-            )}
-
-            {/* Actions kebab */}
-            <div className="relative">
-              <button
-                type="button"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setMenuOpen((v) => !v);
-                }}
-                className="rounded-lg p-1.5 text-payne's_gray opacity-0 transition-all hover:bg-platinum group-hover:opacity-100"
-                aria-label="Project actions"
-              >
-                <MoreVertical size={16} />
-              </button>
-
-              {menuOpen && (
-                <div
-                  onClick={(e) => e.stopPropagation()}
-                  className="absolute right-0 top-full z-10 mt-1 w-36 rounded-lg border border-french_gray bg-white py-1 shadow-lg dark:bg-outer_space"
-                >
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setMenuOpen(false);
-                      onEdit?.(project.id);
-                    }}
-                    className="flex w-full items-center gap-2 px-3 py-2 text-sm text-outer_space hover:bg-platinum dark:text-white"
-                  >
-                    <Pencil size={14} /> Edit
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setMenuOpen(false);
-                      onDelete?.(project.id);
-                    }}
-                    className="flex w-full items-center gap-2 px-3 py-2 text-sm text-red-500 hover:bg-red-50 dark:hover:bg-red-950/30"
-                  >
-                    <Trash2 size={14} /> Delete
-                  </button>
-                </div>
-              )}
             </div>
-          </div>
+          )}
         </div>
 
         {/* Description */}
@@ -225,35 +180,33 @@ export function ProjectTableSkeleton({ count = 3 }: { count?: number }) {
   return (
     <div className="overflow-hidden rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm bg-white dark:bg-[#14263e]">
       <div className="overflow-x-auto">
-        <table className="w-full text-sm text-left">
+        <table className="w-full text-sm text-left table-fixed">
           <thead className="bg-[#142843] text-white">
             <tr>
-              {[
-                "Project",
-                "Category",
-                "Status",
-                "Priority",
-                "Owner",
-                "Team",
-                "Progress",
-                "Devs",
-                "Tasks",
-                "Updated",
-                "Actions",
-              ].map((col) => (
-                <th
-                  key={col}
-                  className="px-5 py-3.5 text-xs font-bold uppercase tracking-wider text-slate-100 whitespace-nowrap"
-                >
-                  {col}
-                </th>
-              ))}
+              <th className="px-6 py-4 text-xs font-bold uppercase tracking-wider text-slate-100 w-[35%]">
+                Project
+              </th>
+              <th className="px-6 py-4 text-xs font-bold uppercase tracking-wider text-slate-100 w-[16%]">
+                Status
+              </th>
+              <th className="px-6 py-4 text-xs font-bold uppercase tracking-wider text-slate-100 w-[14%]">
+                Priority
+              </th>
+              <th className="px-6 py-4 text-xs font-bold uppercase tracking-wider text-slate-100 w-[18%]">
+                Owner
+              </th>
+              <th className="px-6 py-4 text-xs font-bold uppercase tracking-wider text-slate-100 w-[17%]">
+                Team
+              </th>
+              <th className="px-4 py-4 text-xs font-bold uppercase tracking-wider text-slate-100 text-center w-[70px]">
+                Actions
+              </th>
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100 dark:divide-slate-800 bg-white dark:bg-[#14263e]">
             {Array.from({ length: count }).map((_, i) => (
               <tr key={i} className="animate-pulse">
-                <td className="px-5 py-4">
+                <td className="px-6 py-4">
                   <div className="flex items-center gap-3">
                     <div className="h-8 w-8 rounded-lg bg-slate-200 dark:bg-slate-700/60 shrink-0" />
                     <div className="space-y-1">
@@ -262,21 +215,21 @@ export function ProjectTableSkeleton({ count = 3 }: { count?: number }) {
                     </div>
                   </div>
                 </td>
-                <td className="px-5 py-4"><div className="h-3 w-16 rounded bg-slate-200 dark:bg-slate-700/60" /></td>
-                <td className="px-5 py-4"><div className="h-5 w-20 rounded-full bg-slate-200 dark:bg-slate-700/60" /></td>
-                <td className="px-5 py-4"><div className="h-5 w-16 rounded-full bg-slate-200 dark:bg-slate-700/60" /></td>
-                <td className="px-5 py-4"><div className="h-3 w-20 rounded bg-slate-200 dark:bg-slate-700/60" /></td>
-                <td className="px-5 py-4"><div className="h-3 w-20 rounded bg-slate-200 dark:bg-slate-700/60" /></td>
-                <td className="px-5 py-4">
-                  <div className="space-y-1">
-                    <div className="h-3 w-8 rounded bg-slate-200 dark:bg-slate-700/60" />
-                    <div className="h-1.5 w-20 rounded-full bg-slate-200 dark:bg-slate-700/60" />
-                  </div>
+                <td className="px-6 py-4">
+                  <div className="h-5 w-20 rounded-full bg-slate-200 dark:bg-slate-700/60" />
                 </td>
-                <td className="px-5 py-4"><div className="h-3 w-8 rounded bg-slate-200 dark:bg-slate-700/60" /></td>
-                <td className="px-5 py-4"><div className="h-3 w-8 rounded bg-slate-200 dark:bg-slate-700/60" /></td>
-                <td className="px-5 py-4"><div className="h-3 w-16 rounded bg-slate-200 dark:bg-slate-700/60" /></td>
-                <td className="px-5 py-4 text-center"><div className="mx-auto h-4 w-6 rounded bg-slate-200 dark:bg-slate-700/60" /></td>
+                <td className="px-6 py-4">
+                  <div className="h-5 w-16 rounded-full bg-slate-200 dark:bg-slate-700/60" />
+                </td>
+                <td className="px-6 py-4">
+                  <div className="h-3.5 w-24 rounded bg-slate-200 dark:bg-slate-700/60" />
+                </td>
+                <td className="px-6 py-4">
+                  <div className="h-4 w-16 rounded bg-slate-200 dark:bg-slate-700/60" />
+                </td>
+                <td className="px-4 py-4 text-center">
+                  <div className="mx-auto h-4 w-6 rounded bg-slate-200 dark:bg-slate-700/60" />
+                </td>
               </tr>
             ))}
           </tbody>
