@@ -59,7 +59,7 @@ export function PeopleToolbar({
   return (
     <div className="flex flex-wrap items-center gap-2.5">
       {/* Search — LEFT side */}
-      <div className="relative w-52">
+      <div className="relative flex-1 min-w-[200px] max-w-sm">
         <input
           value={search}
           onChange={(e) => onSearchChange(e.target.value)}

@@ -80,7 +80,7 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
             sidebarHovered={sidebarHovered}
           />
 
-          <main className="flex-1 overflow-hidden bg-[#f0f4f8] dark:bg-[#0b1728] flex flex-col">
+          <main className="flex-1 w-full min-w-0 overflow-hidden bg-[#f0f4f8] dark:bg-[#0b1728] flex flex-col">
             <Suspense>{children}</Suspense>
           </main>
         </div>

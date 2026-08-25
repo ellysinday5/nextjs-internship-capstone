@@ -25,38 +25,40 @@ export function PeopleGridSkeleton({ count = 4 }: { count?: number }) {
 export function PeopleTableSkeleton({ count = 4 }: { count?: number }) {
   return (
     <div className="overflow-hidden rounded-xl border border-slate-200 dark:border-slate-800">
-      <table className="w-full text-left text-sm">
-        <thead className="bg-[#142843] text-white">
-          <tr>
-            <th className="px-4 py-3 font-semibold">Name</th>
-            <th className="px-4 py-3 font-semibold">Email</th>
-            <th className="px-4 py-3 font-semibold">Role</th>
-            <th className="px-4 py-3 font-semibold">User Status</th>
-            <th className="px-4 py-3 text-right font-semibold">Action</th>
-          </tr>
-        </thead>
-        <tbody className="divide-y divide-slate-100 bg-white dark:divide-slate-800 dark:bg-slate-900">
-          {Array.from({ length: count }).map((_, i) => (
-            <tr key={i} className="animate-pulse">
-              <td className="px-4 py-3.5">
-                <div className="h-4 w-28 rounded bg-slate-200 dark:bg-slate-700/60" />
-              </td>
-              <td className="px-4 py-3.5">
-                <div className="h-4 w-36 rounded bg-slate-200 dark:bg-slate-700/60" />
-              </td>
-              <td className="px-4 py-3.5">
-                <div className="h-4 w-20 rounded bg-slate-200 dark:bg-slate-700/60" />
-              </td>
-              <td className="px-4 py-3.5">
-                <div className="h-4 w-16 rounded-full bg-slate-200 dark:bg-slate-700/60" />
-              </td>
-              <td className="px-4 py-3.5 text-right">
-                <div className="ml-auto h-4 w-6 rounded bg-slate-200 dark:bg-slate-700/60" />
-              </td>
+      <div className="overflow-x-auto">
+        <table className="w-full text-left text-sm min-w-[500px]">
+          <thead className="bg-[#142843] text-white">
+            <tr>
+              <th className="px-4 py-3 font-semibold">Name</th>
+              <th className="px-4 py-3 font-semibold">Email</th>
+              <th className="px-4 py-3 font-semibold">Role</th>
+              <th className="px-4 py-3 font-semibold">User Status</th>
+              <th className="px-4 py-3 text-right font-semibold">Action</th>
             </tr>
-          ))}
-        </tbody>
-      </table>
+          </thead>
+          <tbody className="divide-y divide-slate-100 bg-white dark:divide-slate-800 dark:bg-slate-900">
+            {Array.from({ length: count }).map((_, i) => (
+              <tr key={i} className="animate-pulse">
+                <td className="px-4 py-3.5">
+                  <div className="h-4 w-28 rounded bg-slate-200 dark:bg-slate-700/60" />
+                </td>
+                <td className="px-4 py-3.5">
+                  <div className="h-4 w-36 rounded bg-slate-200 dark:bg-slate-700/60" />
+                </td>
+                <td className="px-4 py-3.5">
+                  <div className="h-4 w-20 rounded bg-slate-200 dark:bg-slate-700/60" />
+                </td>
+                <td className="px-4 py-3.5">
+                  <div className="h-4 w-16 rounded-full bg-slate-200 dark:bg-slate-700/60" />
+                </td>
+                <td className="px-4 py-3.5 text-right">
+                  <div className="ml-auto h-4 w-6 rounded bg-slate-200 dark:bg-slate-700/60" />
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
     </div>
   );
 }

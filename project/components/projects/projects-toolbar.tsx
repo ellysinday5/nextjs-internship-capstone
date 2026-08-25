@@ -135,19 +135,6 @@ export function ProjectsToolbar({
           />
 
           <FilterDropdown
-            label="Team"
-            icon={<Users size={14} />}
-            value={selectedTeam}
-            options={teamOptions && teamOptions.length > 0 ? teamOptions : teamsList}
-            isOpen={openDropdown === "team"}
-            onToggle={() => toggleDropdown("team")}
-            onSelect={(val) => {
-              setSelectedTeam(val);
-              setOpenDropdown(null);
-            }}
-          />
-
-          <FilterDropdown
             label="Priority"
             icon={<ArrowUpDown size={14} />}
             value={selectedPriority}

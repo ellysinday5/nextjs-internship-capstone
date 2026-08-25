@@ -246,7 +246,7 @@ export function KanbanBoard({ projectId, onSelectTask }: KanbanBoardProps) {
           {DEFAULT_PREVIEW_COLS.map((name, i) => (
             <div
               key={i}
-              className="flex w-[272px] flex-shrink-0 flex-col rounded-xl border border-slate-200/80 dark:border-slate-700/50 bg-[#f5f6f7] dark:bg-[#14263e]/70"
+              className="flex min-w-[280px] flex-1 max-w-[380px] flex-shrink-0 flex-col rounded-xl border border-slate-200/80 dark:border-slate-700/50 bg-[#f5f6f7] dark:bg-[#14263e]/70"
             >
               <div className="flex items-center justify-between px-3 pt-3 pb-2">
                 <span className="text-xs font-bold text-slate-700 dark:text-slate-300">{name}</span>
@@ -304,7 +304,7 @@ export function KanbanBoard({ projectId, onSelectTask }: KanbanBoardProps) {
           </SortableContext>
 
           {/* ── Add section column ── */}
-          <div className="w-[272px] flex-shrink-0">
+          <div className="min-w-[280px] flex-1 max-w-[320px] flex-shrink-0">
             {isAddingList ? (
               <div className="rounded-xl border border-slate-200 bg-[#f5f6f7] p-3 dark:border-slate-700 dark:bg-[#14263e]/70">
                 <input

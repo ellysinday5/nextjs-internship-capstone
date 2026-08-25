@@ -61,7 +61,7 @@ export function KanbanColumn({ list, tasks, onSelectTask }: KanbanColumnProps) {
       <div
         ref={setNodeRef}
         data-list-dropzone={list.id}
-        className="flex w-[272px] flex-shrink-0 flex-col rounded-xl bg-[#f5f6f7] dark:bg-[#14263e]/70 border border-slate-200/80 dark:border-slate-700/50"
+        className="flex min-w-[280px] flex-1 max-w-[380px] flex-shrink-0 flex-col rounded-xl bg-[#f5f6f7] dark:bg-[#14263e]/70 border border-slate-200/80 dark:border-slate-700/50"
       >
         {/* ── Column header ── */}
         <div className="flex items-center justify-between px-3 pt-3 pb-2 group/header">

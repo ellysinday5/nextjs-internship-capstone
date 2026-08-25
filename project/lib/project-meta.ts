@@ -41,6 +41,8 @@ export interface ProjectMeta {
   color: string;
   iconIndex: number;
   isFavorite: boolean;
+  isPublic?: boolean;
+  sharedTeams?: { id: string; name: string }[];
   views?: string[];
 }
 

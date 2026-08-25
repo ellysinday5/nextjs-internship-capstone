@@ -46,6 +46,7 @@ export function ProjectCard({ project, onEditLocal, onProjectDeleted }: ProjectC
     accentColor,
     iconIndex,
     isFavorite,
+    isPublic: project.isPublic ?? false,
   };
 
   function handleEdit(id: string) {

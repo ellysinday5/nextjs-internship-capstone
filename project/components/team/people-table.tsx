@@ -16,7 +16,8 @@ const STATUS_DOT: Record<TeamMember["status"], string> = {
 export function PeopleTable({ members, onSelectMember }: PeopleTableProps) {
   return (
     <div className="overflow-hidden rounded-xl border border-slate-200 dark:border-slate-800">
-      <table className="w-full text-left text-sm">
+      <div className="overflow-x-auto">
+        <table className="w-full text-left text-sm min-w-[500px]">
         <thead className="bg-[#142843] text-white">
           <tr>
             <th className="px-4 py-3 font-semibold">Name</th>
@@ -56,6 +57,7 @@ export function PeopleTable({ members, onSelectMember }: PeopleTableProps) {
           )}
         </tbody>
       </table>
+      </div>
     </div>
   );
 }
