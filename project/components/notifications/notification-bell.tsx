@@ -18,6 +18,7 @@ export function NotificationBell() {
   const [open, setOpen] = useState(false);
   const [notifications, setNotifications] = useState<NotificationWithActor[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
+  const [loading, setLoading] = useState(true);
   const [selectedInviteNotification, setSelectedInviteNotification] =
     useState<NotificationWithActor | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -32,6 +33,8 @@ export function NotificationBell() {
       if (countRes.success && typeof countRes.data === "number") setUnreadCount(countRes.data);
     } catch (err) {
       console.error("Failed to fetch notifications:", err);
+    } finally {
+      setLoading(false);
     }
   }
 
@@ -68,23 +71,15 @@ export function NotificationBell() {
         prev.map((n) => (n.id === notification.id ? { ...n, isRead: true } : n)),
       );
       setUnreadCount((prev) => Math.max(0, prev - 1));
-      markNotificationAsReadAction(notification.id).catch(console.error);
+      await markNotificationAsReadAction(notification.id);
     }
 
-    setOpen(false);
-
-    // Project Invitation -> Open Inline Detail/Accept Modal
-    if (
-      notification.type === "project_invite" ||
-      notification.type === ("project_invitation" as any)
-    ) {
+    if (notification.type === "project_invite") {
       setSelectedInviteNotification(notification);
-      return;
-    }
-
-    // Other notification types -> Navigate to resource href
-    if (notification.href) {
+      setOpen(false);
+    } else if (notification.href) {
       router.push(notification.href);
+      setOpen(false);
     }
   }
 
@@ -92,21 +87,27 @@ export function NotificationBell() {
     <>
       <div className="relative" ref={containerRef}>
         <button
-          onClick={() => setOpen(!open)}
-          className="p-2 text-white/80 hover:text-white rounded-full hover:bg-white/15 hover:shadow-[0_0_12px_2px_rgba(255,255,255,0.12)] transition-all duration-200 relative cursor-pointer"
-          aria-label="Notifications"
-          suppressHydrationWarning
+          type="button"
+          onClick={() => setOpen((prev) => !prev)}
+          className={`relative p-2 rounded-xl transition-colors cursor-pointer ${
+            open
+              ? "bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-white"
+              : "text-slate-500 hover:text-slate-700 hover:bg-slate-100 dark:text-slate-400 dark:hover:text-slate-200 dark:hover:bg-slate-800"
+          }`}
+          title="Notifications"
+          aria-label="Open notifications"
         >
-          <Bell size={20} />
+          <Bell size={18} />
           {unreadCount > 0 && (
-            <span className="absolute top-0.5 right-0.5 min-w-[18px] h-[18px] px-1 rounded-full bg-red-500 text-[10px] font-bold text-white flex items-center justify-center shadow-md">
-              {unreadCount > 9 ? "9+" : unreadCount}
+            <span className="absolute top-1.5 right-1.5 flex h-2 w-2">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75" />
+              <span className="relative inline-flex rounded-full h-2 w-2 bg-[#0033a0] dark:bg-blue-500" />
             </span>
           )}
         </button>
 
         {open && (
-          <div className="absolute right-0 mt-2 w-80 sm:w-96 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-2xl z-50 overflow-hidden text-slate-900 dark:text-slate-100 animate-in fade-in slide-in-from-top-2 duration-150">
+          <div className="absolute right-0 top-full mt-2 w-80 sm:w-96 rounded-2xl bg-white dark:bg-[#14263e] border border-slate-200 dark:border-slate-800 shadow-2xl z-50 overflow-hidden animate-in fade-in slide-in-from-top-2 duration-150">
             <div className="flex items-center justify-between px-4 py-3 border-b border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50">
               <div className="flex items-center gap-2">
                 <span className="font-semibold text-sm">Notifications</span>
@@ -128,7 +129,19 @@ export function NotificationBell() {
             </div>
 
             <div className="max-h-[380px] overflow-y-auto divide-y divide-slate-100 dark:divide-slate-800/60">
-              {notifications.length === 0 ? (
+              {loading && notifications.length === 0 ? (
+                <div className="divide-y divide-slate-100 dark:divide-slate-800/60 animate-pulse">
+                  {[1, 2, 3].map((n) => (
+                    <div key={n} className="px-4 py-3 space-y-1.5">
+                      <div className="flex items-center justify-between">
+                        <div className="h-3.5 w-32 rounded bg-slate-200 dark:bg-slate-700" />
+                        <div className="h-2.5 w-12 rounded bg-slate-200 dark:bg-slate-700" />
+                      </div>
+                      <div className="h-3 w-48 rounded bg-slate-200 dark:bg-slate-700" />
+                    </div>
+                  ))}
+                </div>
+              ) : notifications.length === 0 ? (
                 <div className="py-10 text-center text-slate-400 dark:text-slate-500">
                   <Bell size={28} className="mx-auto mb-2 opacity-30" />
                   <p className="text-sm font-medium">No notifications yet</p>

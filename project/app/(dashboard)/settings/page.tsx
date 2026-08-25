@@ -6,6 +6,7 @@ import { CategoriesTab } from "@/components/settings/tabs/categories-tab";
 import { NotificationsTab } from "@/components/settings/tabs/notifications-tab";
 import { ProfileTab } from "@/components/settings/tabs/profile-tab";
 import { SecurityTab } from "@/components/settings/tabs/security-tab";
+import { UserAvatar } from "@/components/ui/user-avatar";
 import { useUserProfile } from "@/context/user-profile-context";
 import {
   Bell,
@@ -122,22 +123,13 @@ export default function SettingsPage() {
               {/* Avatar protruding over header */}
               <div className="px-5 pb-5 -mt-8 flex flex-col items-center text-center">
                 <div className="relative mb-2">
-                  <div className="w-16 h-16 rounded-2xl overflow-hidden ring-4 ring-white dark:ring-[#14263e] shadow-md bg-white dark:bg-slate-800">
-                    {profile.avatarUrl ? (
-                      <Image
-                        src={profile.avatarUrl}
-                        alt="Profile preview"
-                        width={64}
-                        height={64}
-                        className="w-full h-full object-cover"
-                        unoptimized
-                      />
-                    ) : (
-                      <div className="w-full h-full bg-gradient-to-tr from-[#0f2d5a] to-[#0052cc] flex items-center justify-center text-white text-xl font-bold">
-                        {initials}
-                      </div>
-                    )}
-                  </div>
+                  <UserAvatar
+                    src={profile.avatarUrl}
+                    name={profile.fullName}
+                    size="xl"
+                    shape="rounded-2xl"
+                    className="ring-4 ring-white dark:ring-[#14263e] shadow-md bg-white dark:bg-slate-800"
+                  />
                   <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-emerald-500 rounded-full border-2 border-white dark:border-[#14263e] flex items-center justify-center">
                     <CheckCircle2 size={8} className="text-white" />
                   </div>

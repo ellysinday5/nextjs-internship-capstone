@@ -187,8 +187,9 @@ export function ListTabSkeleton({ noShell = false }: { noShell?: boolean } = {})
         </div>
 
         {/* Sections + rows */}
+        {/* Sections + rows (realistic distribution across sections) */}
         <div className="flex-1 overflow-auto divide-y divide-slate-100 dark:divide-slate-800">
-          {[4, 0, 0, 0].map((rowCount, si) => (
+          {[3, 2, 1].map((rowCount, si) => (
             <div key={si} className="py-2">
               {/* Section header */}
               <div className="flex items-center gap-2 px-6 py-2">
@@ -230,8 +231,8 @@ export function ListTabSkeleton({ noShell = false }: { noShell?: boolean } = {})
    Board skeleton  (index 2)
 ══════════════════════════════════════════════════════════════════════════ */
 export function BoardTabSkeleton({ noShell = false }: { noShell?: boolean } = {}) {
-  // Column definitions: [columnName-width, card widths[]]
-  const COLUMNS = [{ cards: [100, 80, 90, 75] }, { cards: [90] }, { cards: [] }, { cards: [] }];
+  // Column definitions: balanced realistic initial cards per Kanban section (To Do, In Progress, Review, Done)
+  const COLUMNS = [{ cards: [90, 75] }, { cards: [85] }, { cards: [70] }, { cards: [] }];
 
   const inner = (
     <div className="flex flex-1 flex-col overflow-hidden bg-white dark:bg-[#0f1d31]">

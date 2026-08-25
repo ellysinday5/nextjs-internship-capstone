@@ -68,6 +68,14 @@ export default function CreateProjectPage() {
       return;
     }
 
+    // Early UX guard — navigates user back to step 2 immediately rather than
+    // waiting for the round-trip. The server also rejects at parse time.
+    if (!formData.selectedViews || formData.selectedViews.length === 0) {
+      sileo.error("Please select at least one view", "Error");
+      setStep(2);
+      return;
+    }
+
     setIsSubmitting(true);
     setServerError(null);
 
@@ -82,6 +90,10 @@ export default function CreateProjectPage() {
       description,
       categories: ["Frontend"],
       techStack: formData.techStack.length > 0 ? formData.techStack : ["Next.js", "TypeScript"],
+      // selectedViews values come from RECOMMENDED_VIEWS / POPULAR_VIEWS which
+      // only contain PROJECT_VIEW keys — the cast is safe and the server schema
+      // validates the values against z.enum(PROJECT_VIEWS) as a hard backstop.
+      views: formData.selectedViews as import("@/lib/project-schemas").ProjectView[],
       status: "In Progress",
       priority: "Medium",
       dueDate: formData.dueDate || undefined,
@@ -93,20 +105,21 @@ export default function CreateProjectPage() {
     if (res.success) {
       if (res.project?.id) {
         const capitalizedViews = formData.selectedViews.map(
-          (v) => v.charAt(0).toUpperCase() + v.slice(1),
+          (v) => v.charAt(0).toUpperCase() + v.slice(1).toLowerCase(),
         );
-        const viewsToSave = [
-          "Overview",
-          ...capitalizedViews.filter((v) => v.toLowerCase() !== "overview"),
-        ];
-        saveProjectMeta(res.project.id, { views: viewsToSave });
+        saveProjectMeta(res.project.id, { views: capitalizedViews });
       }
       sileo.success(`Project "${formData.name}" created successfully!`, "Project Created");
       router.push("/projects");
       router.refresh();
     } else {
-      setServerError(res.error || "Failed to create project");
-      sileo.error(res.error || "Failed to create project", "Error");
+      const errMsg = res.error || "Failed to create project";
+      setServerError(errMsg);
+      sileo.error(errMsg, "Error");
+      // If the server rejected because views is invalid, navigate back to step 2
+      if (errMsg.toLowerCase().includes("view")) {
+        setStep(2);
+      }
     }
   };
 

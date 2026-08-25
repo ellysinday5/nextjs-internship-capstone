@@ -340,9 +340,22 @@ export function NotificationsTab() {
         {/* List items */}
         <div className="space-y-2 min-h-[120px]">
           {loading ? (
-            <div className="py-12 text-center text-slate-400">
-              <Loader2 size={24} className="mx-auto mb-2 animate-spin opacity-40" />
-              <p className="text-sm font-semibold">Loading notifications…</p>
+            <div className="space-y-2 animate-pulse">
+              {[1, 2, 3].map((n) => (
+                <div
+                  key={n}
+                  className="p-3.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-[#1c304a] flex items-start gap-3"
+                >
+                  <div className="w-8 h-8 rounded-full bg-slate-200 dark:bg-slate-700 shrink-0 mt-0.5" />
+                  <div className="flex-1 space-y-1.5 min-w-0">
+                    <div className="flex items-center justify-between">
+                      <div className="h-3.5 w-32 rounded bg-slate-200 dark:bg-slate-700" />
+                      <div className="h-3 w-12 rounded bg-slate-200 dark:bg-slate-700" />
+                    </div>
+                    <div className="h-3 w-3/4 rounded bg-slate-200 dark:bg-slate-700" />
+                  </div>
+                </div>
+              ))}
             </div>
           ) : filteredNotifs.length === 0 ? (
             <div className="py-12 text-center text-slate-400">

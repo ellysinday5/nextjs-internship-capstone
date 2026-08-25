@@ -184,36 +184,103 @@ function formatDueDate(date: Date): string {
 
 export function ProjectCardSkeleton() {
   return (
-    <div className="animate-pulse rounded-2xl border border-french_gray bg-white overflow-hidden dark:bg-outer_space">
+    <div className="animate-pulse rounded-2xl border border-french_gray bg-white overflow-hidden dark:bg-outer_space dark:border-slate-800 flex flex-col justify-between min-h-[220px]">
       {/* Accent strip */}
-      <div className="h-1.5 w-full bg-platinum" />
-      <div className="p-6 space-y-4">
+      <div className="h-1.5 w-full bg-platinum dark:bg-slate-700/60 shrink-0" />
+      <div className="p-6 flex flex-col flex-1 gap-4">
         {/* Icon + title row */}
-        <div className="flex items-center gap-3">
-          <div className="h-9 w-9 rounded-xl bg-platinum shrink-0" />
-          <div className="flex-1 space-y-1.5">
-            <div className="h-4 w-2/3 rounded bg-platinum" />
-            <div className="h-3 w-1/3 rounded-full bg-platinum" />
+        <div className="flex items-start justify-between gap-2">
+          <div className="flex items-center gap-3 min-w-0 flex-1">
+            <div className="h-9 w-9 rounded-xl bg-platinum dark:bg-slate-700/60 shrink-0" />
+            <div className="flex-1 space-y-1.5">
+              <div className="h-4 w-2/3 rounded bg-platinum dark:bg-slate-700/60" />
+              <div className="h-3 w-1/3 rounded-full bg-platinum dark:bg-slate-700/60" />
+            </div>
           </div>
         </div>
         {/* Description */}
         <div className="space-y-1.5">
-          <div className="h-3 w-full rounded bg-platinum" />
-          <div className="h-3 w-4/5 rounded bg-platinum" />
+          <div className="h-3 w-full rounded bg-platinum dark:bg-slate-700/60" />
+          <div className="h-3 w-4/5 rounded bg-platinum dark:bg-slate-700/60" />
         </div>
         {/* Progress */}
-        <div className="space-y-1.5">
+        <div className="mt-auto space-y-1.5">
           <div className="flex justify-between">
-            <div className="h-3 w-16 rounded bg-platinum" />
-            <div className="h-3 w-8 rounded bg-platinum" />
+            <div className="h-3 w-16 rounded bg-platinum dark:bg-slate-700/60" />
+            <div className="h-3 w-8 rounded bg-platinum dark:bg-slate-700/60" />
           </div>
-          <div className="h-1.5 w-full rounded-full bg-platinum" />
+          <div className="h-1.5 w-full rounded-full bg-platinum dark:bg-slate-700/60" />
         </div>
         {/* Footer */}
-        <div className="flex justify-between border-t border-french_gray pt-3">
-          <div className="h-3 w-16 rounded bg-platinum" />
-          <div className="h-3 w-12 rounded bg-platinum" />
+        <div className="flex items-center gap-3 border-t border-french_gray dark:border-slate-800 pt-3">
+          <div className="h-3 w-12 rounded bg-platinum dark:bg-slate-700/60" />
+          <div className="h-3 w-16 rounded bg-platinum dark:bg-slate-700/60" />
         </div>
+      </div>
+    </div>
+  );
+}
+
+export function ProjectTableSkeleton({ count = 3 }: { count?: number }) {
+  return (
+    <div className="overflow-hidden rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm bg-white dark:bg-[#14263e]">
+      <div className="overflow-x-auto">
+        <table className="w-full text-sm text-left">
+          <thead className="bg-[#142843] text-white">
+            <tr>
+              {[
+                "Project",
+                "Category",
+                "Status",
+                "Priority",
+                "Owner",
+                "Team",
+                "Progress",
+                "Devs",
+                "Tasks",
+                "Updated",
+                "Actions",
+              ].map((col) => (
+                <th
+                  key={col}
+                  className="px-5 py-3.5 text-xs font-bold uppercase tracking-wider text-slate-100 whitespace-nowrap"
+                >
+                  {col}
+                </th>
+              ))}
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-slate-100 dark:divide-slate-800 bg-white dark:bg-[#14263e]">
+            {Array.from({ length: count }).map((_, i) => (
+              <tr key={i} className="animate-pulse">
+                <td className="px-5 py-4">
+                  <div className="flex items-center gap-3">
+                    <div className="h-8 w-8 rounded-lg bg-slate-200 dark:bg-slate-700/60 shrink-0" />
+                    <div className="space-y-1">
+                      <div className="h-3.5 w-28 rounded bg-slate-200 dark:bg-slate-700/60" />
+                      <div className="h-2.5 w-40 rounded bg-slate-200 dark:bg-slate-700/60" />
+                    </div>
+                  </div>
+                </td>
+                <td className="px-5 py-4"><div className="h-3 w-16 rounded bg-slate-200 dark:bg-slate-700/60" /></td>
+                <td className="px-5 py-4"><div className="h-5 w-20 rounded-full bg-slate-200 dark:bg-slate-700/60" /></td>
+                <td className="px-5 py-4"><div className="h-5 w-16 rounded-full bg-slate-200 dark:bg-slate-700/60" /></td>
+                <td className="px-5 py-4"><div className="h-3 w-20 rounded bg-slate-200 dark:bg-slate-700/60" /></td>
+                <td className="px-5 py-4"><div className="h-3 w-20 rounded bg-slate-200 dark:bg-slate-700/60" /></td>
+                <td className="px-5 py-4">
+                  <div className="space-y-1">
+                    <div className="h-3 w-8 rounded bg-slate-200 dark:bg-slate-700/60" />
+                    <div className="h-1.5 w-20 rounded-full bg-slate-200 dark:bg-slate-700/60" />
+                  </div>
+                </td>
+                <td className="px-5 py-4"><div className="h-3 w-8 rounded bg-slate-200 dark:bg-slate-700/60" /></td>
+                <td className="px-5 py-4"><div className="h-3 w-8 rounded bg-slate-200 dark:bg-slate-700/60" /></td>
+                <td className="px-5 py-4"><div className="h-3 w-16 rounded bg-slate-200 dark:bg-slate-700/60" /></td>
+                <td className="px-5 py-4 text-center"><div className="mx-auto h-4 w-6 rounded bg-slate-200 dark:bg-slate-700/60" /></td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
       </div>
     </div>
   );

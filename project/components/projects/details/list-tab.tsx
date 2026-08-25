@@ -1,6 +1,7 @@
 "use client";
 
 import type { TaskItem } from "@/components/tasks/task-details";
+import { UserAvatar } from "@/components/ui/user-avatar";
 import { CheckCircle2, ChevronDown } from "lucide-react";
 import { useEffect, useRef } from "react";
 
@@ -82,9 +83,12 @@ export function ListTab({
                   <div>
                     {task.assignee ? (
                       <div className="flex items-center gap-1.5">
-                        <span className="w-5 h-5 rounded-full bg-amber-400 text-amber-900 font-bold text-[10px] flex items-center justify-center shrink-0">
-                          {task.assignee.initials}
-                        </span>
+                        <UserAvatar
+                          name={task.assignee.name}
+                          initials={task.assignee.initials}
+                          size="xs"
+                          fallbackBg="bg-amber-400 text-amber-900 font-bold"
+                        />
                         <span className="text-slate-600 dark:text-slate-400 truncate text-[11px]">
                           {task.assignee.name}
                         </span>

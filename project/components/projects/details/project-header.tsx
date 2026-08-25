@@ -2,6 +2,7 @@
 
 import { Modal } from "@/components/modals/BaseModal";
 import { BackButton } from "@/components/ui/back-button";
+import { UserAvatar } from "@/components/ui/user-avatar";
 import { PROJECT_ICON_LIST } from "@/lib/project-meta";
 import { sileo } from "@/utils/alerts";
 import {
@@ -87,20 +88,22 @@ function MemberAvatarPopoverItem({
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
     >
-      <span
-        className={`w-8 h-8 rounded-full ${colorClass} font-bold text-xs flex items-center justify-center border-2 border-white dark:border-[#0f1d31] cursor-pointer shadow-xs transition-transform group-hover:scale-110 shrink-0 relative z-10`}
-      >
-        {initials}
-      </span>
+      <UserAvatar
+        name={member.name}
+        size="md"
+        fallbackBg={`${colorClass} font-bold`}
+        className="border-2 border-white dark:border-[#0f1d31] cursor-pointer shadow-xs transition-transform group-hover:scale-110 shrink-0 relative z-10"
+      />
 
       {isHovered && (
         <div className="absolute top-full right-0 mt-2 w-60 bg-white dark:bg-[#14263e] border border-slate-200 dark:border-slate-700 rounded-xl shadow-2xl p-3.5 z-50 animate-in fade-in zoom-in-95 duration-150">
           <div className="flex items-center gap-2.5 mb-2.5">
-            <div
-              className={`w-9 h-9 rounded-full ${colorClass} font-bold text-xs flex items-center justify-center shrink-0`}
-            >
-              {initials}
-            </div>
+            <UserAvatar
+              name={member.name}
+              size="md"
+              fallbackBg={`${colorClass} font-bold`}
+              className="shrink-0"
+            />
             <div className="min-w-0 flex-1">
               <p className="text-xs font-bold text-slate-900 dark:text-white truncate">
                 {member.name}

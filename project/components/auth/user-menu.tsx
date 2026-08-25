@@ -10,10 +10,10 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { UserAvatar } from "@/components/ui/user-avatar";
 import { useUserProfile } from "@/context/user-profile-context";
 import { useClerk, useUser } from "@clerk/nextjs";
-import { LogOut, User as UserIcon } from "lucide-react";
-import Image from "next/image";
+import { LogOut } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 
 export function UserMenu() {
@@ -47,56 +47,33 @@ export function UserMenu() {
   const displayEmail = user?.primaryEmailAddress?.emailAddress || profile.email || "";
   const avatarSrc = profile.avatarUrl || user?.imageUrl;
 
-  const initials = displayName
-    .split(" ")
-    .map((n) => n[0])
-    .join("")
-    .slice(0, 2)
-    .toUpperCase();
-
   return (
     <>
       <div className="relative" ref={dropdownRef}>
         <button
           onClick={() => setDropdownOpen((v) => !v)}
-          className="flex items-center gap-2 rounded-full p-0.5 hover:bg-white/10 transition-all duration-200"
+          className="flex items-center gap-2 rounded-full p-0.5 hover:bg-white/10 transition-all duration-200 cursor-pointer"
           aria-label="User menu"
           suppressHydrationWarning
         >
-          {avatarSrc ? (
-            <Image
-              src={avatarSrc}
-              alt="User avatar"
-              width={38}
-              height={38}
-              unoptimized
-              className="w-9.5 h-9.5 rounded-full object-cover ring-2 ring-purple-400/40 shadow-sm"
-            />
-          ) : (
-            <div className="w-9.5 h-9.5 rounded-full bg-gradient-to-tr from-[#6366f1] via-[#8b5cf6] to-[#d946ef] flex items-center justify-center text-white font-black text-xs ring-2 ring-purple-300/50 shadow-sm select-none">
-              {initials || <UserIcon size={15} className="stroke-[2.5]" />}
-            </div>
-          )}
+          <UserAvatar
+            src={avatarSrc}
+            name={displayName}
+            size="md"
+            className="ring-2 ring-purple-400/40 shadow-sm"
+          />
         </button>
 
         {dropdownOpen && (
           <div className="absolute right-0 top-full mt-2.5 w-64 bg-white dark:bg-[#14263e] rounded-2xl shadow-2xl border border-[#142843]/10 dark:border-white/10 overflow-hidden z-50 animate-slide-in-from-top">
             <div className="px-4 py-4 border-b border-slate-100 dark:border-white/10 bg-slate-50/50 dark:bg-slate-800/30">
               <div className="flex items-center gap-3">
-                {avatarSrc ? (
-                  <Image
-                    src={avatarSrc}
-                    alt="User avatar"
-                    width={44}
-                    height={44}
-                    unoptimized
-                    className="w-11 h-11 rounded-full object-cover ring-2 ring-purple-400/30 flex-shrink-0"
-                  />
-                ) : (
-                  <div className="w-11 h-11 rounded-full bg-gradient-to-tr from-[#6366f1] via-[#8b5cf6] to-[#d946ef] flex items-center justify-center text-white text-sm font-black ring-2 ring-purple-400/30 flex-shrink-0 shadow-sm select-none">
-                    {initials}
-                  </div>
-                )}
+                <UserAvatar
+                  src={avatarSrc}
+                  name={displayName}
+                  size="base"
+                  className="ring-2 ring-purple-400/30 shrink-0 shadow-sm"
+                />
                 <div className="min-w-0 flex-1">
                   <p className="text-sm font-black text-[#142843] dark:text-white truncate">
                     {displayName}

@@ -1,8 +1,8 @@
 "use client";
 
+import { UserAvatar } from "@/components/ui/user-avatar";
 import { sileo } from "@/utils/alerts";
-import { Camera, Trash2, Upload, User, X } from "lucide-react";
-import Image from "next/image";
+import { Camera, Trash2, Upload } from "lucide-react";
 import type React from "react";
 import { useRef } from "react";
 
@@ -22,13 +22,6 @@ export function ProfilePictureCard({
   onAvatarChange,
 }: ProfilePictureCardProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
-
-  const initials = (fullName || "User")
-    .split(" ")
-    .map((n) => n[0])
-    .join("")
-    .slice(0, 2)
-    .toUpperCase();
 
   const processFile = (file: File) => {
     if (file.size > 5 * 1024 * 1024) {
@@ -59,22 +52,12 @@ export function ProfilePictureCard({
       <div className="flex flex-col sm:flex-row items-center sm:items-start gap-6">
         {/* Avatar */}
         <div className="relative group shrink-0">
-          <div className="w-20 h-20 rounded-full overflow-hidden ring-4 ring-slate-100 dark:ring-slate-800 shadow-sm bg-slate-100 dark:bg-slate-800">
-            {avatarPreview ? (
-              <Image
-                src={avatarPreview}
-                alt="Profile photo"
-                width={80}
-                height={80}
-                className="w-full h-full object-cover"
-                unoptimized
-              />
-            ) : (
-              <div className="w-full h-full bg-gradient-to-tr from-[#0f2d5a] to-[#0052cc] flex items-center justify-center text-white text-xl font-bold">
-                {initials}
-              </div>
-            )}
-          </div>
+          <UserAvatar
+            src={avatarPreview}
+            name={fullName}
+            size="2xl"
+            className="ring-4 ring-slate-100 dark:ring-slate-800 shadow-sm"
+          />
           <button
             type="button"
             onClick={() => fileInputRef.current?.click()}

@@ -2,6 +2,7 @@
 
 import { type ProjectWithStats, getProjectsAction } from "@/actions/project-actions";
 import type { ProjectItem } from "@/lib/project-data";
+import { getCachedCount, setCachedCount } from "@/lib/skeleton-cache";
 import { useCallback, useEffect, useMemo, useState } from "react";
 
 export type DropdownKey = "status" | "priority" | "category" | "owner" | "team" | "members" | null;
@@ -10,6 +11,11 @@ export type ViewMode = "grid" | "table";
 export function useProjectFilters() {
   const [dbProjects, setDbProjects] = useState<ProjectWithStats[]>([]);
   const [loading, setLoading] = useState(true);
+  const [skeletonCount, setSkeletonCount] = useState(3);
+
+  useEffect(() => {
+    setSkeletonCount(getCachedCount("projects", 3));
+  }, []);
 
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("All");
@@ -25,6 +31,10 @@ export function useProjectFilters() {
     setLoading(true);
     const result = await getProjectsAction();
     setDbProjects(result);
+    if (result.length > 0) {
+      setCachedCount("projects", result.length);
+      setSkeletonCount(result.length);
+    }
     setLoading(false);
   }, []);
 
@@ -152,5 +162,6 @@ export function useProjectFilters() {
     hasActiveFilters,
     clearFilters,
     toggleDropdown,
+    skeletonCount,
   };
 }

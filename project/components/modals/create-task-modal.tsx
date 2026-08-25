@@ -7,6 +7,7 @@ import {
   FilePreviewModal,
   type PreviewableFile,
 } from "@/components/modals/file-preview-modal";
+import { UserAvatar } from "@/components/ui/user-avatar";
 import { useBoardStore } from "@/stores/board-store";
 import { sileo } from "@/utils/alerts";
 import {
@@ -341,9 +342,11 @@ export function CreateTaskModal({
                     ))}
                   </select>
                   {selectedMember && (
-                    <span className="flex h-5 w-5 items-center justify-center rounded-full bg-amber-400 text-[9px] font-bold text-amber-950">
-                      {getInitials(selectedMember.name)}
-                    </span>
+                    <UserAvatar
+                      name={selectedMember.name}
+                      size="xs"
+                      fallbackBg="bg-amber-400 text-amber-950 font-bold"
+                    />
                   )}
                 </div>
               </div>

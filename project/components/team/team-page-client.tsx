@@ -7,6 +7,7 @@ import { type InviteMemberData, InviteMemberModal } from "@/components/modals/in
 import { MemberProfilePanel } from "@/components/team/member-profile-panel";
 import { PendingInvitesList } from "@/components/team/pending-invites-list";
 import { PeopleGrid } from "@/components/team/people-grid";
+import { PeopleGridSkeleton, PeopleTableSkeleton } from "@/components/team/people-skeleton";
 import { PeopleTable } from "@/components/team/people-table";
 import { PeopleToolbar } from "@/components/team/people-toolbar";
 import { AllTeamsTab } from "@/components/team/tabs/all-teams-tab";
@@ -15,6 +16,7 @@ import { MyInvitesTab } from "@/components/team/tabs/my-invites-tab";
 import { TeamLanding } from "@/components/team/team-landing-page";
 import { type TeamTab, TeamTabsBar } from "@/components/team/team-tabs-bar";
 import type { CreateTeamFormValues } from "@/lib/db/team-schemas";
+import { getCachedCount, setCachedCount } from "@/lib/skeleton-cache";
 import type { Team, TeamMember } from "@/lib/team-data";
 import { sileo } from "@/utils/alerts";
 import { useEffect, useMemo, useState } from "react";
@@ -45,12 +47,14 @@ export function TeamPageClient({ projectOptions }: TeamPageClientProps) {
   const [selectedProjectId, setSelectedProjectId] = useState<string>(projectOptions[0]?.id ?? "");
   const [inviteRefreshKey, setInviteRefreshKey] = useState(0);
   const [canInvite, setCanInvite] = useState(false);
+  const [skeletonCount, setSkeletonCount] = useState(4);
 
   useEffect(() => {
     if (!selectedProjectId) {
       setCanInvite(false);
       return;
     }
+    setSkeletonCount(getCachedCount(`team_members_${selectedProjectId}`, 4));
     getProjectPermissionsAction(selectedProjectId).then((perm) => {
       setCanInvite(perm.canManageMembers);
     });
@@ -72,7 +76,13 @@ export function TeamPageClient({ projectOptions }: TeamPageClientProps) {
 
     getProjectMembersAction(selectedProjectId)
       .then((result) => {
-        if (!cancelled) setPeople(result);
+        if (!cancelled) {
+          setPeople(result);
+          if (result.length > 0) {
+            setCachedCount(`team_members_${selectedProjectId}`, result.length);
+            setSkeletonCount(result.length);
+          }
+        }
       })
       .finally(() => {
         if (!cancelled) setLoadingPeople(false);
@@ -202,7 +212,11 @@ export function TeamPageClient({ projectOptions }: TeamPageClientProps) {
               />
 
               {loadingPeople ? (
-                <p className="py-8 text-center text-sm text-slate-400">Loading members...</p>
+                viewMode === "list" ? (
+                  <PeopleTableSkeleton count={skeletonCount} />
+                ) : (
+                  <PeopleGridSkeleton count={skeletonCount} />
+                )
               ) : viewMode === "list" ? (
                 <PeopleTable members={membersToShow} onSelectMember={setSelectedMember} />
               ) : (

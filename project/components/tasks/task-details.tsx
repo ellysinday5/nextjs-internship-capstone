@@ -10,6 +10,7 @@ import {
 import type { ProjectMember } from "@/actions/member-actions";
 import { ConfirmationModal } from "@/components/modals/ConfirmationModal";
 import { FilePreviewModal, type PreviewableFile } from "@/components/modals/file-preview-modal";
+import { UserAvatar } from "@/components/ui/user-avatar";
 import { useUser } from "@clerk/nextjs";
 import {
   Archive,
@@ -518,15 +519,15 @@ export function TaskDetailsPane({
 
     return (
       <div key={c.id} id={`comment-${c.id}`} className="group flex items-start gap-2.5">
-        <span
-          className={`flex shrink-0 items-center justify-center rounded-full font-bold ${
+        <UserAvatar
+          name={authorName}
+          size={isReply ? "xs" : "sm"}
+          fallbackBg={
             isReply
-              ? "h-5 w-5 text-[8px] bg-sky-100 text-sky-800 dark:bg-sky-950 dark:text-sky-300"
-              : "h-6 w-6 text-[9px] bg-amber-400 text-amber-950"
-          }`}
-        >
-          {initials}
-        </span>
+              ? "bg-sky-100 text-sky-800 dark:bg-sky-950 dark:text-sky-300 font-bold"
+              : "bg-amber-400 text-amber-950 font-bold"
+          }
+        />
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-1.5">
             <span className="text-[11px] font-bold text-slate-700 dark:text-slate-300 truncate">
@@ -987,11 +988,26 @@ export function TaskDetailsPane({
                   </div>
                 ))}
               </div>
-            ) : !isLoadingComments ? (
+            ) : isLoadingComments ? (
+              <div className="space-y-3 animate-pulse pt-1">
+                {[1, 2].map((n) => (
+                  <div key={n} className="flex items-start gap-2.5">
+                    <div className="h-7 w-7 rounded-full bg-slate-200 dark:bg-slate-700 shrink-0 mt-0.5" />
+                    <div className="flex-1 space-y-1.5 min-w-0">
+                      <div className="flex items-center gap-2">
+                        <div className="h-3.5 w-24 rounded bg-slate-200 dark:bg-slate-700" />
+                        <div className="h-2.5 w-12 rounded bg-slate-200 dark:bg-slate-700" />
+                      </div>
+                      <div className="h-3 w-5/6 rounded bg-slate-200 dark:bg-slate-700" />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
               <p className="text-xs text-slate-400 dark:text-slate-500 italic py-1">
                 No comments yet. Start the conversation!
               </p>
-            ) : null}
+            )}
           </div>
         </div>
 
@@ -1017,9 +1033,16 @@ export function TaskDetailsPane({
           )}
 
           <form onSubmit={handleSendComment} className="flex items-center gap-2.5 px-4 py-3">
-            <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-amber-400 text-[10px] font-bold text-amber-950">
-              {currentInitials}
-            </span>
+            <UserAvatar
+              src={clerkUser?.imageUrl}
+              name={
+                clerkUser?.fullName ||
+                [clerkUser?.firstName, clerkUser?.lastName].filter(Boolean).join(" ") ||
+                "You"
+              }
+              size="sm"
+              fallbackBg="bg-amber-400 text-amber-950 font-bold"
+            />
             <div className="flex-1 relative">
               <input
                 ref={commentInputRef}

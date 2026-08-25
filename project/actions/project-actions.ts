@@ -324,6 +324,7 @@ export async function createProjectAction(data: CreateProjectFormValues) {
       dueDate,
       categories = ["Frontend"],
       techStack = [],
+      views,
       status = "In Progress",
       priority = "Medium",
       members = [],
@@ -416,7 +417,7 @@ export async function createProjectAction(data: CreateProjectFormValues) {
     revalidatePath("/dashboard");
     revalidatePath("/projects");
 
-    return { success: true, project: newProject };
+    return { success: true, project: { ...newProject, views } };
   } catch (error: unknown) {
     console.error("[createProjectAction] Error creating project:", error);
     return { success: false, error: "Failed to create project. Please try again." };
@@ -517,6 +518,7 @@ export async function updateProjectAction(data: UpdateProjectFormValues) {
       dueDate,
       categories,
       techStack,
+      views,
       status,
       priority,
       members = [],
@@ -562,7 +564,7 @@ export async function updateProjectAction(data: UpdateProjectFormValues) {
     revalidatePath("/projects");
     revalidatePath(`/projects/${id}`);
 
-    return { success: true, project: updatedProject };
+    return { success: true, project: { ...updatedProject, ...(views ? { views } : {}) } };
   } catch (error: unknown) {
     console.error("[updateProjectAction] Error updating project:", error);
     return { success: false, error: "Failed to update project. Please try again." };

@@ -36,7 +36,6 @@ export const RECOMMENDED_VIEWS: ViewOption[] = [
     name: "List",
     description: "Organize tasks in a powerful table",
     isRecommended: true,
-    isRequired: true,
   },
   {
     id: "board",

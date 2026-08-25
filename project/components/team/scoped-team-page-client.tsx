@@ -20,8 +20,10 @@ import { type InviteMemberData, InviteMemberModal } from "@/components/modals/in
 import { MemberProfilePanel } from "@/components/team/member-profile-panel";
 import { PendingInvitesList } from "@/components/team/pending-invites-list";
 import { PeopleGrid } from "@/components/team/people-grid";
+import { PeopleGridSkeleton, PeopleTableSkeleton } from "@/components/team/people-skeleton";
 import { PeopleTable } from "@/components/team/people-table";
 import { PeopleToolbar } from "@/components/team/people-toolbar";
+import { getCachedCount, setCachedCount } from "@/lib/skeleton-cache";
 import type { TeamMember } from "@/lib/team-data";
 import { sileo } from "@/utils/alerts";
 
@@ -32,16 +34,20 @@ interface ScopedTeamPageClientProps {
 export function ScopedTeamPageClient({ project }: ScopedTeamPageClientProps) {
   const [members, setMembers] = useState<TeamMember[]>([]);
   const [loadingMembers, setLoadingMembers] = useState(true);
+  // Hydration-safe initial state: server and client hydration render identical fallback count
+  const [skeletonCount, setSkeletonCount] = useState(project.memberCount || 3);
   const [inviteModalOpen, setInviteModalOpen] = useState(false);
   const [inviteRefreshKey, setInviteRefreshKey] = useState(0);
   const [selectedMember, setSelectedMember] = useState<TeamMember | null>(null);
   const [canInvite, setCanInvite] = useState(false);
 
   useEffect(() => {
+    // Read from client-side localStorage cache safely after mount
+    setSkeletonCount(getCachedCount(`team_members_${project.id}`, project.memberCount || 3));
     getProjectPermissionsAction(project.id).then((perm) => {
       setCanInvite(perm.canManageMembers);
     });
-  }, [project.id]);
+  }, [project.id, project.memberCount]);
 
   const [search, setSearch] = useState("");
   const [viewMode, setViewMode] = useState<"grid" | "list">("list");
@@ -53,6 +59,10 @@ export function ScopedTeamPageClient({ project }: ScopedTeamPageClientProps) {
     setLoadingMembers(true);
     const data = await getProjectMembersAction(project.id);
     setMembers(data);
+    if (data.length > 0) {
+      setCachedCount(`team_members_${project.id}`, data.length);
+      setSkeletonCount(data.length);
+    }
     setLoadingMembers(false);
   }, [project.id]);
 
@@ -170,9 +180,11 @@ export function ScopedTeamPageClient({ project }: ScopedTeamPageClientProps) {
         />
 
         {loadingMembers ? (
-          <div className="py-12 text-center text-xs font-medium text-slate-400">
-            Loading project team members...
-          </div>
+          viewMode === "list" ? (
+            <PeopleTableSkeleton count={skeletonCount} />
+          ) : (
+            <PeopleGridSkeleton count={skeletonCount} />
+          )
         ) : filteredMembers.length === 0 ? (
           <div className="p-8 rounded-2xl border border-dashed border-slate-200 dark:border-slate-800 bg-white/60 dark:bg-slate-900/40 text-center">
             <p className="text-sm font-medium text-slate-500 dark:text-slate-400">

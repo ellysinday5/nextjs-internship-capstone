@@ -1,6 +1,7 @@
 "use client";
 
 import { getMemberCommentsAction, getMemberTasksAction } from "@/actions/member-actions";
+import { UserAvatar } from "@/components/ui/user-avatar";
 import { useUserProfile } from "@/context/user-profile-context";
 import type { TeamMember } from "@/lib/team-data";
 import { Check, ChevronDown, Clock, Filter, MessageSquare, Plus, Search, X } from "lucide-react";
@@ -204,19 +205,16 @@ export function MemberProfilePanel({
             <div className="relative shrink-0" ref={dropdownRef}>
               <button
                 onClick={() => setDropdownOpen((v) => !v)}
-                className="group relative flex h-14 w-14 items-center justify-center overflow-hidden rounded-xl bg-[#142843] ring-2 ring-transparent hover:ring-[#00b4d8] transition-all"
+                className="group relative flex h-14 w-14 items-center justify-center overflow-hidden rounded-xl bg-[#142843] ring-2 ring-transparent hover:ring-[#00b4d8] transition-all cursor-pointer"
                 title="Switch member"
               >
-                {displayAvatar ? (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img
-                    src={displayAvatar}
-                    alt={displayName}
-                    className="h-full w-full object-cover"
-                  />
-                ) : (
-                  <span className="text-lg font-semibold text-white">{initials(displayName)}</span>
-                )}
+                <UserAvatar
+                  src={displayAvatar}
+                  name={displayName}
+                  size="lg"
+                  shape="rounded-xl"
+                  className="w-full h-full"
+                />
                 <span className="absolute bottom-0 right-0 flex h-5 w-5 items-center justify-center rounded-full bg-white dark:bg-slate-800 shadow">
                   <ChevronDown size={11} className="text-slate-500" />
                 </span>
@@ -237,21 +235,15 @@ export function MemberProfilePanel({
                         onSelectMember(m);
                         setDropdownOpen(false);
                       }}
-                      className={`w-full flex items-center gap-2.5 px-3 py-2.5 text-sm text-left hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors ${m.id === member.id ? "bg-blue-50/60 dark:bg-blue-950/20" : ""}`}
+                      className={`w-full flex items-center gap-2.5 px-3 py-2.5 text-sm text-left hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors cursor-pointer ${m.id === member.id ? "bg-blue-50/60 dark:bg-blue-950/20" : ""}`}
                     >
-                      <div className="h-7 w-7 rounded-lg overflow-hidden bg-[#142843] shrink-0 flex items-center justify-center">
-                        {m.avatarUrl ? (
-                          <img
-                            src={m.avatarUrl}
-                            alt={m.name}
-                            className="h-full w-full object-cover"
-                          />
-                        ) : (
-                          <span className="text-[10px] font-bold text-white">
-                            {initials(m.name)}
-                          </span>
-                        )}
-                      </div>
+                      <UserAvatar
+                        src={m.avatarUrl}
+                        name={m.name}
+                        size="sm"
+                        shape="rounded-lg"
+                        className="shrink-0"
+                      />
                       <div className="min-w-0 flex-1">
                         <p className="text-xs font-semibold text-slate-700 dark:text-slate-200 truncate">
                           {m.name}

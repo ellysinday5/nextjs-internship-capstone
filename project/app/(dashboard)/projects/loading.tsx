@@ -83,9 +83,9 @@ export default function ProjectsLoading() {
             <Bone className="h-8 w-16 rounded-xl" />
           </div>
 
-          {/* ── Project Cards Grid ── */}
+          {/* ── Project Cards Grid (sensible 3-card default for SSR boundary) ── */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {Array.from({ length: 6 }).map((_, i) => (
+            {Array.from({ length: 3 }).map((_, i) => (
               <CardSkeleton key={i} />
             ))}
           </div>

@@ -70,7 +70,21 @@ export function PendingInvitesList({ projectId, refreshKey }: PendingInvitesList
       </h3>
 
       {loading ? (
-        <p className="text-xs text-slate-400">Loading...</p>
+        <div className="space-y-2 animate-pulse">
+          {[1, 2].map((n) => (
+            <div
+              key={n}
+              className="flex items-center justify-between rounded-lg border border-slate-100 bg-slate-50 px-3 py-2 dark:border-slate-800 dark:bg-slate-800/50"
+            >
+              <div className="flex items-center gap-2">
+                <div className="h-3.5 w-3.5 rounded bg-slate-200 dark:bg-slate-700" />
+                <div className="h-3.5 w-32 rounded bg-slate-200 dark:bg-slate-700" />
+                <div className="h-4 w-12 rounded-full bg-slate-200 dark:bg-slate-700" />
+              </div>
+              <div className="h-6 w-12 rounded bg-slate-200 dark:bg-slate-700" />
+            </div>
+          ))}
+        </div>
       ) : (
         <ul className="space-y-2">
           {invites.map((invite) => (

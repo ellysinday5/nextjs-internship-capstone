@@ -1,5 +1,6 @@
 "use client";
 
+import { UserAvatar } from "@/components/ui/user-avatar";
 import type { Team, TeamMember } from "@/lib/team-data";
 import { BarChart2, ChevronDown, ChevronLeft, ChevronRight, ChevronUp, X } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -701,19 +702,11 @@ function MemberCard({ member }: { member: TeamMember }) {
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2.5">
           <div className="relative shrink-0">
-            {member.avatarUrl ? (
-              <img
-                src={member.avatarUrl}
-                alt={member.name}
-                className="w-8 h-8 rounded-full object-cover"
-              />
-            ) : (
-              <div
-                className={`w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-bold ${AVATAR_COLOR(member.id)}`}
-              >
-                {getInitials(member.name)}
-              </div>
-            )}
+            <UserAvatar
+              src={member.avatarUrl}
+              name={member.name}
+              size="md"
+            />
             {/* Status dot */}
             <span
               className={`absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 rounded-full border-2 border-white dark:border-[#14263e] ${STATUS_DOT[member.status]}`}

@@ -7,6 +7,7 @@ import {
   SUGGESTED_DEVS,
   type TeamMember,
 } from "@/lib/project-edit-types";
+import { UserAvatar } from "@/components/ui/user-avatar";
 import { sileo } from "@/utils/alerts";
 import {
   Check,
@@ -121,11 +122,12 @@ export function MembersPanel({ members, setMembers, projectName }: MembersPanelP
                       : "border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 hover:border-blue-400 hover:bg-blue-50 dark:hover:bg-blue-950/30 cursor-pointer"
                   }`}
                 >
-                  <span
-                    className={`w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold ${AVATAR_COLORS[0]}`}
-                  >
-                    {dev.initials}
-                  </span>
+                  <UserAvatar
+                    name={dev.name}
+                    initials={dev.initials}
+                    size="xs"
+                    fallbackBg={`${AVATAR_COLORS[0]} font-bold`}
+                  />
                   <span className="truncate text-slate-800 dark:text-slate-100">{dev.name}</span>
                   {alreadyAdded && (
                     <Check size={12} className="ml-auto text-emerald-500 shrink-0" />
@@ -154,13 +156,13 @@ export function MembersPanel({ members, setMembers, projectName }: MembersPanelP
                 {/* Member header row */}
                 <div className="flex items-center gap-2.5 p-2.5">
                   <GripVertical size={14} className="text-slate-300 dark:text-slate-600 shrink-0" />
-                  <span
-                    className={`w-7 h-7 rounded-full flex items-center justify-center text-[10px] font-bold shrink-0 ${
-                      AVATAR_COLORS[colorIdx % AVATAR_COLORS.length]
-                    }`}
-                  >
-                    {member.initials}
-                  </span>
+                  <UserAvatar
+                    name={member.name}
+                    initials={member.initials}
+                    size="sm"
+                    fallbackBg={`${AVATAR_COLORS[colorIdx % AVATAR_COLORS.length]} font-bold`}
+                    className="shrink-0"
+                  />
 
                   <div className="flex-1 min-w-0">
                     <div className="font-semibold text-xs text-slate-800 dark:text-slate-100 truncate">

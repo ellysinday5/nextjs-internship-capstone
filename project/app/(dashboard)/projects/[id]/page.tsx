@@ -98,6 +98,7 @@ export default function ProjectPage({ params }: { params: Promise<{ id: string }
         setIsFavorite(saved.isFavorite);
         if (saved.views && saved.views.length > 0) {
           setAvailableTabs(saved.views);
+          setActiveTab(saved.views[0]);
         }
       }
 

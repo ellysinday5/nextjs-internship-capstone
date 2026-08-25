@@ -41,9 +41,7 @@ export function StepTwoViews({
 
   const todayStr = new Date().toISOString().split("T")[0];
 
-  const toggleView = (viewId: ViewId, isRequired?: boolean) => {
-    if (isRequired) return;
-
+  const toggleView = (viewId: ViewId) => {
     setFormData((prev) => {
       const exists = prev.selectedViews.includes(viewId);
       const updatedViews = exists
@@ -52,7 +50,9 @@ export function StepTwoViews({
 
       let newActiveTab = prev.activePreviewTab;
       if (exists && prev.activePreviewTab === viewId) {
-        newActiveTab = updatedViews[0] || "list";
+        newActiveTab = updatedViews[0] || "board";
+      } else if (!exists && updatedViews.length === 1) {
+        newActiveTab = viewId;
       }
 
       return {
@@ -277,7 +277,7 @@ export function StepTwoViews({
               return (
                 <div
                   key={view.id}
-                  onClick={() => toggleView(view.id, view.isRequired)}
+                  onClick={() => toggleView(view.id)}
                   className={`group relative flex items-center gap-2.5 rounded-lg border p-2.5 cursor-pointer transition-all ${
                     isSelected
                       ? "border-blue-500 bg-blue-50/50 dark:border-blue-500 dark:bg-blue-950/30"
