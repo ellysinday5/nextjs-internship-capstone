@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import type React from "react";
+// @ts-expect-error Next.js handles global CSS imports at build time.
 import "./globals.css";
 import { AuthToast } from "@/components/auth/auth-toast";
 import { OfflineBanner } from "@/components/errors/offline-banner";
@@ -10,6 +11,7 @@ import { UserProfileProvider } from "@/context/user-profile-context";
 import { ClerkProvider } from "@clerk/nextjs";
 import { QueryProvider } from "./providers";
 
+
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
@@ -17,6 +19,8 @@ export const metadata: Metadata = {
   description: "Team collaboration and project management platform",
   generator: "v0.dev",
 };
+
+export const dynamic = 'force-dynamic';
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
