@@ -1,7 +1,6 @@
 "use client";
 
 import {
-  type DisplayDensity,
   type FontSize,
   type Theme,
   useTheme,
@@ -9,28 +8,14 @@ import {
 import { sileo } from "@/utils/alerts";
 import {
   CheckCircle2,
-  Layers,
   Monitor,
   Moon,
-  Paintbrush,
   Shield,
-  Sliders,
   Sun,
   Type,
   Zap,
 } from "lucide-react";
 import React from "react";
-
-const ACCENT_COLORS = [
-  { hex: "#0052cc", label: "Blue" },
-  { hex: "#7c3aed", label: "Violet" },
-  { hex: "#059669", label: "Green" },
-  { hex: "#dc2626", label: "Red" },
-  { hex: "#d97706", label: "Amber" },
-  { hex: "#0891b2", label: "Cyan" },
-  { hex: "#db2777", label: "Pink" },
-  { hex: "#475569", label: "Slate" },
-];
 
 function ToggleSwitch({
   checked,
@@ -63,12 +48,8 @@ export function AppearanceTab() {
   const {
     theme,
     setTheme,
-    accentColor,
-    setAccentColor,
     fontSize,
     setFontSize,
-    density,
-    setDensity,
     animationsEnabled,
     setAnimationsEnabled,
     compactSidebar,
@@ -136,76 +117,6 @@ export function AppearanceTab() {
         </div>
       </div>
 
-      {/* Accent color */}
-      <div>
-        <div className="flex items-center gap-2 mb-3">
-          <Paintbrush size={14} className="text-slate-400" />
-          <span className="text-xs font-extrabold text-slate-500 dark:text-slate-400 uppercase tracking-widest">
-            Accent Color
-          </span>
-        </div>
-        <div className="flex flex-wrap items-center gap-3">
-          {ACCENT_COLORS.map(({ hex, label }) => (
-            <button
-              key={hex}
-              type="button"
-              onClick={() => {
-                setAccentColor(hex);
-                sileo.success(`Accent color set to ${label}.`, "Color Applied");
-              }}
-              title={label}
-              className={`w-8 h-8 rounded-full transition-all hover:scale-110 cursor-pointer ${
-                accentColor === hex
-                  ? "ring-2 ring-offset-2 ring-slate-400 dark:ring-slate-500 scale-110"
-                  : ""
-              }`}
-              style={{ backgroundColor: hex }}
-            >
-              {accentColor === hex && <CheckCircle2 size={14} className="text-white mx-auto" />}
-            </button>
-          ))}
-        </div>
-        <p className="text-[10px] text-slate-400 mt-2">
-          Selected:{" "}
-          <span className="font-bold" style={{ color: accentColor }}>
-            {ACCENT_COLORS.find((c) => c.hex === accentColor)?.label || accentColor}
-          </span>
-        </p>
-      </div>
-
-      {/* Live UI preview with active accent */}
-      <div className="p-4 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/60 dark:bg-slate-800/30 flex items-center justify-between gap-4">
-        <div className="flex items-center gap-3">
-          <div
-            className="w-9 h-9 rounded-xl flex items-center justify-center text-white font-bold"
-            style={{ backgroundColor: accentColor }}
-          >
-            <Sliders size={16} />
-          </div>
-          <div>
-            <p className="text-xs font-bold text-slate-800 dark:text-white">
-              Active System Palette
-            </p>
-            <p className="text-[11px] text-slate-400">Previewing live buttons and accents</p>
-          </div>
-        </div>
-        <div className="flex items-center gap-2">
-          <button
-            type="button"
-            className="px-3.5 py-1.5 text-xs font-bold text-white rounded-xl shadow-xs"
-            style={{ backgroundColor: accentColor }}
-          >
-            Active Button
-          </button>
-          <span
-            className="px-2.5 py-1 text-[11px] font-bold rounded-lg"
-            style={{ backgroundColor: `${accentColor}20`, color: accentColor }}
-          >
-            Tag Badge
-          </span>
-        </div>
-      </div>
-
       {/* Font size */}
       <div>
         <div className="flex items-center gap-2 mb-3">
@@ -237,40 +148,6 @@ export function AppearanceTab() {
                 Aa
               </span>
               <p className="text-[10px] mt-0.5 capitalize">{size}</p>
-            </button>
-          ))}
-        </div>
-      </div>
-
-      {/* Density */}
-      <div>
-        <div className="flex items-center gap-2 mb-3">
-          <Layers size={14} className="text-slate-400" />
-          <span className="text-xs font-extrabold text-slate-500 dark:text-slate-400 uppercase tracking-widest">
-            Display Density
-          </span>
-        </div>
-        <div className="grid grid-cols-3 gap-3">
-          {[
-            { key: "comfortable" as DisplayDensity, label: "Comfortable", desc: "More spacing" },
-            { key: "cozy" as DisplayDensity, label: "Cozy", desc: "Balanced standard" },
-            { key: "compact" as DisplayDensity, label: "Compact", desc: "Less spacing" },
-          ].map(({ key, label, desc }) => (
-            <button
-              key={key}
-              type="button"
-              onClick={() => {
-                setDensity(key);
-                sileo.success(`Layout density set to ${label}.`, "Density Updated");
-              }}
-              className={`py-3 px-3 rounded-xl border-2 font-semibold transition-all text-left cursor-pointer ${
-                density === key
-                  ? "border-[#0052cc] bg-[#0052cc]/8 text-[#0052cc] dark:text-sky-400"
-                  : "border-slate-200 dark:border-slate-600 text-slate-500 dark:text-slate-300 hover:bg-slate-50"
-              }`}
-            >
-              <p className="text-xs font-bold">{label}</p>
-              <p className="text-[10px] mt-0.5 text-slate-400">{desc}</p>
             </button>
           ))}
         </div>

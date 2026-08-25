@@ -1,7 +1,6 @@
 const fs = require("fs");
 const path = require("path");
 
-// Minimal valid 1x1 PNG generator + custom dimension generator via basic PNG header or SVG
 function createSimplePng(width, height, r, g, b) {
   // Generate a minimal uncompressed raw PNG
   const zlib = require("zlib");

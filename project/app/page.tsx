@@ -194,7 +194,7 @@ export default function HomePage() {
         </section>
 
         {/* ── FEATURES STRIP ── */}
-        <section className="px-4 sm:px-6 lg:px-10 py-14 sm:py-20 bg-slate-50/70 dark:bg-[#0a1525] border-t border-slate-100 dark:border-slate-800/60">
+        <section className="px-4 sm:px-6 lg:px-10 py-10 sm:py-16">
           <div>
             <div
               ref={featReveal.ref}

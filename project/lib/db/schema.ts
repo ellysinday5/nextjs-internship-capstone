@@ -86,7 +86,6 @@ export const projects = pgTable("projects", {
   // Nullable for now — backfill happens in Step 2
   workspaceId: uuid("workspace_id").references(() => workspaces.id, { onDelete: "set null" }),
   dueDate: timestamp("due_date"),
-  categories: text("categories").array().notNull().default([]),
   techStack: text("tech_stack").array().notNull().default([]),
   status: text("status").notNull().default("Not Started"),
   priority: text("priority").notNull().default("Medium"),
@@ -228,6 +227,28 @@ export const notifications = pgTable("notifications", {
 });
 
 // ============================================
+// CATEGORIES (workspace-scoped event categories)
+// ============================================
+export const categories = pgTable(
+  "categories",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    name: text("name").notNull(),
+    workspaceId: uuid("workspace_id")
+      .references(() => workspaces.id, { onDelete: "cascade" })
+      .notNull(),
+    createdBy: uuid("created_by")
+      .references(() => users.id, { onDelete: "cascade" })
+      .notNull(),
+    createdAt: timestamp("created_at").defaultNow(),
+  },
+  (t) => [
+    uniqueIndex("categories_name_workspace_uidx").on(t.name, t.workspaceId),
+    index("categories_workspace_id_idx").on(t.workspaceId),
+  ],
+);
+
+// ============================================
 // RELATIONS
 // ============================================
 export const usersRelations = relations(users, ({ many }) => ({
@@ -240,6 +261,7 @@ export const usersRelations = relations(users, ({ many }) => ({
   sentInvites: many(invites),
   receivedNotifications: many(notifications, { relationName: "recipientNotifications" }),
   sentNotifications: many(notifications, { relationName: "actorNotifications" }),
+  createdCategories: many(categories),
 }));
 
 export const workspacesRelations = relations(workspaces, ({ one, many }) => ({
@@ -250,6 +272,18 @@ export const workspacesRelations = relations(workspaces, ({ one, many }) => ({
   members: many(workspaceMembers),
   projects: many(projects),
   notifications: many(notifications),
+  categories: many(categories),
+}));
+
+export const categoriesRelations = relations(categories, ({ one }) => ({
+  workspace: one(workspaces, {
+    fields: [categories.workspaceId],
+    references: [workspaces.id],
+  }),
+  creator: one(users, {
+    fields: [categories.createdBy],
+    references: [users.id],
+  }),
 }));
 
 export const workspaceMembersRelations = relations(workspaceMembers, ({ one }) => ({

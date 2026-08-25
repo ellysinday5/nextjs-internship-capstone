@@ -113,7 +113,14 @@ export function ManageEventsPageClient() {
   useEffect(() => {
     try {
       const stored = localStorage.getItem(STORAGE_KEY);
-      if (stored) setEvents(JSON.parse(stored));
+      if (stored) {
+        const parsed: EventItem[] = JSON.parse(stored);
+        if (Array.isArray(parsed)) {
+          // Deduplicate by id on load (heals any historical corruption)
+          const byId = new Map(parsed.map((e) => [e.id, e]));
+          setEvents(Array.from(byId.values()));
+        }
+      }
     } catch {}
     getProjectsAction()
       .then((res) => {
@@ -123,9 +130,12 @@ export function ManageEventsPageClient() {
   }, []);
 
   const persistEvents = (updated: EventItem[]) => {
-    setEvents(updated);
+    // Deduplicate by id before persisting
+    const byId = new Map(updated.map((e) => [e.id, e]));
+    const deduped = Array.from(byId.values());
+    setEvents(deduped);
     try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(deduped));
     } catch {}
   };
 

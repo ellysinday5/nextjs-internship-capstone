@@ -13,7 +13,6 @@ import {
   CheckCircle2,
   ChevronRight,
   ExternalLink,
-  HelpCircle,
   Mail,
   Palette,
   Shield,
@@ -74,13 +73,13 @@ export default function SettingsPage() {
     {
       id: "appearance",
       name: "Appearance & Theme",
-      desc: "Dark mode, themes, and density",
+      desc: "Dark mode, themes, and colors",
       icon: Palette,
     },
     {
       id: "categories",
-      name: "Project Categories",
-      desc: "Tags and classification labels",
+      name: "Event Categories",
+      desc: "Calendar tags and event types",
       icon: Tags,
     },
     {
@@ -107,7 +106,7 @@ export default function SettingsPage() {
             Settings
           </h1>
           <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
-            Manage your account preferences, system appearance, project categories, and security.
+            Manage your account preferences, system appearance, event categories, and security.
           </p>
         </div>
 
@@ -213,23 +212,6 @@ export default function SettingsPage() {
                 );
               })}
             </nav>
-
-            {/* 3. Help & Support Card */}
-            <div className="p-4 rounded-2xl bg-gradient-to-br from-slate-50 to-blue-50/40 dark:from-slate-800/40 dark:to-blue-950/20 border border-slate-200 dark:border-slate-700/80">
-              <div className="flex items-start gap-3">
-                <div className="w-8 h-8 rounded-xl bg-blue-100 dark:bg-blue-950 flex items-center justify-center text-[#0052cc] dark:text-sky-400 shrink-0">
-                  <HelpCircle size={16} />
-                </div>
-                <div>
-                  <h4 className="text-xs font-bold text-[#142843] dark:text-white">
-                    Need assistance?
-                  </h4>
-                  <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
-                    Check our documentation or contact workspace support.
-                  </p>
-                </div>
-              </div>
-            </div>
           </aside>
 
           {/* RIGHT CONTENT PANEL */}

@@ -33,6 +33,59 @@ export async function createNotification(data: CreateNotificationInput) {
   await db.insert(notifications).values(data);
 }
 
+/**
+ * Notifies all project members when a new calendar event is scheduled for their project.
+ */
+export async function notifyProjectEventCreatedAction(data: {
+  projectId: string;
+  eventTitle: string;
+  eventDate: string;
+  eventType: string;
+}) {
+  try {
+    const user = await syncUser();
+    if (!user) return { success: false, error: "Unauthorized" };
+
+    const [project] = await db
+      .select({ id: projects.id, name: projects.name, workspaceId: projects.workspaceId })
+      .from(projects)
+      .where(eq(projects.id, data.projectId));
+
+    if (!project) return { success: false, error: "Project not found" };
+
+    const { projectMembers } = await import("@/lib/db/schema");
+    const members = await db
+      .select({ userId: projectMembers.userId })
+      .from(projectMembers)
+      .where(eq(projectMembers.projectId, data.projectId));
+
+    for (const m of members) {
+      if (m.userId && m.userId !== user.id) {
+        await createNotification({
+          workspaceId: project.workspaceId ?? undefined,
+          recipientId: m.userId,
+          actorId: user.id,
+          type: "task_assigned",
+          title: "New Project Event",
+          message: `${user.name} scheduled a new ${data.eventType || "event"} "${data.eventTitle}" for "${project.name}" on ${data.eventDate}.`,
+          href: `/calendar`,
+          metadata: {
+            projectId: project.id,
+            projectName: project.name,
+            eventTitle: data.eventTitle,
+            eventDate: data.eventDate,
+          },
+        });
+      }
+    }
+
+    return { success: true };
+  } catch (error) {
+    console.error("[notifyProjectEventCreatedAction] Error:", error);
+    return { success: false, error: "Failed to send notifications." };
+  }
+}
+
 async function getDbUser(clerkId: string) {
   let dbUser = await db.query.users.findFirst({
     where: (u, { eq }) => eq(u.clerkId, clerkId),

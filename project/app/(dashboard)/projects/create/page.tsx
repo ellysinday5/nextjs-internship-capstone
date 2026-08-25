@@ -88,7 +88,6 @@ export default function CreateProjectPage() {
     const res = await createProjectAction({
       name: formData.name.trim(),
       description,
-      categories: ["Frontend"],
       techStack: formData.techStack.length > 0 ? formData.techStack : ["Next.js", "TypeScript"],
       // selectedViews values come from RECOMMENDED_VIEWS / POPULAR_VIEWS which
       // only contain PROJECT_VIEW keys — the cast is safe and the server schema

@@ -1,6 +1,7 @@
-"use client";
-
+import { notifyProjectEventCreatedAction } from "@/actions/notification-actions";
 import { type ProjectWithStats, getProjectsAction } from "@/actions/project-actions";
+import { BackButton } from "@/components/ui/back-button";
+import { useCategories } from "@/context/category-context";
 import { CheckCircle2 } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
 import type React from "react";
@@ -12,6 +13,7 @@ export function NewEventPageClient() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const draftId = searchParams.get("draft");
+  const { eventCategoryNames } = useCategories();
 
   const [projects, setProjects] = useState<ProjectWithStats[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -116,7 +118,11 @@ export function NewEventPageClient() {
         isDraft: true,
         createdAt: new Date().toISOString(),
       };
-      localStorage.setItem(STORAGE_KEY, JSON.stringify([draft, ...filtered]));
+      // Deduplicate by id — ensure no two entries share the same key.
+      const byId = new Map<string, object>();
+      for (const e of filtered) byId.set((e as { id: string }).id, e);
+      byId.set(draft.id, draft); // overwrite or insert draft
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(Array.from(byId.values())));
     } catch {}
   }, [draftId]);
 
@@ -170,6 +176,15 @@ export function NewEventPageClient() {
         createdAt: new Date().toISOString(),
       };
       localStorage.setItem(STORAGE_KEY, JSON.stringify([newEvent, ...filtered]));
+
+      if (selectedProjectId !== "general") {
+        notifyProjectEventCreatedAction({
+          projectId: selectedProjectId,
+          eventTitle: title.trim(),
+          eventDate: dateFormatted,
+          eventType: category,
+        }).catch((err) => console.error("Failed to notify project members:", err));
+      }
     } catch {}
     setTimeout(() => {
       setIsSubmitting(false);
@@ -193,17 +208,6 @@ export function NewEventPageClient() {
   return (
     <div className="overflow-y-auto h-full">
       <div className="w-full bg-white dark:bg-slate-950 flex flex-col">
-        <div className="flex items-center justify-between px-6 pt-6 pb-2 shrink-0">
-          <button
-            type="button"
-            onClick={handleCancel}
-            className="inline-flex items-center gap-1 text-sm font-semibold text-slate-500 hover:text-[#142843] dark:hover:text-white transition-colors"
-          >
-            <span>&lt;</span>
-            <span>Back to Calendar</span>
-          </button>
-        </div>
-
         {success && (
           <div className="mx-6 mt-4 p-3 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 text-emerald-700 dark:text-emerald-300 flex items-center gap-2 text-sm font-semibold shrink-0">
             <CheckCircle2 size={16} className="text-emerald-500" />
@@ -213,10 +217,13 @@ export function NewEventPageClient() {
 
         <div className="flex-1 overflow-y-auto">
           <form onSubmit={handleSubmit} noValidate>
-            <div className="w-full px-8 py-8">
-              <h1 className="text-2xl font-black text-[#142843] dark:text-white mb-8">
-                Create Event
-              </h1>
+            <div className="w-full px-8 py-6">
+              <div className="flex items-center gap-3 mb-6">
+                <BackButton onClick={handleCancel} title="Back to calendar" />
+                <h1 className="text-xl sm:text-2xl font-black text-[#142843] dark:text-white">
+                  Create Event
+                </h1>
+              </div>
 
               <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
                 {/* Left: Main Fields */}
@@ -306,32 +313,26 @@ export function NewEventPageClient() {
 
                 {/* Right: Meta */}
                 <div className="space-y-5">
-                  {[
-                    {
-                      label: "Category",
-                      value: category,
-                      onChange: (v: string) => setCategory(v),
-                      options: ["Project Deadline", "Meeting", "Milestone", "Presentation", "Task"],
-                    },
-                  ].map(({ label, value, onChange, options }) => (
-                    <div key={label}>
-                      <label className="block text-xs font-extrabold text-[#142843] dark:text-slate-200 uppercase tracking-widest mb-2">
-                        {label}
-                      </label>
-                      <select
-                        value={value}
-                        onChange={(e) => onChange(e.target.value)}
-                        className={fieldClass()}
-                        suppressHydrationWarning
-                      >
-                        {options.map((o) => (
-                          <option key={o} value={o}>
-                            {o}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-                  ))}
+                  <div>
+                    <label className="block text-xs font-extrabold text-[#142843] dark:text-slate-200 uppercase tracking-widest mb-2">
+                      Category
+                    </label>
+                    <select
+                      value={category}
+                      onChange={(e) => setCategory(e.target.value)}
+                      className={fieldClass()}
+                      suppressHydrationWarning
+                    >
+                      {(eventCategoryNames && eventCategoryNames.length > 0
+                        ? eventCategoryNames
+                        : ["Project Deadline", "Meeting", "Milestone", "Presentation", "Task"]
+                      ).map((o) => (
+                        <option key={o} value={o}>
+                          {o}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
 
                   <div>
                     <label className="block text-xs font-extrabold text-[#142843] dark:text-slate-200 uppercase tracking-widest mb-2">

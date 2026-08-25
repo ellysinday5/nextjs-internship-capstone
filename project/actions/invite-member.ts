@@ -301,7 +301,6 @@ export async function createTeamWithMembersAction(input: CreateTeamWithMembersIn
         workspaceId: activeWorkspaceId,
         status: "Not Started",
         priority: "Medium",
-        categories: [],
         techStack: [],
       })
       .returning();

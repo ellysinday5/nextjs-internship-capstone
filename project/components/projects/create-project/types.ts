@@ -25,7 +25,6 @@ export interface CreateProjectFormValues {
   description: string;
   dueDate: string;
   techStack: string[];
-  categories?: string[];
   selectedViews: ViewId[];
   activePreviewTab: ViewId;
 }

@@ -21,8 +21,6 @@ export default function ProjectsPage() {
     fetchProjects,
     searchQuery,
     setSearchQuery,
-    selectedCategory,
-    setSelectedCategory,
     selectedStatus,
     setSelectedStatus,
     selectedPriority,
@@ -70,8 +68,6 @@ export default function ProjectsPage() {
           <ProjectsToolbar
             searchQuery={searchQuery}
             setSearchQuery={setSearchQuery}
-            selectedCategory={selectedCategory}
-            setSelectedCategory={setSelectedCategory}
             selectedStatus={selectedStatus}
             setSelectedStatus={setSelectedStatus}
             selectedPriority={selectedPriority}

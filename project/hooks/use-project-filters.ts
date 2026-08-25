@@ -7,7 +7,7 @@ import { getCachedCount, setCachedCount } from "@/lib/skeleton-cache";
 import { useUser } from "@clerk/nextjs";
 import { useCallback, useEffect, useMemo, useState } from "react";
 
-export type DropdownKey = "status" | "priority" | "category" | "owner" | "team" | "members" | null;
+export type DropdownKey = "status" | "priority" | "owner" | "team" | "members" | null;
 export type ViewMode = "grid" | "table";
 
 export function useProjectFilters() {
@@ -23,7 +23,6 @@ export function useProjectFilters() {
   }, [userId]);
 
   const [searchQuery, setSearchQuery] = useState("");
-  const [selectedCategory, setSelectedCategory] = useState("All");
   const [selectedStatus, setSelectedStatus] = useState("All");
   const [selectedPriority, setSelectedPriority] = useState("All");
   const [selectedOwner, setSelectedOwner] = useState("All");
@@ -61,7 +60,6 @@ export function useProjectFilters() {
         name: p.name,
         description: p.description || "No description provided.",
         techStack: p.techStack && p.techStack.length > 0 ? p.techStack : ["Drizzle", "PostgreSQL", "Clerk"],
-        category: p.categories && p.categories.length > 0 ? p.categories[0] : "Frontend",
         status: completionPercent === 100 ? "Completed" : p.status || "In Progress",
         priority: p.priority || "Medium",
         progress: completionPercent,
@@ -87,7 +85,6 @@ export function useProjectFilters() {
         project.teamName.toLowerCase().includes(searchQuery.toLowerCase()) ||
         project.techStack.some((tech) => tech.toLowerCase().includes(searchQuery.toLowerCase()));
 
-      const matchesCategory = selectedCategory === "All" || project.category === selectedCategory;
       const matchesStatus = selectedStatus === "All" || project.status === selectedStatus;
       const matchesPriority = selectedPriority === "All" || project.priority === selectedPriority;
       const matchesOwner = selectedOwner === "All" || project.owner === selectedOwner;
@@ -101,7 +98,6 @@ export function useProjectFilters() {
 
       return (
         matchesSearch &&
-        matchesCategory &&
         matchesStatus &&
         matchesPriority &&
         matchesOwner &&
@@ -112,7 +108,6 @@ export function useProjectFilters() {
   }, [
     allProjectItems,
     searchQuery,
-    selectedCategory,
     selectedStatus,
     selectedPriority,
     selectedOwner,
@@ -122,7 +117,6 @@ export function useProjectFilters() {
 
   const hasActiveFilters =
     searchQuery !== "" ||
-    selectedCategory !== "All" ||
     selectedStatus !== "All" ||
     selectedPriority !== "All" ||
     selectedOwner !== "All" ||
@@ -131,7 +125,6 @@ export function useProjectFilters() {
 
   const clearFilters = () => {
     setSearchQuery("");
-    setSelectedCategory("All");
     setSelectedStatus("All");
     setSelectedPriority("All");
     setSelectedOwner("All");
@@ -149,8 +142,6 @@ export function useProjectFilters() {
     fetchProjects,
     searchQuery,
     setSearchQuery,
-    selectedCategory,
-    setSelectedCategory,
     selectedStatus,
     setSelectedStatus,
     selectedPriority,

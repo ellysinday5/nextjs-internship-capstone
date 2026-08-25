@@ -1,8 +1,9 @@
 "use client";
 
+import { getUserWorkspaceRoleAction } from "@/actions/member-actions";
 import { useUser } from "@clerk/nextjs";
 import type React from "react";
-import { createContext, useContext, useEffect, useState } from "react";
+import { createContext, useCallback, useContext, useEffect, useState } from "react";
 
 export interface UserProfile {
   fullName: string;
@@ -14,6 +15,7 @@ export interface UserProfile {
 interface UserProfileContextType {
   profile: UserProfile;
   updateProfile: (newProfile: Partial<UserProfile>) => void;
+  refreshRole: () => Promise<void>;
 }
 
 const defaultProfile: UserProfile = {
@@ -27,6 +29,17 @@ const UserProfileContext = createContext<UserProfileContextType | undefined>(und
 export function UserProfileProvider({ children }: { children: React.ReactNode }) {
   const { user, isLoaded } = useUser();
   const [profile, setProfile] = useState<UserProfile>(defaultProfile);
+
+  const refreshRole = useCallback(async () => {
+    try {
+      const res = await getUserWorkspaceRoleAction();
+      if (res.role) {
+        setProfile((prev) => ({ ...prev, role: res.role }));
+      }
+    } catch (err) {
+      console.error("[UserProfileProvider] Failed to fetch workspace role:", err);
+    }
+  }, []);
 
   useEffect(() => {
     let savedProfile: Partial<UserProfile> = {};
@@ -48,16 +61,33 @@ export function UserProfileProvider({ children }: { children: React.ReactNode })
       const clerkEmail = user.primaryEmailAddress?.emailAddress || "";
       const clerkAvatar = user.imageUrl || "";
 
-      setProfile({
+      setProfile((prev) => ({
         fullName: savedProfile.fullName || clerkName || "User",
         email: savedProfile.email || clerkEmail || "",
-        role: savedProfile.role || "Member",
+        role: prev.role || "Member",
         avatarUrl: savedProfile.avatarUrl || clerkAvatar,
-      });
+      }));
+
+      // Fetch actual role from active workspace
+      refreshRole();
     } else if (Object.keys(savedProfile).length > 0) {
       setProfile((prev) => ({ ...prev, ...savedProfile }));
     }
-  }, [isLoaded, user]);
+  }, [isLoaded, user, refreshRole]);
+
+  // Listen to workspace change events and window focus to keep role in sync
+  useEffect(() => {
+    function handleWorkspaceChange() {
+      refreshRole();
+    }
+    window.addEventListener("syntraflow:workspace-changed", handleWorkspaceChange);
+    window.addEventListener("focus", handleWorkspaceChange);
+
+    return () => {
+      window.removeEventListener("syntraflow:workspace-changed", handleWorkspaceChange);
+      window.removeEventListener("focus", handleWorkspaceChange);
+    };
+  }, [refreshRole]);
 
   const updateProfile = (newProfile: Partial<UserProfile>) => {
     setProfile((prev) => {
@@ -72,7 +102,7 @@ export function UserProfileProvider({ children }: { children: React.ReactNode })
   };
 
   return (
-    <UserProfileContext.Provider value={{ profile, updateProfile }}>
+    <UserProfileContext.Provider value={{ profile, updateProfile, refreshRole }}>
       {children}
     </UserProfileContext.Provider>
   );
@@ -84,6 +114,7 @@ export function useUserProfile() {
     return {
       profile: defaultProfile,
       updateProfile: () => {},
+      refreshRole: async () => {},
     };
   }
   return context;

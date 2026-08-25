@@ -30,7 +30,6 @@ export interface ProjectWithStats {
   ownerId: string;
   ownerName: string; // NEW
   dueDate: Date | null;
-  categories: string[];
   techStack: string[];
   status: string;
   priority: string;
@@ -78,7 +77,6 @@ export async function getProjectsAction(): Promise<ProjectWithStats[]> {
         ownerId: projects.ownerId,
         workspaceId: projects.workspaceId,
         dueDate: projects.dueDate,
-        categories: projects.categories,
         techStack: projects.techStack,
         status: projects.status,
         priority: projects.priority,
@@ -158,7 +156,6 @@ export async function getProjectsAction(): Promise<ProjectWithStats[]> {
         ownerId: p.ownerId,
         ownerName: p.ownerName || "Project Owner",
         dueDate: p.dueDate,
-        categories: p.categories || [],
         techStack: p.techStack || [],
         status: p.status,
         priority: p.priority,
@@ -207,7 +204,6 @@ export async function getProjectBySlugAction(slug: string): Promise<ProjectWithS
           ownerId: string;
           workspaceId: string | null;
           dueDate: Date | null;
-          categories: string[];
           techStack: string[];
           status: string;
           priority: string;
@@ -226,7 +222,6 @@ export async function getProjectBySlugAction(slug: string): Promise<ProjectWithS
           ownerId: projects.ownerId,
           workspaceId: projects.workspaceId,
           dueDate: projects.dueDate,
-          categories: projects.categories,
           techStack: projects.techStack,
           status: projects.status,
           priority: projects.priority,
@@ -249,7 +244,6 @@ export async function getProjectBySlugAction(slug: string): Promise<ProjectWithS
           ownerId: projects.ownerId,
           workspaceId: projects.workspaceId,
           dueDate: projects.dueDate,
-          categories: projects.categories,
           techStack: projects.techStack,
           status: projects.status,
           priority: projects.priority,
@@ -295,7 +289,6 @@ export async function getProjectBySlugAction(slug: string): Promise<ProjectWithS
       ownerId: projectRow.ownerId,
       ownerName: projectRow.ownerName || "Project Owner",
       dueDate: projectRow.dueDate,
-      categories: projectRow.categories || [],
       techStack: projectRow.techStack || [],
       status: projectRow.status,
       priority: projectRow.priority,
@@ -334,7 +327,6 @@ export async function createProjectAction(data: CreateProjectFormValues) {
       name,
       description,
       dueDate,
-      categories = ["Frontend"],
       techStack = [],
       views,
       status = "In Progress",
@@ -392,7 +384,6 @@ export async function createProjectAction(data: CreateProjectFormValues) {
           ownerId: user.id,
           workspaceId: workspace.id,
           dueDate: dueDate ? new Date(dueDate) : null,
-          categories,
           techStack,
           status,
           priority,
@@ -528,7 +519,6 @@ export async function updateProjectAction(data: UpdateProjectFormValues) {
       name,
       description,
       dueDate,
-      categories,
       techStack,
       views,
       status,
@@ -548,7 +538,6 @@ export async function updateProjectAction(data: UpdateProjectFormValues) {
           name,
           description: description || null,
           dueDate: dueDate ? new Date(dueDate) : null,
-          categories,
           techStack,
           status,
           priority,

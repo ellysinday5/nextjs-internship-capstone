@@ -609,6 +609,7 @@ export async function switchActiveWorkspaceAction(workspaceId: string) {
     revalidatePath("/team");
     revalidatePath("/projects");
     revalidatePath("/dashboard");
+    revalidatePath("/settings");
 
     return { success: true };
   } catch (error) {
@@ -733,6 +734,21 @@ export async function deleteWorkspaceAction(id: string) {
    User Pending Invitations Server Actions
 ───────────────────────────────────────────────────────────── */
 
+export interface UserSentInvite {
+  id: string;
+  email: string;
+  recipientName: string | null;
+  projectId: string;
+  projectName: string;
+  workspaceId: string | null;
+  workspaceName: string | null;
+  role: string;
+  status: "pending" | "accepted" | "expired" | "revoked";
+  createdAt: Date | null;
+  expiresAt: Date;
+  acceptedAt: Date | null;
+}
+
 export async function getMyPendingInvitesAction(): Promise<UserPendingInvite[]> {
   try {
     const user = await syncUser();
@@ -778,6 +794,89 @@ export async function getMyPendingInvitesAction(): Promise<UserPendingInvite[]> 
   } catch (error) {
     console.error("[getMyPendingInvitesAction] Error:", error);
     return [];
+  }
+}
+
+export async function getMySentInvitesAction(): Promise<UserSentInvite[]> {
+  try {
+    const user = await syncUser();
+    if (!user) return [];
+
+    const rows = await db
+      .select({
+        id: invites.id,
+        email: invites.email,
+        projectId: invites.projectId,
+        role: invites.role,
+        status: invites.status,
+        createdAt: invites.createdAt,
+        expiresAt: invites.expiresAt,
+        acceptedAt: invites.acceptedAt,
+        projectName: projects.name,
+        workspaceId: projects.workspaceId,
+        workspaceName: workspaces.name,
+        recipientName: users.name,
+      })
+      .from(invites)
+      .innerJoin(projects, eq(invites.projectId, projects.id))
+      .leftJoin(workspaces, eq(projects.workspaceId, workspaces.id))
+      .leftJoin(users, sql`LOWER(${invites.email}) = LOWER(${users.email})`)
+      .where(eq(invites.invitedBy, user.id))
+      .orderBy(sql`${invites.createdAt} DESC`);
+
+    const now = new Date();
+
+    return rows.map((r) => {
+      let currentStatus = r.status as "pending" | "accepted" | "expired" | "revoked";
+      if (currentStatus === "pending" && r.expiresAt < now) {
+        currentStatus = "expired";
+      }
+
+      return {
+        id: r.id,
+        email: r.email,
+        recipientName: r.recipientName ?? null,
+        projectId: r.projectId,
+        projectName: r.projectName,
+        workspaceId: r.workspaceId,
+        workspaceName: r.workspaceName,
+        role: r.role,
+        status: currentStatus,
+        createdAt: r.createdAt,
+        expiresAt: r.expiresAt,
+        acceptedAt: r.acceptedAt,
+      };
+    });
+  } catch (error) {
+    console.error("[getMySentInvitesAction] Error:", error);
+    return [];
+  }
+}
+
+export async function revokeSentInviteAction(inviteId: string) {
+  try {
+    const user = await syncUser();
+    if (!user) return { success: false, error: "Unauthorized. Please sign in." };
+
+    const [invite] = await db.select().from(invites).where(eq(invites.id, inviteId));
+    if (!invite) return { success: false, error: "Invite not found." };
+    if (invite.invitedBy !== user.id) {
+      return { success: false, error: "You can only revoke invitations that you sent." };
+    }
+
+    if (invite.status !== "pending") {
+      return { success: false, error: `Cannot revoke invite with status "${invite.status}".` };
+    }
+
+    await db.update(invites).set({ status: "revoked" }).where(eq(invites.id, invite.id));
+
+    revalidatePath("/team");
+    revalidatePath("/projects");
+
+    return { success: true };
+  } catch (error) {
+    console.error("[revokeSentInviteAction] Error:", error);
+    return { success: false, error: "Failed to revoke invitation." };
   }
 }
 
@@ -861,15 +960,31 @@ export async function acceptProjectInviteAction(inviteId: string) {
         .where(eq(invites.id, invite.id));
     });
 
-    // 5. Switch the user's active workspace context to the joined project's workspace
-    //    so the sidebar/dashboard immediately reflects the newly joined project.
+    // 5. Active Workspace Context Management:
+    // Only auto-set current_workspace_id if the user currently has NO active workspace (first invite).
+    // If the user already has an active workspace, preserve their current context.
+    const currentActiveWorkspaceId = await getActiveWorkspaceId(user.id);
+    let isDifferentWorkspace = false;
+    let joinedWorkspaceName: string | null = null;
+
     if (joinedWorkspaceId) {
-      const cookieStore = await cookies();
-      cookieStore.set("current_workspace_id", joinedWorkspaceId, {
-        path: "/",
-        maxAge: 60 * 60 * 24 * 365,
-        sameSite: "lax",
-      });
+      const [wsRow] = await db
+        .select({ name: workspaces.name })
+        .from(workspaces)
+        .where(eq(workspaces.id, joinedWorkspaceId));
+      joinedWorkspaceName = wsRow?.name ?? null;
+
+      if (!currentActiveWorkspaceId) {
+        // Brand-new user with no active workspace -> initialize cookie
+        const cookieStore = await cookies();
+        cookieStore.set("current_workspace_id", joinedWorkspaceId, {
+          path: "/",
+          maxAge: 60 * 60 * 24 * 365,
+          sameSite: "lax",
+        });
+      } else if (currentActiveWorkspaceId !== joinedWorkspaceId) {
+        isDifferentWorkspace = true;
+      }
     }
 
     revalidatePath(`/projects`);
@@ -880,7 +995,14 @@ export async function acceptProjectInviteAction(inviteId: string) {
     // Derive a URL-safe slug from the project name (same function used everywhere else)
     const projectSlug = joinedProjectName ? toSlug(joinedProjectName) : invite.projectId;
 
-    return { success: true, projectId: invite.projectId, projectSlug };
+    return {
+      success: true,
+      projectId: invite.projectId,
+      projectSlug,
+      workspaceId: joinedWorkspaceId,
+      workspaceName: joinedWorkspaceName,
+      isDifferentWorkspace,
+    };
   } catch (error) {
     console.error("[acceptProjectInviteAction] Error:", error);
     return { success: false, error: "Failed to accept invite. Please try again." };
@@ -991,3 +1113,154 @@ export async function getProjectPermissionsAction(projectId: string): Promise<Pr
     };
   }
 }
+
+export async function getUserWorkspaceRoleAction(): Promise<{
+  role: string;
+  workspaceId: string | null;
+  workspaceName: string | null;
+}> {
+  try {
+    const user = await syncUser();
+    if (!user) return { role: "Member", workspaceId: null, workspaceName: null };
+
+    const activeWorkspaceId = await getActiveWorkspaceId(user.id);
+    if (!activeWorkspaceId) return { role: "Member", workspaceId: null, workspaceName: null };
+
+    // Check if user is the workspace owner
+    const [ws] = await db
+      .select({ id: workspaces.id, name: workspaces.name, ownerId: workspaces.ownerId })
+      .from(workspaces)
+      .where(eq(workspaces.id, activeWorkspaceId));
+
+    if (!ws) return { role: "Member", workspaceId: null, workspaceName: null };
+
+    if (ws.ownerId === user.id) {
+      return { role: "Owner", workspaceId: ws.id, workspaceName: ws.name };
+    }
+
+    // Check workspace_members
+    const [membership] = await db
+      .select({ role: workspaceMembers.role })
+      .from(workspaceMembers)
+      .where(
+        and(
+          eq(workspaceMembers.workspaceId, activeWorkspaceId),
+          eq(workspaceMembers.userId, user.id),
+        ),
+      );
+
+    if (membership?.role) {
+      const formatted =
+        membership.role.charAt(0).toUpperCase() + membership.role.slice(1).toLowerCase();
+      return { role: formatted, workspaceId: ws.id, workspaceName: ws.name };
+    }
+
+    return { role: "Member", workspaceId: ws.id, workspaceName: ws.name };
+  } catch (error) {
+    console.error("[getUserWorkspaceRoleAction] Error:", error);
+    return { role: "Member", workspaceId: null, workspaceName: null };
+  }
+}
+
+export async function getActiveWorkspacePeopleAction(): Promise<
+  { id: string; name: string; email: string; role: string }[]
+> {
+  try {
+    const user = await syncUser();
+    if (!user) return [];
+
+    const activeWorkspaceId = await getActiveWorkspaceId(user.id);
+    if (!activeWorkspaceId) return [];
+
+    // Get workspace owner
+    const [ws] = await db
+      .select({
+        id: workspaces.id,
+        ownerId: workspaces.ownerId,
+        ownerName: users.name,
+        ownerEmail: users.email,
+      })
+      .from(workspaces)
+      .leftJoin(users, eq(workspaces.ownerId, users.id))
+      .where(eq(workspaces.id, activeWorkspaceId));
+
+    const result: { id: string; name: string; email: string; role: string }[] = [];
+    const seen = new Set<string>();
+
+    if (ws && ws.ownerId) {
+      seen.add(ws.ownerId);
+      result.push({
+        id: ws.ownerId,
+        name: ws.ownerName || "Workspace Owner",
+        email: ws.ownerEmail || "",
+        role: "Owner",
+      });
+    }
+
+    // Get members of the workspace
+    const memberRows = await db
+      .select({
+        userId: workspaceMembers.userId,
+        role: workspaceMembers.role,
+        name: users.name,
+        email: users.email,
+      })
+      .from(workspaceMembers)
+      .leftJoin(users, eq(workspaceMembers.userId, users.id))
+      .where(eq(workspaceMembers.workspaceId, activeWorkspaceId));
+
+    for (const m of memberRows) {
+      if (m.userId && !seen.has(m.userId)) {
+        seen.add(m.userId);
+        const formatted = m.role
+          ? m.role.charAt(0).toUpperCase() + m.role.slice(1).toLowerCase()
+          : "Member";
+        result.push({
+          id: m.userId,
+          name: m.name || m.email?.split("@")[0] || "Member",
+          email: m.email || "",
+          role: formatted,
+        });
+      }
+    }
+
+    // Also get project members within projects of this workspace
+    const projectRows = await db
+      .select({ id: projects.id })
+      .from(projects)
+      .where(eq(projects.workspaceId, activeWorkspaceId));
+
+    if (projectRows.length > 0) {
+      const projIds = projectRows.map((p) => p.id);
+      const projMembers = await db
+        .select({
+          userId: projectMembers.userId,
+          name: projectMembers.name,
+          role: projectMembers.role,
+          email: users.email,
+        })
+        .from(projectMembers)
+        .leftJoin(users, eq(projectMembers.userId, users.id))
+        .where(inArray(projectMembers.projectId, projIds));
+
+      for (const pm of projMembers) {
+        if (pm.userId && !seen.has(pm.userId)) {
+          seen.add(pm.userId);
+          result.push({
+            id: pm.userId,
+            name: pm.name || pm.email?.split("@")[0] || "Member",
+            email: pm.email || "",
+            role: pm.role || "Member",
+          });
+        }
+      }
+    }
+
+    return result;
+  } catch (error) {
+    console.error("[getActiveWorkspacePeopleAction] Error:", error);
+    return [];
+  }
+}
+
+

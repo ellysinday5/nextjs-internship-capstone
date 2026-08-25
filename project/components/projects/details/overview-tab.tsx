@@ -20,7 +20,6 @@ interface OverviewTabProps {
   taskCount: number;
   completedTaskCount?: number;
   completionPercentage?: number;
-  categories?: string[];
   techStack: string[];
   members: ProjectMember[];
   onAddMember: () => void;
@@ -39,7 +38,6 @@ export function OverviewTab({
   taskCount,
   completedTaskCount,
   completionPercentage,
-  categories = [],
   techStack = [],
   members,
   onAddMember,
@@ -167,17 +165,9 @@ export function OverviewTab({
         <div className="md:col-span-2 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-[#14263e] p-5 shadow-sm space-y-3.5">
           <h4 className="text-[11px] font-extrabold uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
             <Tag size={12} />
-            CATEGORIES &amp; TECH STACK
+            TECH STACK &amp; TAGS
           </h4>
           <div className="flex flex-wrap gap-2">
-            {categories.map((cat, i) => (
-              <span
-                key={`cat-${i}`}
-                className="px-3 py-1 rounded-full text-xs font-semibold bg-sky-50 dark:bg-sky-950/40 text-sky-700 dark:text-sky-300 border border-sky-200 dark:border-sky-800"
-              >
-                {cat}
-              </span>
-            ))}
             {techStack.map((tech, i) => (
               <span
                 key={`tech-${i}`}
@@ -186,9 +176,9 @@ export function OverviewTab({
                 {tech}
               </span>
             ))}
-            {categories.length === 0 && techStack.length === 0 && (
+            {techStack.length === 0 && (
               <span className="text-xs text-slate-400 italic">
-                No categories or tech stack specified.
+                No tech stack specified.
               </span>
             )}
           </div>
