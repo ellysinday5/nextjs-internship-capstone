@@ -102,6 +102,11 @@ export function WorkspaceSwitcher({ isCollapsed = false }: WorkspaceSwitcherProp
     startTransition(async () => {
       const res = await switchActiveWorkspaceAction(ws.id);
       if (res.success) {
+        if (typeof window !== "undefined") {
+          window.dispatchEvent(
+            new CustomEvent("syntraflow:workspace-changed", { detail: { workspaceId: ws.id } }),
+          );
+        }
         sileo.success(`Switched to ${ws.name}`, "Workspace Changed");
         router.refresh();
       } else {

@@ -1,5 +1,6 @@
 "use client";
 
+import { useUser } from "@clerk/nextjs";
 import { sileo } from "@/utils/alerts";
 import {
   AlertCircle,
@@ -8,6 +9,7 @@ import {
   EyeOff,
   Globe,
   Laptop,
+  Loader2,
   Lock,
   LogOut,
   Smartphone,
@@ -20,12 +22,14 @@ interface SecurityTabProps {
 }
 
 export function SecurityTab({ onSaved }: SecurityTabProps) {
+  const { user } = useUser();
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [showCurrentPw, setShowCurrentPw] = useState(false);
   const [showNewPw, setShowNewPw] = useState(false);
   const [showConfirmPw, setShowConfirmPw] = useState(false);
+  const [isUpdating, setIsUpdating] = useState(false);
 
   const passwordRequirements = useMemo(() => {
     return [
@@ -75,25 +79,50 @@ export function SecurityTab({ onSaved }: SecurityTabProps) {
     },
   ]);
 
-  const handlePasswordSave = (e: React.FormEvent) => {
+  const handlePasswordSave = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!user) {
+      sileo.error("You must be logged in to update your password.", "Unauthorized");
+      return;
+    }
     if (!currentPassword) {
       sileo.error("Please provide your current password.", "Current Password Required");
       return;
     }
     if (passwordStrength < 2) {
-      sileo.error("Please choose a stronger new password.", "Weak Password");
+      sileo.error(
+        "Please choose a stronger new password (at least 8 characters, with letters and numbers).",
+        "Weak Password",
+      );
       return;
     }
     if (newPassword !== confirmPassword) {
       sileo.error("New password and confirm password do not match.", "Password Mismatch");
       return;
     }
-    setCurrentPassword("");
-    setNewPassword("");
-    setConfirmPassword("");
-    sileo.success("Your password has been changed securely.", "Password Changed");
-    onSaved?.();
+
+    setIsUpdating(true);
+    try {
+      await user.updatePassword({
+        currentPassword,
+        newPassword,
+      });
+      setCurrentPassword("");
+      setNewPassword("");
+      setConfirmPassword("");
+      sileo.success("Your password has been changed securely.", "Password Changed");
+      onSaved?.();
+    } catch (err: any) {
+      console.error("[SecurityTab] updatePassword error:", err);
+      const msg =
+        err?.errors?.[0]?.longMessage ||
+        err?.errors?.[0]?.message ||
+        err?.message ||
+        "Failed to update password. Please check your current password and try again.";
+      sileo.error(msg, "Password Error");
+    } finally {
+      setIsUpdating(false);
+    }
   };
 
   const handleRevokeSession = (id: string) => {
@@ -353,9 +382,11 @@ export function SecurityTab({ onSaved }: SecurityTabProps) {
         </button>
         <button
           type="submit"
-          className="inline-flex items-center gap-2 px-5 py-2.5 bg-[#0f2d5a] hover:bg-[#0c2447] text-white font-bold text-xs rounded-xl shadow-sm transition-all cursor-pointer"
+          disabled={isUpdating}
+          className="inline-flex items-center gap-2 px-5 py-2.5 bg-[#0f2d5a] hover:bg-[#0c2447] disabled:opacity-50 text-white font-bold text-xs rounded-xl shadow-sm transition-all cursor-pointer"
         >
-          Save Changes
+          {isUpdating && <Loader2 size={13} className="animate-spin" />}
+          {isUpdating ? "Saving..." : "Save Changes"}
         </button>
       </div>
     </form>

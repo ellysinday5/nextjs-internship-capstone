@@ -22,7 +22,6 @@ export type MemberRole =
 export interface EditableProjectData {
   name: string;
   description: string;
-  category: string;
   status: string;
   priority: string;
   techStack: string[];
@@ -41,16 +40,6 @@ export const MEMBER_ROLES: MemberRole[] = [
   "UI/UX Designer",
   "Data Scientist",
   "Mobile Dev",
-];
-
-export const ALL_CATEGORIES = [
-  "Frontend",
-  "Backend",
-  "Cloud & DevOps",
-  "Cybersecurity",
-  "AI & Data",
-  "Mobile",
-  "Full Stack",
 ];
 
 export const ALL_STATUSES = ["Planning", "In Progress", "Review", "On Hold", "Completed"];

@@ -14,24 +14,25 @@ interface ProfileTabProps {
 }
 
 export function ProfileTab({ onSaved }: ProfileTabProps) {
-  const { profile, updateProfile } = useUserProfile();
+  const { profile, updateProfile, refreshRole } = useUserProfile();
 
   const [fullName, setFullName] = useState(profile.fullName);
   const [email, setEmail] = useState(profile.email);
-  const [role, setRole] = useState(profile.role);
   const [avatarPreview, setAvatarPreview] = useState<string | undefined>(profile.avatarUrl);
 
   useEffect(() => {
     setFullName(profile.fullName);
     setEmail(profile.email);
-    setRole(profile.role);
     setAvatarPreview(profile.avatarUrl);
-  }, [profile.fullName, profile.email, profile.role, profile.avatarUrl]);
+  }, [profile.fullName, profile.email, profile.avatarUrl]);
+
+  useEffect(() => {
+    refreshRole();
+  }, [refreshRole]);
 
   const hasChanges =
     fullName !== profile.fullName ||
     email !== profile.email ||
-    role !== profile.role ||
     avatarPreview !== profile.avatarUrl;
 
   const handleProfileSave = (e: React.FormEvent) => {
@@ -39,7 +40,6 @@ export function ProfileTab({ onSaved }: ProfileTabProps) {
     updateProfile({
       fullName,
       email,
-      role,
       avatarUrl: avatarPreview,
     });
     sileo.success("Profile changes saved successfully.", "Profile Updated");
@@ -49,7 +49,6 @@ export function ProfileTab({ onSaved }: ProfileTabProps) {
   const handleCancel = () => {
     setFullName(profile.fullName);
     setEmail(profile.email);
-    setRole(profile.role);
     setAvatarPreview(profile.avatarUrl);
     sileo.info("Unsaved changes discarded.", "Changes Reverted");
   };
@@ -69,7 +68,7 @@ export function ProfileTab({ onSaved }: ProfileTabProps) {
         <ProfilePictureCard
           avatarPreview={avatarPreview}
           fullName={fullName}
-          role={role}
+          role={profile.role}
           email={email}
           onAvatarChange={setAvatarPreview}
         />
@@ -78,10 +77,9 @@ export function ProfileTab({ onSaved }: ProfileTabProps) {
         <PersonalInfoCard
           fullName={fullName}
           email={email}
-          role={role}
+          role={profile.role}
           onFullNameChange={setFullName}
           onEmailChange={setEmail}
-          onRoleChange={setRole}
         />
 
         {/* 3. Account Stats Card */}

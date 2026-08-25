@@ -8,7 +8,6 @@ import React, { useState, useEffect, use } from "react";
 import { ConfirmationModal } from "@/components/modals/ConfirmationModal";
 import { MembersPanel } from "@/components/projects/edit-card/members-panel";
 import { TechStackEditor } from "@/components/projects/edit-card/tech-stack-editor";
-import { useCategories } from "@/context/category-context";
 import { type ProjectItem, initialProjects } from "@/lib/project-data";
 import {
   ALL_PRIORITIES,
@@ -45,7 +44,6 @@ function buildInitialMembers(project: ProjectItem): TeamMember[] {
 export default function EditProjectPage({ params }: { params: Promise<{ id: string }> }) {
   const router = useRouter();
   const { id } = use(params);
-  const { categories } = useCategories();
 
   const [activeTab, setActiveTab] = useState<"details" | "members">("details");
   const [project, setProject] = useState<ProjectItem | null>(null);
@@ -54,7 +52,6 @@ export default function EditProjectPage({ params }: { params: Promise<{ id: stri
   const [form, setForm] = useState<EditableProjectData>({
     name: "",
     description: "",
-    category: "Frontend",
     status: "In Progress",
     priority: "High",
     techStack: [],
@@ -85,7 +82,6 @@ export default function EditProjectPage({ params }: { params: Promise<{ id: stri
       const data: EditableProjectData = {
         name: foundProj.name,
         description: foundProj.description,
-        category: foundProj.category,
         status: foundProj.status,
         priority: foundProj.priority,
         techStack: [...foundProj.techStack],
@@ -129,7 +125,6 @@ export default function EditProjectPage({ params }: { params: Promise<{ id: stri
     const updatedProject = {
       name: form.name,
       description: form.description,
-      category: form.category,
       status: form.status,
       priority: form.priority,
       techStack: form.techStack,
@@ -246,28 +241,6 @@ export default function EditProjectPage({ params }: { params: Promise<{ id: stri
 
               {/* ── RIGHT COLUMN ── */}
               <div className="space-y-6">
-                {/* Category */}
-                <div>
-                  <label className={label}>Category</label>
-                  <div className="relative">
-                    <select
-                      value={form.category}
-                      onChange={(e) => set("category", e.target.value)}
-                      className={`${inputCls} appearance-none cursor-pointer pr-10`}
-                    >
-                      {categories.map((c) => (
-                        <option key={c} value={c}>
-                          {c}
-                        </option>
-                      ))}
-                    </select>
-                    <ChevronDown
-                      size={14}
-                      className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none"
-                    />
-                  </div>
-                </div>
-
                 {/* Status */}
                 <div>
                   <label className={label}>Status</label>

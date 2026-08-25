@@ -11,6 +11,8 @@ import {
   AlertTriangle,
   Bell,
   CheckCheck,
+  ChevronLeft,
+  ChevronRight,
   Info,
   Loader2,
   RefreshCw,
@@ -28,7 +30,6 @@ interface NotifPrefs {
   emailNotifs: boolean;
   pushNotifs: boolean;
   taskAlerts: boolean;
-  weeklyDigest: boolean;
 }
 
 const PREFS_STORAGE_KEY = "sf_notif_prefs";
@@ -37,7 +38,6 @@ const DEFAULT_PREFS: NotifPrefs = {
   emailNotifs: true,
   pushNotifs: true,
   taskAlerts: true,
-  weeklyDigest: false,
 };
 
 // ─── Helper: map DB notification type → UI category ──────────────────────────
@@ -67,7 +67,6 @@ function dbTypeToIcon(type: string) {
 function isAllowedByPrefs(type: string, prefs: NotifPrefs): boolean {
   const cat = dbTypeToCategory(type);
   if (cat === "task" && !prefs.taskAlerts) return false;
-  if (cat === "system" && !prefs.weeklyDigest) return false;
   return true;
 }
 
@@ -246,13 +245,9 @@ export function NotificationsTab() {
       desc: "Notify instantly when assigned to a task",
       note: "Task notifications are hidden from your list while this is off",
     },
-    {
-      key: "weeklyDigest",
-      label: "Weekly Summary Digest",
-      desc: "Receive productivity report weekly",
-      note: "System/digest notifications are hidden from your list while this is off",
-    },
   ];
+
+  const totalPages = Math.max(1, hasMore ? page + 1 : page);
 
   return (
     <div className="p-6 sm:p-8 space-y-6">
@@ -370,11 +365,6 @@ export function NotificationsTab() {
                   Task alerts are disabled in your preferences below.
                 </p>
               )}
-              {notifCategory === "system" && !prefs.weeklyDigest && (
-                <p className="text-xs mt-1 text-amber-500">
-                  Weekly digest is disabled in your preferences below.
-                </p>
-              )}
             </div>
           ) : (
             filteredNotifs.map((notif) => (
@@ -442,26 +432,51 @@ export function NotificationsTab() {
           )}
         </div>
 
-        {/* Pagination */}
-        <div className="flex items-center justify-center gap-3 mt-4">
-          <button
-            type="button"
-            onClick={() => fetchNotifications(page - 1)}
-            disabled={page === 1 || loading}
-            className="px-3 py-1.5 text-xs font-bold rounded-lg border border-slate-200 dark:border-slate-700 disabled:opacity-40 cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors"
-          >
-            Prev
-          </button>
-          <span className="text-xs text-slate-500">Page {page}</span>
-          <button
-            type="button"
-            onClick={() => fetchNotifications(page + 1)}
-            disabled={!hasMore || loading}
-            className="px-3 py-1.5 text-xs font-bold rounded-lg border border-slate-200 dark:border-slate-700 disabled:opacity-40 cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors"
-          >
-            Next
-          </button>
-        </div>
+        {/* Standard Table Pagination */}
+        {(totalPages > 1 || page > 1) && (
+          <div className="flex items-center justify-between pt-4 px-1 border-t border-slate-100 dark:border-slate-800/80 mt-4">
+            <span className="text-xs font-semibold text-slate-500 dark:text-slate-400">
+              Page <strong className="text-[#142843] dark:text-white">{page}</strong> of{" "}
+              <strong className="text-[#142843] dark:text-white">{totalPages}</strong>
+            </span>
+            <div className="flex items-center gap-1">
+              <button
+                type="button"
+                onClick={() => fetchNotifications(Math.max(1, page - 1))}
+                disabled={page === 1 || loading}
+                className="p-2 rounded-xl border border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 disabled:opacity-40 disabled:cursor-not-allowed transition-colors cursor-pointer"
+                suppressHydrationWarning
+              >
+                <ChevronLeft size={14} />
+              </button>
+              {Array.from({ length: totalPages }, (_, i) => i + 1).map((p) => (
+                <button
+                  key={p}
+                  type="button"
+                  onClick={() => fetchNotifications(p)}
+                  disabled={loading}
+                  className={`min-w-[32px] h-8 rounded-xl text-xs font-bold transition-colors cursor-pointer ${
+                    p === page
+                      ? "bg-[#142843] text-white shadow-sm"
+                      : "border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800"
+                  }`}
+                  suppressHydrationWarning
+                >
+                  {p}
+                </button>
+              ))}
+              <button
+                type="button"
+                onClick={() => fetchNotifications(page + 1)}
+                disabled={!hasMore || loading}
+                className="p-2 rounded-xl border border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 disabled:opacity-40 disabled:cursor-not-allowed transition-colors cursor-pointer"
+                suppressHydrationWarning
+              >
+                <ChevronRight size={14} />
+              </button>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* ── Notification Preferences ───────────────────────────────────────── */}
@@ -507,4 +522,3 @@ export function NotificationsTab() {
     </div>
   );
 }
-

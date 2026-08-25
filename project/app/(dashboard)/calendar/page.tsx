@@ -5,6 +5,7 @@ import { getProjectTasksAction } from "@/actions/task-actions";
 import { CalendarGrid, SelectedDayChip } from "@/components/calendar/calendar-grid";
 import { EventsList } from "@/components/calendar/events-list";
 import { ConfirmationModal } from "@/components/modals/ConfirmationModal";
+import { useCategories } from "@/context/category-context";
 import {
   Archive,
   CalendarDays,
@@ -93,6 +94,7 @@ function priorityBadge(p?: string) {
 
 export default function CalendarPage() {
   const router = useRouter();
+  const { eventCategoryNames } = useCategories();
   const [events, setEvents] = useState<EventItem[]>(initialDeadlines);
   const [search, setSearch] = useState("");
   const [filterStatus, setFilterStatus] = useState("All");
@@ -115,18 +117,27 @@ export default function CalendarPage() {
   } | null>(null);
 
   useEffect(() => {
+    let stored: EventItem[] = [];
     try {
-      const stored = localStorage.getItem(STORAGE_KEY);
-      if (stored) {
-        const parsed: EventItem[] = JSON.parse(stored);
-        if (Array.isArray(parsed) && parsed.length > 0) {
-          setEvents((prev) => {
-            const ids = new Set(prev.map((d) => d.id));
-            return [...parsed.filter((i) => !ids.has(i.id)), ...prev];
-          });
-        }
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if (raw) {
+        const parsed: EventItem[] = JSON.parse(raw);
+        if (Array.isArray(parsed)) stored = parsed;
       }
     } catch {}
+
+    // Merge localStorage events with initialDeadlines, deduplicating by id.
+    // localStorage events take precedence (they may have been updated/archived).
+    setEvents(() => {
+      const byId = new Map<string, EventItem>();
+      // Start with the hardcoded defaults so they're always the lowest priority
+      for (const e of initialDeadlines) byId.set(e.id, e);
+      // Override with stored versions (they may carry completed/archived state)
+      for (const e of stored) byId.set(e.id, e);
+      return Array.from(byId.values());
+    });
+
+    // Append task due-date events (deduplicated against what's already in state)
     getProjectsAction()
       .then(async (projectsList) => {
         if (!Array.isArray(projectsList)) return;
@@ -166,17 +177,23 @@ export default function CalendarPage() {
         ).flat();
         if (all.length > 0)
           setEvents((prev) => {
-            const ids = new Set(prev.map((d) => d.id));
-            return [...prev, ...all.filter((t) => !ids.has(t.id))];
+            const byId = new Map(prev.map((e) => [e.id, e]));
+            for (const t of all) {
+              if (!byId.has(t.id)) byId.set(t.id, t);
+            }
+            return Array.from(byId.values());
           });
       })
       .catch(() => {});
   }, []);
 
   const persistEvents = (updated: EventItem[]) => {
-    setEvents(updated);
+    // Deduplicate by id before persisting
+    const byId = new Map(updated.map((e) => [e.id, e]));
+    const deduped = Array.from(byId.values());
+    setEvents(deduped);
     try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(deduped));
     } catch {}
   };
 
@@ -276,30 +293,34 @@ export default function CalendarPage() {
   const statsCards = [
     {
       label: "Total Events",
-      value: activeEvents.length,
-      color: "text-[#0052cc]",
-      bg: "bg-blue-50 dark:bg-blue-950/30",
+      value: activeEvents.length + draftEvents.length,
+      accentColor: "#0033a0",
+      color: "text-[#0033a0] dark:text-blue-400",
+      pillBg: "bg-blue-50 text-[#0033a0] dark:bg-blue-950/60 dark:text-blue-400",
       icon: CalendarDays,
     },
     {
       label: "Upcoming",
       value: activeEvents.filter((e) => !e.completed).length,
-      color: "text-violet-600",
-      bg: "bg-violet-50 dark:bg-violet-950/30",
+      accentColor: "#10b981",
+      color: "text-emerald-600 dark:text-emerald-400",
+      pillBg: "bg-emerald-50 text-emerald-600 dark:bg-emerald-950/60 dark:text-emerald-400",
       icon: Clock,
     },
     {
       label: "Drafts",
       value: draftEvents.length,
-      color: "text-amber-600",
-      bg: "bg-amber-50 dark:bg-amber-950/30",
+      accentColor: "#f59e0b",
+      color: "text-amber-600 dark:text-amber-400",
+      pillBg: "bg-amber-50 text-amber-600 dark:bg-amber-950/60 dark:text-amber-400",
       icon: FileEdit,
     },
     {
       label: "Archived",
       value: archivedEvents.length,
-      color: "text-slate-500",
-      bg: "bg-slate-100 dark:bg-slate-800/50",
+      accentColor: "#64748b",
+      color: "text-slate-600 dark:text-slate-400",
+      pillBg: "bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400",
       icon: Archive,
     },
   ];
@@ -319,14 +340,8 @@ export default function CalendarPage() {
           </div>
           <div className="flex items-center gap-3">
             <button
-              onClick={() => router.push("/calendar/events")}
-              className="inline-flex items-center gap-2 px-4 py-2 bg-white dark:bg-[#1c304a] border border-slate-200 dark:border-slate-700 text-[#142843] dark:text-white font-bold text-sm rounded-xl hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-all shadow-xs"
-            >
-              <Layers size={15} className="text-[#0052cc]" /> Manage Events
-            </button>
-            <button
               onClick={() => router.push("/calendar/new")}
-              className="inline-flex items-center gap-2 px-5 py-2 bg-[#0052cc] hover:bg-[#003d99] text-white font-bold text-sm rounded-xl shadow-md transition-all active:scale-[0.98]"
+              className="inline-flex items-center gap-2 px-5 py-2.5 bg-[#0033a0] hover:bg-[#00277a] dark:bg-blue-600 dark:hover:bg-blue-700 text-white font-bold text-sm rounded-xl shadow-sm transition-all active:scale-[0.98] cursor-pointer"
             >
               <Plus size={16} className="stroke-[3]" /> Add Event
             </button>
@@ -334,23 +349,32 @@ export default function CalendarPage() {
         </div>
 
         {/* Stat Cards */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-          {statsCards.map((s) => (
-            <div
-              key={s.label}
-              className={`${s.bg} rounded-2xl p-4 flex items-center gap-3 border border-transparent dark:border-slate-800`}
-            >
-              <div className="p-2.5 rounded-xl bg-white dark:bg-slate-900/50 shadow-xs">
-                <s.icon size={18} className={s.color} />
-              </div>
-              <div>
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3.5">
+          {statsCards.map((s) => {
+            const Icon = s.icon;
+            return (
+              <div
+                key={s.label}
+                className="group relative flex flex-col justify-between rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4 shadow-xs hover:shadow-md hover:border-slate-300 dark:hover:border-slate-700 transition-all duration-200 overflow-hidden"
+              >
+                <div
+                  className="absolute top-0 left-0 right-0 h-1 w-full"
+                  style={{ backgroundColor: s.accentColor }}
+                />
+                <div className="flex items-center justify-between gap-2 mb-2">
+                  <span className="text-xs font-extrabold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+                    {s.label}
+                  </span>
+                  <div
+                    className={`h-8 w-8 rounded-xl flex items-center justify-center shrink-0 transition-transform duration-200 group-hover:scale-105 ${s.pillBg}`}
+                  >
+                    <Icon size={16} className="stroke-[2.5]" />
+                  </div>
+                </div>
                 <p className={`text-2xl font-black ${s.color}`}>{s.value}</p>
-                <p className="text-xs font-semibold text-slate-500 dark:text-slate-400">
-                  {s.label}
-                </p>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
 
         {/* Main 2-column Layout */}
@@ -438,12 +462,15 @@ export default function CalendarPage() {
                     onChange={(e) => setFilterCategory(e.target.value)}
                     className="appearance-none pl-8 pr-8 py-2 border border-slate-200 dark:border-slate-600 rounded-xl bg-white dark:bg-slate-800/50 text-xs font-bold text-[#142843] dark:text-white focus:outline-none focus:ring-2 focus:ring-[#0052cc] cursor-pointer"
                   >
-                    <option value="All">Categories</option>
-                    <option value="Project Deadline">Project Deadline</option>
-                    <option value="Meeting">Meeting</option>
-                    <option value="Milestone">Milestone</option>
-                    <option value="Presentation">Presentation</option>
-                    <option value="Task">Task</option>
+                    <option value="All">All Categories</option>
+                    {(eventCategoryNames && eventCategoryNames.length > 0
+                      ? eventCategoryNames
+                      : ["Project Deadline", "Meeting", "Milestone", "Presentation", "Task"]
+                    ).map((cat) => (
+                      <option key={cat} value={cat}>
+                        {cat}
+                      </option>
+                    ))}
                   </select>
                   <Layers
                     size={13}

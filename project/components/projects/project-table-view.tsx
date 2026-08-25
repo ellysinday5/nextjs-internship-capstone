@@ -104,7 +104,6 @@ function ActionMenu({
                 ownerId: "demo",
                 ownerName: "Unknown",
                 dueDate: null,
-                categories: [project.category],
                 techStack: project.techStack || [],
                 status: project.status,
                 priority: project.priority,
@@ -156,9 +155,6 @@ export function ProjectTableView({ projects, onEdit, onDelete }: ProjectTableVie
                   Project
                 </th>
                 <th className="px-5 py-3.5 text-xs font-bold uppercase tracking-wider text-slate-100">
-                  Category
-                </th>
-                <th className="px-5 py-3.5 text-xs font-bold uppercase tracking-wider text-slate-100">
                   Status
                 </th>
                 <th className="px-5 py-3.5 text-xs font-bold uppercase tracking-wider text-slate-100">
@@ -208,11 +204,6 @@ export function ProjectTableView({ projects, onEdit, onDelete }: ProjectTableVie
                         )}
                       </div>
                     </div>
-                  </td>
-                  <td className="px-5 py-3.5">
-                    <span className="text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300">
-                      {project.category}
-                    </span>
                   </td>
                   <td className="px-5 py-3.5">
                     <span

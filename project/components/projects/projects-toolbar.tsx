@@ -3,7 +3,6 @@
 import { FilterDropdown } from "@/components/projects/filter-dropdown";
 import type { DropdownKey, ViewMode } from "@/hooks/use-project-filters";
 import {
-  categories,
   membersFilterOptions,
   owners,
   priorities,
@@ -30,8 +29,6 @@ import { useEffect, useRef } from "react";
 interface ProjectsToolbarProps {
   searchQuery: string;
   setSearchQuery: (v: string) => void;
-  selectedCategory: string;
-  setSelectedCategory: (v: string) => void;
   selectedStatus: string;
   setSelectedStatus: (v: string) => void;
   selectedPriority: string;
@@ -55,8 +52,6 @@ interface ProjectsToolbarProps {
 export function ProjectsToolbar({
   searchQuery,
   setSearchQuery,
-  selectedCategory,
-  setSelectedCategory,
   selectedStatus,
   setSelectedStatus,
   selectedPriority,
@@ -123,19 +118,6 @@ export function ProjectsToolbar({
               />
             )}
           </div>
-
-          <FilterDropdown
-            label="Category"
-            icon={<ChevronDown size={14} />}
-            value={selectedCategory}
-            options={categories}
-            isOpen={openDropdown === "category"}
-            onToggle={() => toggleDropdown("category")}
-            onSelect={(val) => {
-              setSelectedCategory(val);
-              setOpenDropdown(null);
-            }}
-          />
 
           <FilterDropdown
             label="Status"

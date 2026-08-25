@@ -5,7 +5,6 @@ export interface ProjectItem {
   name: string;
   description: string;
   techStack: string[];
-  category: string;
   status: string;
   priority: string;
   progress: number;
@@ -34,7 +33,6 @@ export const initialProjects: ProjectItem[] = [
     description:
       "Short description of what this project is about. Replace with actual project details.",
     techStack: ["Tech A", "Tech B", "Tech C"],
-    category: "Frontend",
     status: "In Progress",
     priority: "High",
     progress: 75,
@@ -51,7 +49,6 @@ export const initialProjects: ProjectItem[] = [
     description:
       "Short description of what this project is about. Replace with actual project details.",
     techStack: ["Tech A", "Tech B", "Tech C"],
-    category: "Backend",
     status: "In Progress",
     priority: "High",
     progress: 50,
@@ -68,7 +65,6 @@ export const initialProjects: ProjectItem[] = [
     description:
       "Short description of what this project is about. Replace with actual project details.",
     techStack: ["Tech A", "Tech B", "Tech C"],
-    category: "AI & Data",
     status: "Review",
     priority: "Medium",
     progress: 88,
@@ -79,16 +75,6 @@ export const initialProjects: ProjectItem[] = [
     updatedAt: "1 day ago",
     color: "bg-purple-500",
   },
-];
-
-export const categories = [
-  "All",
-  "Frontend",
-  "Backend",
-  "Cloud & DevOps",
-  "Cybersecurity",
-  "AI & Data",
-  "Mobile",
 ];
 
 export const statuses = ["All", "In Progress", "Review", "Planning", "Completed"];

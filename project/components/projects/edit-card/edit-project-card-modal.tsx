@@ -3,7 +3,6 @@
 import { Modal } from "@/components/modals/BaseModal";
 import type { ProjectItem } from "@/lib/project-data";
 import {
-  ALL_CATEGORIES,
   ALL_PRIORITIES,
   ALL_STATUSES,
   type EditableProjectData,
@@ -62,7 +61,6 @@ export function EditProjectCardModal({
   const [form, setForm] = useState<EditableProjectData>({
     name: "",
     description: "",
-    category: "Frontend",
     status: "In Progress",
     priority: "High",
     techStack: [],
@@ -77,7 +75,6 @@ export function EditProjectCardModal({
     setForm({
       name: project.name,
       description: project.description,
-      category: project.category,
       status: project.status,
       priority: project.priority,
       techStack: [...project.techStack],
@@ -94,7 +91,6 @@ export function EditProjectCardModal({
     onSave(project.id, {
       name: form.name,
       description: form.description,
-      category: form.category,
       status: form.status,
       priority: form.priority,
       techStack: form.techStack,
@@ -189,31 +185,8 @@ export function EditProjectCardModal({
             />
           </div>
 
-          {/* Category / Status / Priority — 3 column row */}
-          <div className="grid grid-cols-3 gap-3">
-            <div>
-              <label className="text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider block mb-1">
-                Category
-              </label>
-              <div className="relative">
-                <select
-                  value={form.category}
-                  onChange={(e) => set("category", e.target.value)}
-                  className="w-full appearance-none rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 px-3 py-2 text-xs font-semibold text-slate-800 dark:text-slate-100 outline-none focus:border-blue-500 cursor-pointer pr-7"
-                >
-                  {ALL_CATEGORIES.map((c) => (
-                    <option key={c} value={c}>
-                      {c}
-                    </option>
-                  ))}
-                </select>
-                <ChevronDown
-                  size={13}
-                  className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none"
-                />
-              </div>
-            </div>
-
+          {/* Status / Priority — 2 column row */}
+          <div className="grid grid-cols-2 gap-3">
             <div>
               <label className="text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider block mb-1">
                 Status

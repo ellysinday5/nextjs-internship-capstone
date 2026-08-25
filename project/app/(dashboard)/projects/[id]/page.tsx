@@ -52,7 +52,6 @@ export default function ProjectPage({ params }: { params: Promise<{ id: string }
   const [isEditingDescription, setIsEditingDescription] = useState(false);
   const [isSavingDescription, setIsSavingDescription] = useState(false);
   const [ownerName, setOwnerName] = useState("");
-  const [categories, setCategories] = useState<string[]>([]);
   const [techStack, setTechStack] = useState<string[]>([]);
   const [projectColor, setProjectColor] = useState("#3b82f6");
   const [selectedIconIndex, setSelectedIconIndex] = useState(0);
@@ -87,7 +86,6 @@ export default function ProjectPage({ params }: { params: Promise<{ id: string }
       setProjectDescription(project.description || "");
       setTempDescription(project.description || "");
       setOwnerName(project.ownerName || "");
-      setCategories(project.categories || []);
       setTechStack(project.techStack || []);
       if (project.status) setStatus(project.status as ProjectStatusType);
 
@@ -250,7 +248,6 @@ export default function ProjectPage({ params }: { params: Promise<{ id: string }
       description: newDesc,
       status: schemaStatus as "Not Started" | "In Progress" | "Completed" | "On Hold",
       priority: "Medium",
-      categories,
       techStack,
       members: members.map((m) => ({ name: m.name, role: m.role })),
     });
@@ -270,7 +267,6 @@ export default function ProjectPage({ params }: { params: Promise<{ id: string }
       description: projectDescription,
       status: schemaStatus as "Not Started" | "In Progress" | "Completed" | "On Hold",
       priority: "Medium",
-      categories,
       techStack,
       members: members.map((m) => ({ name: m.name, role: m.role })),
     });
@@ -290,7 +286,6 @@ export default function ProjectPage({ params }: { params: Promise<{ id: string }
       description: projectDescription,
       status: schemaStatus as "Not Started" | "In Progress" | "Completed" | "On Hold",
       priority: "Medium",
-      categories,
       techStack,
       members: members.map((m) => ({ name: m.name, role: m.role })),
     });
@@ -373,7 +368,6 @@ export default function ProjectPage({ params }: { params: Promise<{ id: string }
                 tasks.filter((t) => isTaskCompleted(t.status)).length,
                 tasks.length,
               )}
-              categories={categories}
               techStack={techStack}
               members={members}
               onAddMember={() => setIsAddMemberOpen(true)}

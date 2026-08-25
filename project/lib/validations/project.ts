@@ -4,15 +4,6 @@ import { z } from "zod";
    Constants — sourced from DB schema (plain text columns, no pgEnum)
    These are the canonical values used across the codebase.
 ───────────────────────────────────────────────────────────── */
-export const PROJECT_CATEGORIES = [
-  "Frontend",
-  "Backend",
-  "Database",
-  "DevOps",
-  "Mobile",
-  "Design",
-] as const;
-
 export const PROJECT_STATUSES = ["Not Started", "In Progress", "Completed", "On Hold"] as const;
 
 export const PROJECT_PRIORITIES = ["Low", "Medium", "High"] as const;
@@ -27,7 +18,6 @@ export const PROJECT_VIEWS = [
   "overview",
 ] as const;
 
-export type ProjectCategory = (typeof PROJECT_CATEGORIES)[number];
 export type ProjectStatus = (typeof PROJECT_STATUSES)[number];
 export type ProjectPriority = (typeof PROJECT_PRIORITIES)[number];
 export type ProjectView = (typeof PROJECT_VIEWS)[number];
@@ -52,11 +42,6 @@ const sharedProjectFields = {
     .optional()
     .or(z.literal("")),
   dueDate: z.string().optional().or(z.literal("")),
-  // NOTE: categories uses z.array(z.string()) — NOT z.enum(PROJECT_CATEGORIES)
-  // because CategoryProvider (context/category-context.tsx) allows
-  // user-customized categories stored in localStorage beyond the
-  // default PROJECT_CATEGORIES preset list.
-  categories: z.array(z.string()).optional(),
   techStack: z.array(z.string()).optional(),
   status: z
     .enum(PROJECT_STATUSES, {
