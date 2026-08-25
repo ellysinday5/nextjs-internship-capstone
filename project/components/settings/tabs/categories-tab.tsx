@@ -13,7 +13,6 @@ import {
   Plus,
   RotateCcw,
   Search,
-  Sparkles,
   Tag,
   Tags,
   Trash2,
@@ -24,16 +23,16 @@ import React, { useMemo, useRef, useState } from "react";
 type SortOrder = "default" | "asc" | "desc";
 
 const PRESET_SUGGESTIONS = [
-  { label: "Standup", emoji: "☀️" },
-  { label: "Sprint Review", emoji: "🏃" },
-  { label: "Demo", emoji: "🎯" },
-  { label: "Milestone", emoji: "🏁" },
-  { label: "1-on-1", emoji: "💬" },
-  { label: "Deploy", emoji: "🚀" },
-  { label: "Bug Bash", emoji: "🐛" },
-  { label: "Planning", emoji: "📋" },
-  { label: "Retrospective", emoji: "🔄" },
-  { label: "Workshop", emoji: "🛠️" },
+  { label: "Standup" },
+  { label: "Sprint Review" },
+  { label: "Demo" },
+  { label: "Milestone" },
+  { label: "1-on-1" },
+  { label: "Deploy" },
+  { label: "Bug Bash" },
+  { label: "Planning" },
+  { label: "Retrospective" },
+  { label: "Workshop" },
 ];
 
 const COLOR_PALETTE = [
@@ -232,7 +231,6 @@ export function CategoriesTab() {
           {availablePresets.length > 0 && (
             <div className="space-y-2">
               <div className="flex items-center gap-1.5">
-                <Sparkles size={12} className="text-slate-400" />
                 <span className="text-[11px] font-bold text-slate-400 uppercase tracking-widest">
                   Quick add suggestions
                 </span>
@@ -246,7 +244,6 @@ export function CategoriesTab() {
                     disabled={isSubmitting}
                     className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50 hover:border-[#0052cc]/60 hover:bg-[#0052cc]/5 dark:hover:bg-[#0052cc]/10 hover:text-[#0052cc] text-slate-600 dark:text-slate-300 text-xs font-semibold transition-all cursor-pointer disabled:opacity-50"
                   >
-                    <span>{preset.emoji}</span>
                     <span>{preset.label}</span>
                     <Plus size={11} className="opacity-60" />
                   </button>

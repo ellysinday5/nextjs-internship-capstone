@@ -132,6 +132,10 @@ export default function ProjectPage({ params }: { params: Promise<{ id: string }
     setSelectedPriorityFilter,
     selectedStatusFilter,
     setSelectedStatusFilter,
+    selectedAssignee,
+    setSelectedAssignee,
+    filterRules,
+    setFilterRules,
     sortBy,
     setSortBy,
     filteredSections,
@@ -146,8 +150,6 @@ export default function ProjectPage({ params }: { params: Promise<{ id: string }
     });
   }, [resolvedProjectId, projectColor, selectedIconIndex, isFavorite]);
 
-  const [inlineAddingSectionId, setInlineAddingSectionId] = useState<string | null>(null);
-  const [newTaskTitle, setNewTaskTitle] = useState("");
   const [isCreateTaskOpen, setIsCreateTaskOpen] = useState(false);
   const [defaultTaskListId, setDefaultTaskListId] = useState<string | undefined>(undefined);
   const [isAddMemberOpen, setIsAddMemberOpen] = useState(false);
@@ -157,16 +159,6 @@ export default function ProjectPage({ params }: { params: Promise<{ id: string }
     setIsCreateTaskOpen(true);
     if (activeTab === "Overview") setActiveTab("List");
   };
-
-  async function handleSaveInlineTask(listId: string) {
-    if (!newTaskTitle.trim()) {
-      setInlineAddingSectionId(null);
-      return;
-    }
-    await createTask(listId, { title: newTaskTitle.trim(), listId });
-    setNewTaskTitle("");
-    setInlineAddingSectionId(null);
-  }
 
   async function handleUpdateTask(updatedTask: TaskItem) {
     const VALID_STATUSES = [
@@ -396,6 +388,8 @@ export default function ProjectPage({ params }: { params: Promise<{ id: string }
           ) : activeTab === "Board" ? (
             <div className="flex flex-col h-full">
               <ProjectToolbar
+                projectId={resolvedProjectId ?? undefined}
+                members={members}
                 onAddTask={triggerAddTask}
                 searchQuery={searchQuery}
                 setSearchQuery={setSearchQuery}
@@ -403,6 +397,11 @@ export default function ProjectPage({ params }: { params: Promise<{ id: string }
                 setSelectedPriorityFilter={setSelectedPriorityFilter}
                 selectedStatusFilter={selectedStatusFilter}
                 setSelectedStatusFilter={setSelectedStatusFilter}
+                filterRules={filterRules}
+                setFilterRules={setFilterRules}
+                selectedAssignee={selectedAssignee}
+                setSelectedAssignee={setSelectedAssignee}
+                availableAssignees={members.map((m) => m.name)}
                 sortBy={sortBy}
                 setSortBy={setSortBy}
                 onAddSection={async () => {
@@ -436,6 +435,8 @@ export default function ProjectPage({ params }: { params: Promise<{ id: string }
           ) : (
             <div className="flex flex-col h-full">
               <ProjectToolbar
+                projectId={resolvedProjectId ?? undefined}
+                members={members}
                 onAddTask={triggerAddTask}
                 searchQuery={searchQuery}
                 setSearchQuery={setSearchQuery}
@@ -443,6 +444,11 @@ export default function ProjectPage({ params }: { params: Promise<{ id: string }
                 setSelectedPriorityFilter={setSelectedPriorityFilter}
                 selectedStatusFilter={selectedStatusFilter}
                 setSelectedStatusFilter={setSelectedStatusFilter}
+                filterRules={filterRules}
+                setFilterRules={setFilterRules}
+                selectedAssignee={selectedAssignee}
+                setSelectedAssignee={setSelectedAssignee}
+                availableAssignees={members.map((m) => m.name)}
                 sortBy={sortBy}
                 setSortBy={setSortBy}
                 onAddSection={async () => {
@@ -455,11 +461,6 @@ export default function ProjectPage({ params }: { params: Promise<{ id: string }
                 filteredSections={filteredSections}
                 selectedTask={selectedTask}
                 onSelectTask={setSelectedTask}
-                inlineAddingSectionId={inlineAddingSectionId}
-                setInlineAddingSectionId={setInlineAddingSectionId}
-                newTaskTitle={newTaskTitle}
-                setNewTaskTitle={setNewTaskTitle}
-                onSaveInlineTask={handleSaveInlineTask}
               />
             </div>
           )}

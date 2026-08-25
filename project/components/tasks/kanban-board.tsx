@@ -8,10 +8,13 @@ import { useBoardStore } from "@/stores/board-store";
 import {
   DndContext,
   type DragEndEvent,
+  type DragOverEvent,
   DragOverlay,
   type DragStartEvent,
   PointerSensor,
-  closestCorners,
+  closestCenter,
+  pointerWithin,
+  rectIntersection,
   useSensor,
   useSensors,
 } from "@dnd-kit/core";
@@ -22,13 +25,21 @@ import {
   verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
 import { Loader2, Plus } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { KanbanColumn } from "./kanban-column";
 import { TaskCard } from "./task-card";
 
 interface KanbanBoardProps {
   projectId: string;
   onSelectTask?: (task: TaskRecord) => void;
+}
+
+/** Custom collision detection: prefer pointer-within for cross-column drops,
+ *  fall back to rect intersection so empty columns are still reachable. */
+function customCollisionDetection(args: Parameters<typeof pointerWithin>[0]) {
+  const pointerCollisions = pointerWithin(args);
+  if (pointerCollisions.length > 0) return pointerCollisions;
+  return rectIntersection(args);
 }
 
 export function KanbanBoard({ projectId, onSelectTask }: KanbanBoardProps) {
@@ -50,23 +61,52 @@ export function KanbanBoard({ projectId, onSelectTask }: KanbanBoardProps) {
   const [isAddingList, setIsAddingList] = useState(false);
   const [newListName, setNewListName] = useState("");
 
+  // Local optimistic task order during a drag — keeps the UI responsive.
+  // We only commit to the server on DragEnd.
+  const [localTasks, setLocalTasks] = useState<TaskRecord[]>(tasks);
+  const pendingMoveRef = useRef<{
+    taskId: string;
+    toListId: string;
+    toPosition: number;
+  } | null>(null);
+
+  // Keep localTasks in sync when the store changes (outside of a drag)
+  useEffect(() => {
+    if (!draggedTask && !draggedColumn) {
+      setLocalTasks(tasks);
+    }
+  }, [tasks, draggedTask, draggedColumn]);
+
   useEffect(() => {
     loadProject(projectId);
   }, [projectId, loadProject]);
 
   const keyboardCoordinateGetter = createKanbanCoordinateGetter(() => ({
-    tasks: tasks.map((t) => ({ id: t.id, listId: t.listId, position: t.position })),
+    tasks: localTasks.map((t) => ({ id: t.id, listId: t.listId, position: t.position })),
     lists: lists.map((l) => ({ id: l.id })),
   }));
 
-  const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 8 } }));
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
+  );
 
-  function tasksForList(listId: string) {
-    return tasks.filter((t) => t.listId === listId).sort((a, b) => a.position - b.position);
+  function tasksForList(listId: string, source: TaskRecord[] = localTasks) {
+    return source.filter((t) => t.listId === listId).sort((a, b) => a.position - b.position);
   }
 
-  function findListOfTask(taskId: string): string | null {
-    return tasks.find((t) => t.id === taskId)?.listId ?? null;
+  function findListOfTask(taskId: string, source: TaskRecord[] = localTasks): string | null {
+    return source.find((t) => t.id === taskId)?.listId ?? null;
+  }
+
+  /** Resolve the list ID from what was under the pointer at drop/over time */
+  function resolveTargetListId(
+    overId: string,
+    overData: Record<string, unknown> | undefined,
+  ): string | null {
+    if (overData?.listId) return overData.listId as string;
+    // overId might be a list id (column drop) or a task id
+    if (lists.find((l) => l.id === overId)) return overId;
+    return findListOfTask(overId);
   }
 
   function handleDragStart(event: DragStartEvent) {
@@ -76,16 +116,74 @@ export function KanbanBoard({ projectId, onSelectTask }: KanbanBoardProps) {
       setDraggedColumn(col ?? null);
       return;
     }
-
-    const task = tasks.find((t) => t.id === event.active.id);
+    const task = localTasks.find((t) => t.id === event.active.id);
     setDraggedTask(task ?? null);
+  }
+
+  /** Optimistically reorder localTasks while dragging so the ghost moves smoothly */
+  function handleDragOver(event: DragOverEvent) {
+    const { active, over } = event;
+    if (!over) return;
+
+    const activeType = active.data.current?.type;
+    if (activeType === "column") return; // column reordering handled on DragEnd only
+
+    const taskId = active.id as string;
+    const fromListId = findListOfTask(taskId);
+    const toListId = resolveTargetListId(
+      over.id as string,
+      over.data.current as Record<string, unknown> | undefined,
+    );
+
+    if (!fromListId || !toListId) return;
+
+    const destTasks = tasksForList(toListId).filter((t) => t.id !== taskId);
+    const overIndex = destTasks.findIndex((t) => t.id === over.id);
+    const newPosition = overIndex === -1 ? destTasks.length : overIndex;
+
+    // Same list, same position — nothing to do
+    if (fromListId === toListId) {
+      const curPos = localTasks.find((t) => t.id === taskId)?.position ?? -1;
+      if (curPos === newPosition) return;
+    }
+
+    // Optimistically update local task order
+    setLocalTasks((prev) => {
+      const moving = prev.find((t) => t.id === taskId);
+      if (!moving) return prev;
+
+      const withoutMoving = prev.filter((t) => t.id !== taskId);
+
+      // Rebuild destination list with the task inserted
+      const destWithoutMoving = withoutMoving
+        .filter((t) => t.listId === toListId)
+        .sort((a, b) => a.position - b.position);
+
+      const insertAt = overIndex === -1 ? destWithoutMoving.length : overIndex;
+      destWithoutMoving.splice(insertAt, 0, { ...moving, listId: toListId, position: insertAt });
+
+      // Rebuild the rest
+      const otherTasks = withoutMoving.filter((t) => t.listId !== toListId);
+
+      const allDest = destWithoutMoving.map((t, i) => ({ ...t, position: i }));
+      return [...otherTasks, ...allDest];
+    });
+
+    // Record the pending move so DragEnd can commit it
+    pendingMoveRef.current = { taskId, toListId, toPosition: newPosition };
   }
 
   function handleDragEnd(event: DragEndEvent) {
     const { active, over } = event;
     setDraggedTask(null);
     setDraggedColumn(null);
-    if (!over) return;
+
+    if (!over) {
+      // Cancelled — revert to store state
+      setLocalTasks(tasks);
+      pendingMoveRef.current = null;
+      return;
+    }
 
     const activeType = active.data.current?.type;
 
@@ -93,35 +191,43 @@ export function KanbanBoard({ projectId, onSelectTask }: KanbanBoardProps) {
     if (activeType === "column") {
       const activeId = active.id as string;
       const overId = over.id as string;
-
       if (activeId !== overId) {
         const oldIndex = lists.findIndex((l) => l.id === activeId);
         const newIndex = lists.findIndex((l) => l.id === overId);
-
         if (oldIndex !== -1 && newIndex !== -1) {
           const newOrder = arrayMove(lists, oldIndex, newIndex);
           reorderLists(newOrder.map((l) => l.id));
         }
       }
+      pendingMoveRef.current = null;
       return;
     }
 
-    // Handle task movement
-    const taskId = active.id as string;
-    const fromListId = findListOfTask(taskId);
-    const toListId = (over.data.current?.listId as string) ?? findListOfTask(over.id as string);
-    if (!fromListId || !toListId) return;
+    // Commit pending task move to server
+    if (pendingMoveRef.current) {
+      const { taskId, toListId, toPosition } = pendingMoveRef.current;
+      pendingMoveRef.current = null;
+      moveTask(taskId, toListId, toPosition);
+    } else {
+      // DragOver never fired (tiny drag within same position) — check if moved
+      const taskId = active.id as string;
+      const fromListId = findListOfTask(taskId);
+      const toListId = resolveTargetListId(
+        over.id as string,
+        over.data.current as Record<string, unknown> | undefined,
+      );
+      if (!fromListId || !toListId) return;
 
-    const destTasks = tasksForList(toListId).filter((t) => t.id !== taskId);
-    const overIndex = destTasks.findIndex((t) => t.id === over.id);
-    const newPosition = overIndex === -1 ? destTasks.length : overIndex;
+      const destTasks = tasksForList(toListId).filter((t) => t.id !== taskId);
+      const overIndex = destTasks.findIndex((t) => t.id === over.id);
+      const newPosition = overIndex === -1 ? destTasks.length : overIndex;
 
-    if (fromListId === toListId) {
-      const fromIndex = tasksForList(fromListId).findIndex((t) => t.id === taskId);
-      if (fromIndex === newPosition) return;
+      if (fromListId === toListId) {
+        const fromIndex = tasksForList(fromListId).findIndex((t) => t.id === taskId);
+        if (fromIndex === newPosition) return;
+      }
+      moveTask(taskId, toListId, newPosition);
     }
-
-    moveTask(taskId, toListId, newPosition);
   }
 
   async function handleAddList() {
@@ -174,8 +280,9 @@ export function KanbanBoard({ projectId, onSelectTask }: KanbanBoardProps) {
 
       <DndContext
         sensors={sensors}
-        collisionDetection={closestCorners}
+        collisionDetection={customCollisionDetection}
         onDragStart={handleDragStart}
+        onDragOver={handleDragOver}
         onDragEnd={handleDragEnd}
       >
         {/* Board scroll container */}

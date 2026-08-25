@@ -44,6 +44,7 @@ export function useTasks(projectId: string) {
         dueDate: newTaskData.dueDate ? new Date(newTaskData.dueDate) : null,
         position: previousTasks?.filter((t) => t.listId === newTaskData.listId).length ?? 0,
         commentsCount: 0,
+        isPublic: false,
         createdAt: new Date(),
         updatedAt: new Date(),
         completedAt: null,

@@ -271,7 +271,7 @@ export function DashboardPageClient() {
       />
       <CreateTaskModal isOpen={modal === "task"} onClose={() => setModal(null)} />
 
-      <div className="space-y-6 w-full max-w-7xl mx-auto">
+      <div className="space-y-6 w-full">
         {/* ── 1. Clean Header (search & export removed) ── */}
         <div className="bg-white dark:bg-[#14263e] p-5 sm:p-6 rounded-2xl border border-slate-200 dark:border-slate-700/80 shadow-xs">
           <h1 className="text-xl sm:text-2xl font-extrabold text-[#142843] dark:text-white tracking-tight">

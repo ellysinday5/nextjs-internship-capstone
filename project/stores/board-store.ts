@@ -93,6 +93,7 @@ export const useBoardStore = create<BoardState>()(
         dueDate: task.dueDate ? new Date(task.dueDate) : null,
         position: get().tasks.filter((t) => t.listId === listId).length,
         commentsCount: 0,
+        isPublic: false,
         createdAt: new Date(),
         updatedAt: new Date(),
         completedAt: null,

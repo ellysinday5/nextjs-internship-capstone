@@ -99,7 +99,7 @@ export default function SettingsPage() {
 
   return (
     <div className="overflow-y-auto h-full p-4 sm:p-6 lg:p-8 bg-[#f8fafc] dark:bg-[#0b1728] text-slate-900 dark:text-white transition-colors duration-200">
-      <div className="max-w-7xl mx-auto space-y-6">
+      <div className="w-full space-y-6">
         {/* PAGE HEADER */}
         <div>
           <h1 className="text-3xl sm:text-4xl font-black text-[#142843] dark:text-white tracking-tight">

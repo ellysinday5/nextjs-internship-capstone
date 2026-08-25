@@ -7,12 +7,8 @@ import {
   CheckCircle2,
   Eye,
   EyeOff,
-  Globe,
-  Laptop,
   Loader2,
   Lock,
-  LogOut,
-  Smartphone,
 } from "lucide-react";
 import type React from "react";
 import { useMemo, useState } from "react";
@@ -56,7 +52,6 @@ export function SecurityTab({ onSaved }: SecurityTabProps) {
     {
       id: "1",
       device: "Chrome on Windows",
-      icon: Laptop,
       location: "Manila, PH",
       time: "Active now",
       current: true,
@@ -64,7 +59,6 @@ export function SecurityTab({ onSaved }: SecurityTabProps) {
     {
       id: "2",
       device: "Safari on iPhone",
-      icon: Smartphone,
       location: "Quezon City, PH",
       time: "2 hours ago",
       current: false,
@@ -72,7 +66,6 @@ export function SecurityTab({ onSaved }: SecurityTabProps) {
     {
       id: "3",
       device: "Firefox on macOS",
-      icon: Globe,
       location: "Makati, PH",
       time: "Yesterday",
       current: false,
@@ -297,18 +290,13 @@ export function SecurityTab({ onSaved }: SecurityTabProps) {
         {/* Active Sessions */}
         <div className="p-5 bg-slate-50 dark:bg-slate-800/30 rounded-2xl border border-slate-100 dark:border-slate-800">
           <div className="flex items-center justify-between mb-4">
-            <div className="flex items-center gap-2">
-              <div className="w-8 h-8 rounded-xl bg-sky-100 dark:bg-sky-950/40 flex items-center justify-center">
-                <Globe size={14} className="text-sky-600 dark:text-sky-400" />
-              </div>
-              <div>
-                <h3 className="text-sm font-bold text-[#142843] dark:text-white">
-                  Active Sessions
-                </h3>
-                <p className="text-[11px] text-slate-400">
-                  Devices currently signed in to your account
-                </p>
-              </div>
+            <div>
+              <h3 className="text-sm font-bold text-[#142843] dark:text-white">
+                Active Sessions
+              </h3>
+              <p className="text-[11px] text-slate-400">
+                Devices currently signed in to your account
+              </p>
             </div>
             <button
               type="button"
@@ -323,21 +311,12 @@ export function SecurityTab({ onSaved }: SecurityTabProps) {
             {activeSessions.map((s) => (
               <div
                 key={s.id}
-                className={`flex items-center gap-3 p-3 rounded-xl border ${
+                className={`flex items-center justify-between gap-3 p-3.5 rounded-xl border ${
                   s.current
                     ? "border-[#0052cc]/20 bg-blue-50/50 dark:bg-blue-950/10"
                     : "border-slate-200 dark:border-slate-700 bg-white dark:bg-[#1c304a]"
                 }`}
               >
-                <div
-                  className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 ${
-                    s.current
-                      ? "bg-[#0052cc]/10 dark:bg-[#0052cc]/20"
-                      : "bg-slate-100 dark:bg-slate-800"
-                  }`}
-                >
-                  <s.icon size={16} className={s.current ? "text-[#0052cc]" : "text-slate-500"} />
-                </div>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2">
                     <span className="text-xs font-bold text-[#142843] dark:text-white truncate">
@@ -357,9 +336,9 @@ export function SecurityTab({ onSaved }: SecurityTabProps) {
                   <button
                     type="button"
                     onClick={() => handleRevokeSession(s.id)}
-                    className="text-[10px] font-bold text-red-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/30 px-2.5 py-1.5 rounded-lg transition-colors flex items-center gap-1 shrink-0 cursor-pointer"
+                    className="text-[10px] font-bold text-red-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/30 px-2.5 py-1.5 rounded-lg transition-colors shrink-0 cursor-pointer"
                   >
-                    <LogOut size={11} /> Revoke
+                    Revoke
                   </button>
                 )}
               </div>

@@ -393,7 +393,7 @@ export function AnalyticsPageClient() {
 
   return (
     <div className="overflow-y-auto h-full p-4 sm:p-6 lg:p-8">
-      <div className="space-y-6 w-full max-w-7xl mx-auto">
+      <div className="space-y-6 w-full">
         {/* ── HEADER TOOLBAR ── */}
         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 p-5 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-xs">
           <div>
