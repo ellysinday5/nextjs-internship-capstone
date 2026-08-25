@@ -2,6 +2,8 @@ import { getUserWorkspacesAction } from "@/actions/member-actions";
 import { WorkspacesPageClient } from "@/components/workspaces/workspaces-page-client";
 import type { Metadata } from "next";
 
+export const dynamic = "force-dynamic";
+
 export const metadata: Metadata = {
   title: "My Workspaces | SyntraFlow",
   description: "View and manage your owned and member workspaces.",
