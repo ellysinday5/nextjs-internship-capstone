@@ -136,7 +136,7 @@ async function checkCanManageProject(projectId: string, userId: string): Promise
 }
 
 /* =========================================================================
-   1. CREATE COMMENT
+   1. CREATE COMMENT (With Atomic DB Transaction & Notification Dispatch)
    ========================================================================= */
 export async function createCommentAction(
   taskId: string,
@@ -176,6 +176,7 @@ export async function createCommentAction(
 
     const trimmedContent = validated.data.content.trim();
 
+    // Wrap comment insertion and notification creation in a single atomic transaction
     const newComment = await db.transaction(async (tx) => {
       const [inserted] = await tx
         .insert(comments)
@@ -187,40 +188,56 @@ export async function createCommentAction(
         })
         .returning();
 
-      const recipientsToNotify = new Set<string>();
+      const projectSlug = toSlug(taskCtx.projectName);
+      const deepLinkHref = `/projects/${projectSlug}?taskId=${taskId}&commentId=${inserted.id}#comment-${inserted.id}`;
 
+      // Determine recipients and notification payloads
       if (parentCommentId && parentAuthorClerkId) {
+        // Reply notification -> notify parent comment author (skip if self)
         const [parentAuthorUser] = await tx
-          .select({ id: users.id })
+          .select({ id: users.id, name: users.name })
           .from(users)
           .where(eq(users.clerkId, parentAuthorClerkId));
 
         if (parentAuthorUser?.id && parentAuthorUser.id !== user.id) {
-          recipientsToNotify.add(parentAuthorUser.id);
+          await tx.insert(notifications).values({
+            workspaceId: taskCtx.workspaceId || null,
+            recipientId: parentAuthorUser.id,
+            actorId: user.id,
+            type: "comment_added",
+            title: "New Reply",
+            message: `${user.name} replied to your comment on "${taskCtx.taskTitle}".`,
+            href: deepLinkHref,
+            metadata: {
+              taskId,
+              commentId: inserted.id,
+              parentCommentId,
+              projectId: taskCtx.projectId,
+              projectSlug,
+              notificationKind: "comment_reply",
+            },
+          });
         }
       } else if (!parentCommentId && taskCtx.assigneeId) {
+        // Top-level comment -> notify task assignee (skip if self)
         if (taskCtx.assigneeId !== user.id) {
-          recipientsToNotify.add(taskCtx.assigneeId);
+          await tx.insert(notifications).values({
+            workspaceId: taskCtx.workspaceId || null,
+            recipientId: taskCtx.assigneeId,
+            actorId: user.id,
+            type: "comment_added",
+            title: "New Comment",
+            message: `${user.name} commented on "${taskCtx.taskTitle}".`,
+            href: deepLinkHref,
+            metadata: {
+              taskId,
+              commentId: inserted.id,
+              projectId: taskCtx.projectId,
+              projectSlug,
+              notificationKind: "task_comment",
+            },
+          });
         }
-      }
-
-      for (const recipientId of recipientsToNotify) {
-        const projectSlug = toSlug(taskCtx.projectName);
-        await tx.insert(notifications).values({
-          workspaceId: taskCtx.workspaceId || null,
-          recipientId,
-          actorId: user.id,
-          type: "comment_added",
-          title: "New Comment",
-          message: `${user.name} commented on "${taskCtx.taskTitle}".`,
-          href: `/projects/${projectSlug}#comment-${inserted.id}`,
-          metadata: {
-            taskId,
-            commentId: inserted.id,
-            projectId: taskCtx.projectId,
-            projectSlug,
-          },
-        });
       }
 
       return inserted;
@@ -249,9 +266,9 @@ export async function createCommentAction(
 }
 
 /* =========================================================================
-   2. GET TASK COMMENTS
+   2. GET COMMENTS FOR TASK (Hierarchical Nested Tree)
    ========================================================================= */
-export async function getTaskCommentsAction(taskId: string) {
+export async function getCommentsForTaskAction(taskId: string) {
   try {
     const user = await syncUser();
     if (!user) return { success: false, error: "Unauthorized. Please sign in.", comments: [] };
@@ -310,16 +327,9 @@ export async function getTaskCommentsAction(taskId: string) {
       if (!rec.parentCommentId) {
         topLevelComments.push(rec);
       } else {
-        let ancestor = commentMap.get(rec.parentCommentId);
-        const visited = new Set<string>([rec.id]);
-        while (ancestor?.parentCommentId && !visited.has(ancestor.id)) {
-          visited.add(ancestor.id);
-          const next = commentMap.get(ancestor.parentCommentId);
-          if (!next) break;
-          ancestor = next;
-        }
-        if (ancestor) {
-          ancestor.replies.push(rec);
+        const parent = commentMap.get(rec.parentCommentId);
+        if (parent) {
+          parent.replies.push(rec);
         } else {
           topLevelComments.push(rec);
         }
@@ -328,13 +338,83 @@ export async function getTaskCommentsAction(taskId: string) {
 
     return { success: true, comments: topLevelComments };
   } catch (error) {
-    console.error("[getTaskCommentsAction] Error:", error);
+    console.error("[getCommentsForTaskAction] Error:", error);
     return { success: false, error: "Failed to fetch comments.", comments: [] };
   }
 }
 
+// Alias for existing callers
+export const getTaskCommentsAction = getCommentsForTaskAction;
+
 /* =========================================================================
-   3. UPDATE COMMENT
+   3. DELETE COMMENT (Author or Project Admin, Soft/Hard Delete)
+   ========================================================================= */
+export async function deleteCommentAction(commentId: string) {
+  try {
+    const user = await syncUser();
+    if (!user) return { success: false, error: "Unauthorized. Please sign in." };
+
+    const validated = deleteCommentSchema.safeParse({ id: commentId });
+    if (!validated.success) {
+      return { success: false, error: "Invalid comment ID." };
+    }
+
+    const [existing] = await db
+      .select({
+        id: comments.id,
+        authorId: comments.authorId,
+        taskId: comments.taskId,
+        parentCommentId: comments.parentCommentId,
+        content: comments.content,
+      })
+      .from(comments)
+      .where(eq(comments.id, commentId));
+
+    if (!existing) return { success: false, error: "Comment not found." };
+
+    const taskCtx = await getTaskProjectContext(existing.taskId);
+    if (!taskCtx) return { success: false, error: "Task not found." };
+
+    const isAuthor = existing.authorId === user.clerkId;
+    const canManage = await checkCanManageProject(taskCtx.projectId, user.id);
+
+    if (!isAuthor && !canManage) {
+      return { success: false, error: "Unauthorized. You cannot delete this comment." };
+    }
+
+    const [hasReplies] = await db
+      .select({ id: comments.id })
+      .from(comments)
+      .where(eq(comments.parentCommentId, commentId))
+      .limit(1);
+
+    if (hasReplies) {
+      // Soft-delete to preserve thread reply tree
+      await db
+        .update(comments)
+        .set({
+          content: "[deleted]",
+          updatedAt: new Date(),
+        })
+        .where(eq(comments.id, commentId));
+    } else {
+      // Hard delete if no child replies exist
+      await db.delete(comments).where(eq(comments.id, commentId));
+    }
+
+    const projectSlug = toSlug(taskCtx.projectName);
+    revalidatePath(`/projects/${projectSlug}`);
+    revalidatePath(`/projects/${taskCtx.projectId}`);
+
+    return { success: true, softDeleted: Boolean(hasReplies) };
+  } catch (error) {
+    console.error("[deleteCommentAction] Error:", error);
+    return { success: false, error: "Failed to delete comment." };
+  }
+}
+
+/* =========================================================================
+   4. UPDATE COMMENT
    ========================================================================= */
 export async function updateCommentAction(commentId: string, content: string) {
   try {
@@ -387,70 +467,5 @@ export async function updateCommentAction(commentId: string, content: string) {
   } catch (error) {
     console.error("[updateCommentAction] Error:", error);
     return { success: false, error: "Failed to update comment." };
-  }
-}
-
-/* =========================================================================
-   4. DELETE COMMENT
-   ========================================================================= */
-export async function deleteCommentAction(commentId: string) {
-  try {
-    const user = await syncUser();
-    if (!user) return { success: false, error: "Unauthorized. Please sign in." };
-
-    const validated = deleteCommentSchema.safeParse({ id: commentId });
-    if (!validated.success) {
-      return { success: false, error: "Invalid comment ID." };
-    }
-
-    const [existing] = await db
-      .select({
-        id: comments.id,
-        authorId: comments.authorId,
-        taskId: comments.taskId,
-        parentCommentId: comments.parentCommentId,
-        content: comments.content,
-      })
-      .from(comments)
-      .where(eq(comments.id, commentId));
-
-    if (!existing) return { success: false, error: "Comment not found." };
-
-    const taskCtx = await getTaskProjectContext(existing.taskId);
-    if (!taskCtx) return { success: false, error: "Task not found." };
-
-    const isAuthor = existing.authorId === user.clerkId;
-    const canManage = await checkCanManageProject(taskCtx.projectId, user.id);
-
-    if (!isAuthor && !canManage) {
-      return { success: false, error: "Unauthorized. You cannot delete this comment." };
-    }
-
-    const [hasReplies] = await db
-      .select({ id: comments.id })
-      .from(comments)
-      .where(eq(comments.parentCommentId, commentId))
-      .limit(1);
-
-    if (hasReplies) {
-      await db
-        .update(comments)
-        .set({
-          content: "[deleted]",
-          updatedAt: new Date(),
-        })
-        .where(eq(comments.id, commentId));
-    } else {
-      await db.delete(comments).where(eq(comments.id, commentId));
-    }
-
-    const projectSlug = toSlug(taskCtx.projectName);
-    revalidatePath(`/projects/${projectSlug}`);
-    revalidatePath(`/projects/${taskCtx.projectId}`);
-
-    return { success: true, softDeleted: Boolean(hasReplies) };
-  } catch (error) {
-    console.error("[deleteCommentAction] Error:", error);
-    return { success: false, error: "Failed to delete comment." };
   }
 }

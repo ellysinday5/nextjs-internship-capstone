@@ -1,15 +1,16 @@
 "use client";
 
+import { inviteTeamMember } from "@/actions/invite-member";
 import { Modal } from "@/components/modals/BaseModal";
 import { BackButton } from "@/components/ui/back-button";
 import { UserAvatar } from "@/components/ui/user-avatar";
+import { toSlug } from "@/lib/project-data";
 import { PROJECT_ICON_LIST } from "@/lib/project-meta";
 import { sileo } from "@/utils/alerts";
 import {
   Check,
   ChevronDown,
   Circle,
-  Copy,
   ListTodo,
   MessageSquare,
   Pencil,
@@ -32,6 +33,8 @@ export interface HeaderMember {
 }
 
 interface ProjectHeaderProps {
+  projectId?: string;
+  projectSlug?: string;
   projectTitle: string;
   setProjectTitle: (title: string) => void;
   onTitleSave?: (title: string) => void | Promise<void>;
@@ -46,6 +49,7 @@ interface ProjectHeaderProps {
   onStatusSave?: (status: ProjectStatusType) => void | Promise<void>;
   members?: HeaderMember[];
   onAddMember?: () => void;
+  onInviteSuccess?: () => void;
 }
 
 const AVATAR_STYLES = [
@@ -78,7 +82,6 @@ function MemberAvatarPopoverItem({
   onViewProfile: (name: string) => void;
 }) {
   const [isHovered, setIsHovered] = useState(false);
-  const initials = getInitials(member.name);
   const email =
     member.email || `${member.name.toLowerCase().replace(/[^a-z0-9]/g, ".")}@company.com`;
 
@@ -119,14 +122,14 @@ function MemberAvatarPopoverItem({
             <button
               type="button"
               onClick={() => onMessage(member.name)}
-              className="flex items-center justify-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-blue-50 hover:bg-blue-100 text-blue-600 dark:bg-blue-950/50 dark:hover:bg-blue-900/60 dark:text-blue-400 text-[11px] font-bold transition-colors"
+              className="flex items-center justify-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-blue-50 hover:bg-blue-100 text-blue-600 dark:bg-blue-950/50 dark:hover:bg-blue-900/60 dark:text-blue-400 text-[11px] font-bold transition-colors cursor-pointer"
             >
               <MessageSquare size={12} /> Message
             </button>
             <button
               type="button"
               onClick={() => onViewProfile(member.name)}
-              className="flex items-center justify-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 dark:bg-slate-800 dark:hover:bg-slate-700 dark:text-slate-200 text-[11px] font-bold transition-colors"
+              className="flex items-center justify-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 dark:bg-slate-800 dark:hover:bg-slate-700 dark:text-slate-200 text-[11px] font-bold transition-colors cursor-pointer"
             >
               <User size={12} /> Profile
             </button>
@@ -138,6 +141,8 @@ function MemberAvatarPopoverItem({
 }
 
 export function ProjectHeader({
+  projectId,
+  projectSlug,
   projectTitle,
   setProjectTitle,
   onTitleSave,
@@ -152,6 +157,7 @@ export function ProjectHeader({
   onStatusSave,
   members = [],
   onAddMember,
+  onInviteSuccess,
 }: ProjectHeaderProps) {
   const router = useRouter();
   const [isCustomizeOpen, setIsCustomizeOpen] = useState(false);
@@ -160,9 +166,21 @@ export function ProjectHeader({
   const [titleInput, setTitleInput] = useState(projectTitle);
   const [isShareModalOpen, setIsShareModalOpen] = useState(false);
   const [shareEmail, setShareEmail] = useState("");
+  const [isInviting, setIsInviting] = useState(false);
+  const [inviteSuccessMsg, setInviteSuccessMsg] = useState<string | null>(null);
+  const [inviteErrorMsg, setInviteErrorMsg] = useState<string | null>(null);
+  const [copied, setCopied] = useState(false);
 
   const ActiveProjectIcon = iconList[selectedIconIndex]?.Icon || ListTodo;
   const currentStatusMeta = STATUS_OPTIONS.find((s) => s.value === status);
+
+  const actualSlug = projectSlug || toSlug(projectTitle);
+  const projectShareUrl =
+    typeof window !== "undefined"
+      ? `${window.location.origin}/projects/${actualSlug}`
+      : `/projects/${actualSlug}`;
+
+  const isEmailValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(shareEmail.trim());
 
   const ownerMember: HeaderMember = {
     id: "owner",
@@ -218,18 +236,56 @@ export function ProjectHeader({
     }
   };
 
-  const handleCopyLink = () => {
-    navigator.clipboard.writeText(window.location.href);
-    sileo.success("Project link copied to clipboard!", "Copied");
+  const handleCopyLink = async () => {
+    try {
+      await navigator.clipboard.writeText(projectShareUrl);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2500);
+      sileo.success("Project link copied to clipboard!", "Copied");
+    } catch (err) {
+      console.error("Failed to copy link:", err);
+      sileo.error("Failed to copy project link.", "Error");
+    }
   };
 
-  const handleInviteMember = (e: React.FormEvent) => {
+  const handleInviteMember = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (shareEmail.trim()) {
-      sileo.success(`Invitation sent to ${shareEmail}`, "Invited");
-      setShareEmail("");
-      setIsShareModalOpen(false);
+    const trimmedEmail = shareEmail.trim().toLowerCase();
+    if (!isEmailValid || !trimmedEmail || isInviting) return;
+
+    if (!projectId) {
+      setInviteErrorMsg("Project ID not found. Please try again.");
+      return;
     }
+
+    setIsInviting(true);
+    setInviteErrorMsg(null);
+    setInviteSuccessMsg(null);
+
+    try {
+      const res = await inviteTeamMember(projectId, trimmedEmail, "member");
+      if (res.success) {
+        setInviteSuccessMsg(`Invitation sent to ${trimmedEmail}! They'll receive an invitation link.`);
+        sileo.success(`Invitation sent to ${trimmedEmail}!`, "Invited");
+        setShareEmail("");
+        onInviteSuccess?.();
+      } else {
+        setInviteErrorMsg(res.error || "Failed to send invitation. Please try again.");
+        sileo.error(res.error || "Failed to send invite.", "Error");
+      }
+    } catch (err) {
+      console.error("[handleInviteMember] Error:", err);
+      setInviteErrorMsg("An unexpected error occurred while sending the invite.");
+    } finally {
+      setIsInviting(false);
+    }
+  };
+
+  const handleCloseShareModal = () => {
+    setIsShareModalOpen(false);
+    setInviteSuccessMsg(null);
+    setInviteErrorMsg(null);
+    setShareEmail("");
   };
 
   const handleMessageMember = (memberName: string) => {
@@ -435,33 +491,60 @@ export function ProjectHeader({
 
       <Modal
         isOpen={isShareModalOpen}
-        onClose={() => setIsShareModalOpen(false)}
+        onClose={handleCloseShareModal}
         title="Share Project"
+        showCloseButton={false}
         maxWidthClassName="max-w-md"
+        footer={
+          <button
+            type="button"
+            onClick={handleCloseShareModal}
+            disabled={isInviting}
+            className="rounded-lg px-4 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800 transition-colors disabled:opacity-50 cursor-pointer"
+          >
+            Cancel
+          </button>
+        }
       >
         <div className="space-y-4">
+          {/* Project Link */}
           <div>
-            <label className="block text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1">
+            <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">
               Project Link
             </label>
             <div className="flex gap-2">
               <input
                 type="text"
                 readOnly
-                value={typeof window !== "undefined" ? window.location.href : ""}
-                className="flex-1 rounded-lg border border-slate-300 bg-slate-50 px-3 py-2 text-xs text-slate-700 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200"
+                value={projectShareUrl}
+                className="flex-1 rounded-lg border border-slate-300 bg-slate-50 px-3 py-2 text-xs text-slate-700 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 outline-none select-all"
               />
               <button
+                type="button"
                 onClick={handleCopyLink}
-                className="flex items-center gap-1 rounded-lg bg-blue-600 px-3 py-2 text-xs font-semibold text-white hover:bg-blue-700"
+                className="rounded-lg bg-[#0033a0] hover:bg-[#002a80] px-4 py-2 text-xs font-semibold text-white transition-colors cursor-pointer shrink-0"
               >
-                <Copy size={13} /> Copy
+                {copied ? "Copied" : "Copy"}
               </button>
             </div>
           </div>
 
-          <form onSubmit={handleInviteMember} className="space-y-3 pt-2">
-            <label className="block text-xs font-semibold text-slate-600 dark:text-slate-300">
+          {/* Inline Feedback States */}
+          {inviteSuccessMsg && (
+            <div className="rounded-lg border border-emerald-200 bg-emerald-50 px-3.5 py-2.5 text-xs font-semibold text-emerald-700 dark:border-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-300">
+              {inviteSuccessMsg}
+            </div>
+          )}
+
+          {inviteErrorMsg && (
+            <div className="rounded-lg border border-red-200 bg-red-50 px-3.5 py-2.5 text-xs font-semibold text-red-600 dark:border-red-800 dark:bg-red-950/40 dark:text-red-400">
+              {inviteErrorMsg}
+            </div>
+          )}
+
+          {/* Invite Form */}
+          <form onSubmit={handleInviteMember} className="space-y-3 pt-1">
+            <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300">
               Invite Team Member
             </label>
             <div className="flex gap-2">
@@ -469,14 +552,20 @@ export function ProjectHeader({
                 type="email"
                 placeholder="colleague@company.com"
                 value={shareEmail}
-                onChange={(e) => setShareEmail(e.target.value)}
-                className="flex-1 rounded-lg border border-slate-300 px-3 py-2 text-xs text-slate-900 outline-none focus:border-blue-500 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
+                onChange={(e) => {
+                  setShareEmail(e.target.value);
+                  setInviteErrorMsg(null);
+                  setInviteSuccessMsg(null);
+                }}
+                disabled={isInviting}
+                className="flex-1 rounded-lg border border-slate-300 px-3 py-2 text-xs text-slate-900 outline-none focus:border-[#0033a0] dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100 disabled:opacity-60"
               />
               <button
                 type="submit"
-                className="rounded-lg bg-blue-600 px-4 py-2 text-xs font-semibold text-white hover:bg-blue-700"
+                disabled={!isEmailValid || isInviting}
+                className="rounded-lg bg-[#0033a0] hover:bg-[#002a80] px-4 py-2 text-xs font-semibold text-white transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer shrink-0"
               >
-                Invite
+                {isInviting ? "Inviting..." : "Invite"}
               </button>
             </div>
           </form>

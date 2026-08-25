@@ -1,3 +1,5 @@
+"use client";
+
 import { notifyProjectEventCreatedAction } from "@/actions/notification-actions";
 import { type ProjectWithStats, getProjectsAction } from "@/actions/project-actions";
 import { BackButton } from "@/components/ui/back-button";

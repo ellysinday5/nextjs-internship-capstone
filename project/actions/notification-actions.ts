@@ -8,8 +8,9 @@ import { db } from "@/lib/db";
 import { syncUser } from "@/lib/db/auth";
 import { invites, type notificationTypeEnum, notifications, projects } from "@/lib/db/schema";
 import { toSlug } from "@/lib/project-data";
+import { getActiveWorkspaceId } from "@/lib/workspace-helpers";
 import { auth } from "@clerk/nextjs/server";
-import { type InferSelectModel, and, count, eq, sql } from "drizzle-orm";
+import { type InferSelectModel, and, count, eq, isNull, or, sql } from "drizzle-orm";
 
 export type NotificationType = (typeof notificationTypeEnum.enumValues)[number];
 
@@ -106,8 +107,16 @@ export async function getRecentNotificationsAction(limit = 10) {
   const dbUser = await getDbUser(clerkId);
   if (!dbUser) return { success: false, error: "User not found", data: null };
 
+  const activeWorkspaceId = await getActiveWorkspaceId(dbUser.id);
+
   const results = await db.query.notifications.findMany({
-    where: (n, { eq }) => eq(n.recipientId, dbUser.id),
+    where: (n, { and, eq, or, isNull }) =>
+      and(
+        eq(n.recipientId, dbUser.id),
+        activeWorkspaceId
+          ? or(eq(n.workspaceId, activeWorkspaceId), isNull(n.workspaceId))
+          : undefined,
+      ),
     orderBy: (n, { desc }) => [desc(n.createdAt)],
     limit,
     with: {
@@ -130,8 +139,16 @@ export async function getAllNotificationsAction(page = 1, pageSize = 20) {
   const dbUser = await getDbUser(clerkId);
   if (!dbUser) return { success: false, error: "User not found", data: null };
 
+  const activeWorkspaceId = await getActiveWorkspaceId(dbUser.id);
+
   const results = await db.query.notifications.findMany({
-    where: (n, { eq }) => eq(n.recipientId, dbUser.id),
+    where: (n, { and, eq, or, isNull }) =>
+      and(
+        eq(n.recipientId, dbUser.id),
+        activeWorkspaceId
+          ? or(eq(n.workspaceId, activeWorkspaceId), isNull(n.workspaceId))
+          : undefined,
+      ),
     orderBy: (n, { desc }) => [desc(n.createdAt)],
     limit: pageSize,
     offset: (page - 1) * pageSize,
@@ -153,10 +170,20 @@ export async function getUnreadNotificationCountAction() {
   const dbUser = await getDbUser(clerkId);
   if (!dbUser) return { success: false, error: "User not found", data: 0 };
 
+  const activeWorkspaceId = await getActiveWorkspaceId(dbUser.id);
+
+  const whereClause = activeWorkspaceId
+    ? and(
+        eq(notifications.recipientId, dbUser.id),
+        eq(notifications.isRead, false),
+        or(eq(notifications.workspaceId, activeWorkspaceId), isNull(notifications.workspaceId)),
+      )
+    : and(eq(notifications.recipientId, dbUser.id), eq(notifications.isRead, false));
+
   const [result] = await db
     .select({ count: count() })
     .from(notifications)
-    .where(and(eq(notifications.recipientId, dbUser.id), eq(notifications.isRead, false)));
+    .where(whereClause);
 
   return { success: true, error: null, data: result?.count ?? 0 };
 }
