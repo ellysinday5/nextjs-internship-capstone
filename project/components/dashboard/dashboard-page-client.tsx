@@ -1,6 +1,6 @@
 "use client";
 
-import { getProjectsAction } from "@/actions/project-actions";
+import { type ProjectWithStats, getProjectsAction } from "@/actions/project-actions";
 import { AddMemberModal } from "@/components/modals/add-member-modal";
 import { CreateProjectModal } from "@/components/modals/create-project-modal";
 import { CreateTaskModal } from "@/components/modals/create-task-modal";
@@ -129,6 +129,7 @@ export function DashboardPageClient() {
   const { user } = useUser();
   const [search, setSearch] = useState("");
   const [modal, setModal] = useState<"project" | "member" | "task" | null>(null);
+  const [dbProjects, setDbProjects] = useState<ProjectWithStats[]>([]);
   const [projectOptions, setProjectOptions] = useState<ProjectOption[]>([]);
 
   const email = user?.primaryEmailAddress?.emailAddress || user?.emailAddresses?.[0]?.emailAddress;
@@ -137,9 +138,47 @@ export function DashboardPageClient() {
 
   useEffect(() => {
     getProjectsAction().then((projects) => {
+      setDbProjects(projects);
       setProjectOptions(projects.map((p) => ({ id: p.id, name: p.name })));
     });
   }, []);
+
+  const totalProjects = dbProjects.length;
+  const totalTasks = dbProjects.reduce((acc, p) => acc + (p.taskCount || 0), 0);
+  const completedTasks = dbProjects.reduce((acc, p) => acc + (p.completedTaskCount || 0), 0);
+  const pendingTasks = Math.max(0, totalTasks - completedTasks);
+
+  const dynamicStats = [
+    {
+      name: "Active Projects",
+      value: String(totalProjects),
+      change: "+2.5%",
+      icon: TrendingUp,
+      color: "bg-[#54c5d0]",
+    },
+    {
+      name: "Total Tasks",
+      value: String(totalTasks),
+      change: "+4.1%",
+      icon: Users,
+      color: "bg-[#6c7fd8]",
+    },
+    {
+      name: "Completed Tasks",
+      value: String(completedTasks),
+      change: "+12.3%",
+      icon: CheckCircle2,
+      color: "bg-[#52cba3]",
+    },
+    {
+      name: "Pending Tasks",
+      value: String(pendingTasks),
+      change: "-2.1%",
+      icon: Clock,
+      color: "bg-[#e98c6a]",
+      highlight: pendingTasks > 0,
+    },
+  ];
 
   return (
     <div className="overflow-y-auto h-full p-4 sm:p-6 lg:p-8">
@@ -189,7 +228,7 @@ export function DashboardPageClient() {
 
         {/* Stat Cards */}
         <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
-          {STATS.map((stat) => (
+          {dynamicStats.map((stat) => (
             <div
               key={stat.name}
               className={`group bg-white dark:bg-[#14263e] border-2 border-[#142843]/20 dark:border-slate-700 rounded-2xl p-5 flex items-center justify-between shadow-sm cursor-default transition-all duration-200 ease-out hover:scale-[1.03] hover:shadow-lg hover:-translate-y-0.5 ${stat.highlight ? "ring-2 ring-purple-400/50" : ""}`}
@@ -235,33 +274,46 @@ export function DashboardPageClient() {
               </Link>
             </div>
             <div className="space-y-3">
-              {RECENT_PROJECTS.map((p) => (
-                <div
-                  key={p.id}
-                  className="bg-[#263852] rounded-xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 hover:bg-[#2e4264] transition-colors cursor-pointer"
-                >
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 mb-1">
-                      <span className="font-bold text-white text-sm truncate">{p.name}</span>
-                      <span className="text-[10px] px-2 py-0.5 rounded-full bg-[#3151b7]/50 text-[#a5b4fc] font-semibold shrink-0">
-                        {p.status}
-                      </span>
-                    </div>
-                    <p className="text-xs text-slate-400">
-                      Updated {p.updated} · {p.members} members
-                    </p>
-                  </div>
-                  <div className="flex items-center gap-3 shrink-0">
-                    <span className="text-xs font-bold text-[#54c5d0]">{p.progress}%</span>
-                    <div className="w-28 bg-[#142843] h-2.5 rounded-full overflow-hidden border border-white/10">
-                      <div
-                        className="bg-gradient-to-r from-[#00b4d8] to-[#54c5d0] h-full rounded-full transition-all duration-500"
-                        style={{ width: `${p.progress}%` }}
-                      />
-                    </div>
-                  </div>
+              {dbProjects.length === 0 ? (
+                <div className="py-8 text-center text-xs text-slate-400 font-semibold bg-[#263852] rounded-xl">
+                  No projects yet. Create your first project to get started!
                 </div>
-              ))}
+              ) : (
+                dbProjects.slice(0, 3).map((p) => {
+                  const percent = p.completionPercentage ?? 0;
+                  const updatedText = p.updatedAt
+                    ? new Date(p.updatedAt).toLocaleDateString()
+                    : "Recently";
+                  return (
+                    <Link
+                      key={p.id}
+                      href={`/projects/${p.id}`}
+                      className="bg-[#263852] rounded-xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 hover:bg-[#2e4264] transition-colors cursor-pointer block"
+                    >
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 mb-1">
+                          <span className="font-bold text-white text-sm truncate">{p.name}</span>
+                          <span className="text-[10px] px-2 py-0.5 rounded-full bg-[#3151b7]/50 text-[#a5b4fc] font-semibold shrink-0">
+                            {p.status || "In Progress"}
+                          </span>
+                        </div>
+                        <p className="text-xs text-slate-400">
+                          Updated {updatedText} · {p.memberCount || 1} members · {p.taskCount || 0} tasks
+                        </p>
+                      </div>
+                      <div className="flex items-center gap-3 shrink-0">
+                        <span className="text-xs font-bold text-[#54c5d0]">{percent}%</span>
+                        <div className="w-28 bg-[#142843] h-2.5 rounded-full overflow-hidden border border-white/10">
+                          <div
+                            className="bg-gradient-to-r from-[#00b4d8] to-[#54c5d0] h-full rounded-full transition-all duration-500"
+                            style={{ width: `${percent}%` }}
+                          />
+                        </div>
+                      </div>
+                    </Link>
+                  );
+                })
+              )}
             </div>
           </div>
 

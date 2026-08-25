@@ -1,0 +1,107 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 750" width="1200" height="750">
+  <defs>
+    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#070f1c" />
+      <stop offset="100%" stop-color="#0e1e35" />
+    </linearGradient>
+    <linearGradient id="cardGrad1" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#142843" />
+      <stop offset="100%" stop-color="#0f2038" />
+    </linearGradient>
+    <linearGradient id="progressGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#0052cc" />
+      <stop offset="100%" stop-color="#00b4d8" />
+    </linearGradient>
+  </defs>
+
+  <!-- Background -->
+  <rect width="100%" height="100%" fill="url(#bgGrad)" />
+
+  <!-- Top App Navigation Bar -->
+  <rect x="0" y="0" width="1200" height="60" fill="#0d1b2e" />
+  <line x1="0" y1="60" x2="1200" y2="60" stroke="#1c3352" stroke-width="1" />
+  <circle cx="36" cy="30" r="14" fill="#0052cc" />
+  <text x="36" y="35" fill="#ffffff" font-family="sans-serif" font-size="12" font-weight="900" text-anchor="middle">SF</text>
+  <text x="64" y="35" fill="#ffffff" font-family="sans-serif" font-size="16" font-weight="bold">SyntraFlow</text>
+
+  <!-- Nav Links -->
+  <rect x="220" y="16" width="76" height="28" rx="6" fill="#142843" />
+  <text x="258" y="35" fill="#38bdf8" font-family="sans-serif" font-size="13" font-weight="bold" text-anchor="middle">Projects</text>
+  <text x="340" y="35" fill="#94a3b8" font-family="sans-serif" font-size="13" font-weight="600">Team</text>
+  <text x="410" y="35" fill="#94a3b8" font-family="sans-serif" font-size="13" font-weight="600">Calendar</text>
+  <text x="500" y="35" fill="#94a3b8" font-family="sans-serif" font-size="13" font-weight="600">Analytics</text>
+
+  <!-- User Avatar on Right -->
+  <circle cx="1150" cy="30" r="16" fill="#0052cc" />
+  <text x="1150" y="35" fill="#ffffff" font-family="sans-serif" font-size="12" font-weight="bold" text-anchor="middle">ES</text>
+
+  <!-- Page Header -->
+  <text x="50" y="110" fill="#ffffff" font-family="sans-serif" font-size="24" font-weight="900">Projects</text>
+  <text x="50" y="132" fill="#64748b" font-family="sans-serif" font-size="13" font-weight="500">Overview of all active workspace projects and team velocity</text>
+
+  <!-- Action button -->
+  <rect x="1020" y="92" width="130" height="38" rx="8" fill="#0052cc" />
+  <text x="1085" y="116" fill="#ffffff" font-family="sans-serif" font-size="13" font-weight="bold" text-anchor="middle">+ New Project</text>
+
+  <!-- Search & Filter Bar -->
+  <rect x="50" y="155" width="280" height="36" rx="8" fill="#142843" stroke="#1c3352" />
+  <text x="70" y="178" fill="#64748b" font-family="sans-serif" font-size="12">Search projects...</text>
+  <rect x="345" y="155" width="90" height="36" rx="8" fill="#142843" stroke="#1c3352" />
+  <text x="390" y="178" fill="#94a3b8" font-family="sans-serif" font-size="12" text-anchor="middle">All Views ▾</text>
+
+  <!-- 3 Project Cards Grid -->
+  <!-- Card 1 -->
+  <g transform="translate(50, 215)">
+    <rect width="350" height="230" rx="16" fill="url(#cardGrad1)" stroke="#1e3a5f" stroke-width="1.5" />
+    <rect x="24" y="24" width="70" height="22" rx="6" fill="#0284c7" fill-opacity="0.2" />
+    <text x="59" y="39" fill="#38bdf8" font-family="sans-serif" font-size="11" font-weight="bold" text-anchor="middle">Frontend</text>
+    <text x="24" y="80" fill="#ffffff" font-family="sans-serif" font-size="18" font-weight="bold">Core Design System</text>
+    <text x="24" y="104" fill="#64748b" font-family="sans-serif" font-size="12">Component tokens, dark mode, and UI primitives.</text>
+    <!-- Progress bar -->
+    <rect x="24" y="145" width="302" height="6" rx="3" fill="#1e293b" />
+    <rect x="24" y="145" width="230" height="6" rx="3" fill="url(#progressGrad)" />
+    <text x="24" y="172" fill="#94a3b8" font-family="sans-serif" font-size="11" font-weight="bold">76% Complete</text>
+    <text x="326" y="172" fill="#64748b" font-family="sans-serif" font-size="11" text-anchor="end">19/25 tasks</text>
+    <!-- Avatars -->
+    <circle cx="36" cy="200" r="11" fill="#0052cc" />
+    <text x="36" y="204" fill="#ffffff" font-family="sans-serif" font-size="9" text-anchor="middle">ES</text>
+    <circle cx="54" cy="200" r="11" fill="#7c3aed" />
+    <text x="54" y="204" fill="#ffffff" font-family="sans-serif" font-size="9" text-anchor="middle">JR</text>
+  </g>
+
+  <!-- Card 2 -->
+  <g transform="translate(425, 215)">
+    <rect width="350" height="230" rx="16" fill="url(#cardGrad1)" stroke="#1e3a5f" stroke-width="1.5" />
+    <rect x="24" y="24" width="70" height="22" rx="6" fill="#059669" fill-opacity="0.2" />
+    <text x="59" y="39" fill="#34d399" font-family="sans-serif" font-size="11" font-weight="bold" text-anchor="middle">Backend</text>
+    <text x="24" y="80" fill="#ffffff" font-family="sans-serif" font-size="18" font-weight="bold">REST API & Auth Migration</text>
+    <text x="24" y="104" fill="#64748b" font-family="sans-serif" font-size="12">Clerk webhook sync and Neon Postgres schema.</text>
+    <!-- Progress bar -->
+    <rect x="24" y="145" width="302" height="6" rx="3" fill="#1e293b" />
+    <rect x="24" y="145" width="302" height="6" rx="3" fill="#10b981" />
+    <text x="24" y="172" fill="#34d399" font-family="sans-serif" font-size="11" font-weight="bold">100% Complete</text>
+    <text x="326" y="172" fill="#64748b" font-family="sans-serif" font-size="11" text-anchor="end">14/14 tasks</text>
+    <!-- Avatars -->
+    <circle cx="36" cy="200" r="11" fill="#059669" />
+    <text x="36" y="204" fill="#ffffff" font-family="sans-serif" font-size="9" text-anchor="middle">MT</text>
+  </g>
+
+  <!-- Card 3 -->
+  <g transform="translate(800, 215)">
+    <rect width="350" height="230" rx="16" fill="url(#cardGrad1)" stroke="#1e3a5f" stroke-width="1.5" />
+    <rect x="24" y="24" width="70" height="22" rx="6" fill="#d97706" fill-opacity="0.2" />
+    <text x="59" y="39" fill="#fbbf24" font-family="sans-serif" font-size="11" font-weight="bold" text-anchor="middle">Mobile</text>
+    <text x="24" y="80" fill="#ffffff" font-family="sans-serif" font-size="18" font-weight="bold">SyntraFlow Mobile App</text>
+    <text x="24" y="104" fill="#64748b" font-family="sans-serif" font-size="12">Responsive PWA offline caching & push alerts.</text>
+    <!-- Progress bar -->
+    <rect x="24" y="145" width="302" height="6" rx="3" fill="#1e293b" />
+    <rect x="24" y="145" width="125" height="6" rx="3" fill="url(#progressGrad)" />
+    <text x="24" y="172" fill="#94a3b8" font-family="sans-serif" font-size="11" font-weight="bold">42% Complete</text>
+    <text x="326" y="172" fill="#64748b" font-family="sans-serif" font-size="11" text-anchor="end">8/19 tasks</text>
+    <!-- Avatars -->
+    <circle cx="36" cy="200" r="11" fill="#0052cc" />
+    <text x="36" y="204" fill="#ffffff" font-family="sans-serif" font-size="9" text-anchor="middle">ES</text>
+    <circle cx="54" cy="200" r="11" fill="#059669" />
+    <text x="54" y="204" fill="#ffffff" font-family="sans-serif" font-size="9" text-anchor="middle">MT</text>
+  </g>
+</svg>

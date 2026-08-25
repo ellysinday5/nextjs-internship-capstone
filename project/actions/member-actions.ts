@@ -14,7 +14,8 @@ import {
   workspaces,
 } from "@/lib/db/schema";
 import { toSlug } from "@/lib/project-data";
-import type { TeamMember } from "@/lib/team-data";
+import { type TeamMember, formatRole } from "@/lib/team-data";
+import { getActiveWorkspaceId } from "@/lib/workspace-helpers";
 import { and, eq, inArray, isNotNull, ne, sql } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { cookies } from "next/headers";
@@ -107,16 +108,19 @@ export async function getProjectMembersAction(projectId: string): Promise<TeamMe
       .leftJoin(users, eq(projectMembers.userId, users.id))
       .where(eq(projectMembers.projectId, projectId));
 
-    return rows.map((r) => ({
-      id: r.id,
-      userId: r.userId,
-      name: r.name,
-      email: r.email ?? "—",
-      role: r.role,
-      status: "Offline" as const,
-      accountType: r.role === "admin" ? "Admin" : "Member",
-      projectCount: 0,
-    }));
+    return rows.map((r) => {
+      const formatted = formatRole(r.role);
+      return {
+        id: r.id,
+        userId: r.userId,
+        name: r.name,
+        email: r.email ?? "—",
+        role: formatted,
+        status: "Offline" as const,
+        accountType: formatted === "Admin" ? "Admin" : "Member",
+        projectCount: 0,
+      };
+    });
   } catch (error) {
     console.error("[getProjectMembersAction] Error:", error);
     return [];
@@ -195,6 +199,266 @@ export async function getMemberCommentsAction(userId: string, projectId: string)
 /* ─────────────────────────────────────────────────────────────
    Workspace Server Actions
 ───────────────────────────────────────────────────────────── */
+
+export interface WorkspaceMember {
+  id: string;
+  userId: string;
+  name: string;
+  email: string;
+  role: "owner" | "admin" | "member";
+  joinedAt: Date | null;
+}
+
+export interface WorkspaceOverview {
+  id: string;
+  name: string;
+  slug: string;
+  ownerId: string;
+  ownerName: string;
+  createdAt: Date | null;
+  userRole: "owner" | "admin" | "member";
+  members: WorkspaceMember[];
+  projects: {
+    id: string;
+    name: string;
+    description: string | null;
+    status: string;
+    priority: string;
+    dueDate: Date | null;
+    memberCount: number;
+    createdAt: Date | null;
+  }[];
+}
+
+/**
+ * Returns all members of the currently active workspace.
+ * Used by the Team page to scope the People tab to the active workspace.
+ */
+export async function getActiveWorkspaceMembersAction(): Promise<WorkspaceMember[]> {
+  try {
+    const user = await syncUser();
+    if (!user) return [];
+
+    const activeWorkspaceId = await getActiveWorkspaceId(user.id);
+    if (!activeWorkspaceId) return [];
+
+    // Verify user has access to this workspace
+    const [ws] = await db
+      .select({ id: workspaces.id, ownerId: workspaces.ownerId })
+      .from(workspaces)
+      .where(eq(workspaces.id, activeWorkspaceId));
+
+    if (!ws) return [];
+
+    // Owner always has access; others must be in workspace_members
+    if (ws.ownerId !== user.id) {
+      const [wm] = await db
+        .select({ id: workspaceMembers.id })
+        .from(workspaceMembers)
+        .where(
+          and(
+            eq(workspaceMembers.workspaceId, activeWorkspaceId),
+            eq(workspaceMembers.userId, user.id),
+          ),
+        );
+      if (!wm) return [];
+    }
+
+    // 1. Owner row
+    const [ownerRow] = await db
+      .select({ id: users.id, name: users.name, email: users.email })
+      .from(users)
+      .where(eq(users.id, ws.ownerId));
+
+    const ownerMember: WorkspaceMember | null = ownerRow
+      ? {
+          id: `owner-${ws.ownerId}`,
+          userId: ws.ownerId,
+          name: ownerRow.name,
+          email: ownerRow.email,
+          role: "owner",
+          joinedAt: null,
+        }
+      : null;
+
+    // 2. Non-owner members
+    const memberRows = await db
+      .select({
+        id: workspaceMembers.id,
+        userId: workspaceMembers.userId,
+        role: workspaceMembers.role,
+        createdAt: workspaceMembers.createdAt,
+        name: users.name,
+        email: users.email,
+      })
+      .from(workspaceMembers)
+      .leftJoin(users, eq(workspaceMembers.userId, users.id))
+      .where(
+        and(
+          eq(workspaceMembers.workspaceId, activeWorkspaceId),
+          ne(workspaceMembers.role, "owner"),
+        ),
+      );
+
+    const members: WorkspaceMember[] = memberRows.map((m) => ({
+      id: m.id,
+      userId: m.userId,
+      name: m.name ?? "Unknown",
+      email: m.email ?? "—",
+      role: (m.role as "admin" | "member") ?? "member",
+      joinedAt: m.createdAt,
+    }));
+
+    return ownerMember ? [ownerMember, ...members] : members;
+  } catch (error) {
+    console.error("[getActiveWorkspaceMembersAction] Error:", error);
+    return [];
+  }
+}
+
+/**
+ * Returns full workspace overview data (workspace info, all members, all projects)
+ * for a given workspace ID. Used by the /workspaces/[id] overview page.
+ */
+export async function getWorkspaceOverviewAction(workspaceId: string): Promise<WorkspaceOverview | null> {
+  try {
+    const user = await syncUser();
+    if (!user) return null;
+
+    // Verify the workspace exists
+    const [ws] = await db
+      .select({
+        id: workspaces.id,
+        name: workspaces.name,
+        slug: workspaces.slug,
+        ownerId: workspaces.ownerId,
+        createdAt: workspaces.createdAt,
+        ownerName: users.name,
+      })
+      .from(workspaces)
+      .leftJoin(users, eq(workspaces.ownerId, users.id))
+      .where(eq(workspaces.id, workspaceId));
+
+    if (!ws) return null;
+
+    // Determine user role in this workspace
+    let userRole: "owner" | "admin" | "member";
+    if (ws.ownerId === user.id) {
+      userRole = "owner";
+    } else {
+      const [wm] = await db
+        .select({ role: workspaceMembers.role })
+        .from(workspaceMembers)
+        .where(
+          and(
+            eq(workspaceMembers.workspaceId, workspaceId),
+            eq(workspaceMembers.userId, user.id),
+          ),
+        );
+      if (!wm) return null; // No access
+      userRole = (wm.role as "admin" | "member") ?? "member";
+    }
+
+    // Fetch all members (owner + workspace_members)
+    const [ownerRow] = await db
+      .select({ id: users.id, name: users.name, email: users.email })
+      .from(users)
+      .where(eq(users.id, ws.ownerId));
+
+    const memberRows = await db
+      .select({
+        id: workspaceMembers.id,
+        userId: workspaceMembers.userId,
+        role: workspaceMembers.role,
+        createdAt: workspaceMembers.createdAt,
+        name: users.name,
+        email: users.email,
+      })
+      .from(workspaceMembers)
+      .leftJoin(users, eq(workspaceMembers.userId, users.id))
+      .where(
+        and(
+          eq(workspaceMembers.workspaceId, workspaceId),
+          ne(workspaceMembers.role, "owner"),
+        ),
+      );
+
+    const ownerMember: WorkspaceMember | null = ownerRow
+      ? { id: `owner-${ws.ownerId}`, userId: ws.ownerId, name: ownerRow.name, email: ownerRow.email, role: "owner", joinedAt: ws.createdAt }
+      : null;
+
+    const members: WorkspaceMember[] = memberRows.map((m) => ({
+      id: m.id,
+      userId: m.userId,
+      name: m.name ?? "Unknown",
+      email: m.email ?? "—",
+      role: (m.role as "admin" | "member") ?? "member",
+      joinedAt: m.createdAt,
+    }));
+
+    const allMembers = ownerMember ? [ownerMember, ...members] : members;
+
+    // Fetch all projects in this workspace
+    const wsProjects = await db
+      .select({
+        id: projects.id,
+        name: projects.name,
+        description: projects.description,
+        status: projects.status,
+        priority: projects.priority,
+        dueDate: projects.dueDate,
+        createdAt: projects.createdAt,
+      })
+      .from(projects)
+      .where(eq(projects.workspaceId, workspaceId))
+      .orderBy(sql`${projects.createdAt} DESC`);
+
+    // Fetch member counts for those projects
+    const projectIds = wsProjects.map((p) => p.id);
+    const pmCounts =
+      projectIds.length > 0
+        ? await db
+            .select({
+              projectId: projectMembers.projectId,
+              count: sql<number>`cast(count(${projectMembers.id}) as int)`,
+            })
+            .from(projectMembers)
+            .where(inArray(projectMembers.projectId, projectIds))
+            .groupBy(projectMembers.projectId)
+        : [];
+
+    const pmCountMap = new Map<string, number>();
+    for (const row of pmCounts) {
+      pmCountMap.set(row.projectId, Number(row.count));
+    }
+
+    const projectList = wsProjects.map((p) => ({
+      id: p.id,
+      name: p.name,
+      description: p.description,
+      status: p.status,
+      priority: p.priority,
+      dueDate: p.dueDate,
+      memberCount: pmCountMap.get(p.id) ?? 0,
+      createdAt: p.createdAt,
+    }));
+
+    return {
+      id: ws.id,
+      name: ws.name,
+      slug: ws.slug,
+      ownerId: ws.ownerId,
+      ownerName: ws.ownerName ?? "Workspace Owner",
+      createdAt: ws.createdAt,
+      userRole,
+      members: allMembers,
+      projects: projectList,
+    };
+  } catch (error) {
+    console.error("[getWorkspaceOverviewAction] Error:", error);
+    return null;
+  }
+}
 
 export async function getUserWorkspacesAction(): Promise<UserWorkspacesResult> {
   try {
@@ -301,8 +565,9 @@ export async function getUserWorkspacesAction(): Promise<UserWorkspacesResult> {
 
     const allWorkspaces = [...ownedWorkspaces, ...memberWorkspaces];
 
-    // Determine active workspace
-    let activeWs = allWorkspaces.find((w) => w.id === activeWorkspaceIdCookie);
+    // Determine active workspace using the single canonical resolver
+    const activeWorkspaceId = await getActiveWorkspaceId(user.id);
+    let activeWs = allWorkspaces.find((w) => w.id === activeWorkspaceId);
     if (!activeWs && allWorkspaces.length > 0) {
       activeWs = allWorkspaces[0];
     }

@@ -18,6 +18,8 @@ import {
   createProjectSchema,
   updateProjectSchema,
 } from "@/lib/project-schemas";
+import { calculateCompletionPercentage, isTaskCompleted } from "@/lib/project-stats";
+import { getActiveWorkspaceId } from "@/lib/workspace-helpers";
 import { and, eq, inArray, or, sql } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 
@@ -37,6 +39,7 @@ export interface ProjectWithStats {
   listCount: number;
   taskCount: number;
   completedTaskCount: number;
+  completionPercentage: number;
   memberCount: number;
   members: { id: string; name: string; role: string }[];
 }
@@ -46,7 +49,11 @@ export async function getProjectsAction(): Promise<ProjectWithStats[]> {
     const user = await syncUser();
     if (!user) return [];
 
-    // 1. Fetch project IDs where the user is a member
+    // 1. Resolve canonical active workspace (with cookie validation + fallback)
+    const activeWorkspaceId = await getActiveWorkspaceId(user.id);
+    if (!activeWorkspaceId) return [];
+
+    // 2. Fetch project IDs where the user is a member
     const memberProjectRows = await db
       .select({ projectId: projectMembers.projectId })
       .from(projectMembers)
@@ -54,11 +61,14 @@ export async function getProjectsAction(): Promise<ProjectWithStats[]> {
 
     const memberProjectIds = memberProjectRows.map((m) => m.projectId).filter(Boolean);
 
-    // 2. Query projects where user is owner OR member
-    const whereClause =
+    // 3. Build the user access clause (owner OR explicit project member)
+    const userAccessClause =
       memberProjectIds.length > 0
         ? or(eq(projects.ownerId, user.id), inArray(projects.id, memberProjectIds))
         : eq(projects.ownerId, user.id);
+
+    // 4. Always scope strictly to active workspace (never unscoped!)
+    const whereClause = and(eq(projects.workspaceId, activeWorkspaceId), userAccessClause);
 
     const userProjects = await db
       .select({
@@ -124,7 +134,7 @@ export async function getProjectsAction(): Promise<ProjectWithStats[]> {
     for (const t of allTasks) {
       const stats = taskStatsMap.get(t.projectId) || { total: 0, completed: 0 };
       stats.total += 1;
-      if (t.status === "Completed" || t.status === "Done" || t.status === "Complete") {
+      if (isTaskCompleted(t.status)) {
         stats.completed += 1;
       }
       taskStatsMap.set(t.projectId, stats);
@@ -140,6 +150,7 @@ export async function getProjectsAction(): Promise<ProjectWithStats[]> {
     return userProjects.map((p) => {
       const stats = taskStatsMap.get(p.id) || { total: 0, completed: 0 };
       const members = membersMap.get(p.id) || [];
+      const completionPercentage = calculateCompletionPercentage(stats.completed, stats.total);
       return {
         id: p.id,
         name: p.name,
@@ -156,6 +167,7 @@ export async function getProjectsAction(): Promise<ProjectWithStats[]> {
         listCount: listCountMap.get(p.id) || 0,
         taskCount: stats.total,
         completedTaskCount: stats.completed,
+        completionPercentage,
         memberCount: members.length,
         members,
       };
@@ -273,9 +285,8 @@ export async function getProjectBySlugAction(slug: string): Promise<ProjectWithS
     ]);
 
     const totalTasks = projectTaskList.length;
-    const completedTasks = projectTaskList.filter(
-      (t) => t.status === "Completed" || t.status === "Done" || t.status === "Complete",
-    ).length;
+    const completedTasks = projectTaskList.filter((t) => isTaskCompleted(t.status)).length;
+    const completionPercentage = calculateCompletionPercentage(completedTasks, totalTasks);
 
     return {
       id: projectRow.id,
@@ -293,6 +304,7 @@ export async function getProjectBySlugAction(slug: string): Promise<ProjectWithS
       listCount: projectLists.length,
       taskCount: totalTasks,
       completedTaskCount: completedTasks,
+      completionPercentage,
       memberCount: members.length,
       members,
     };

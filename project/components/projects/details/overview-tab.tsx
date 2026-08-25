@@ -1,6 +1,7 @@
 "use client";
 
 import type { ProjectMember } from "@/actions/member-actions";
+import { calculateCompletionPercentage } from "@/lib/project-stats";
 import { Plus, Tag, Users } from "lucide-react";
 import { z } from "zod";
 
@@ -17,6 +18,8 @@ interface OverviewTabProps {
   ownerName: string;
   status: string;
   taskCount: number;
+  completedTaskCount?: number;
+  completionPercentage?: number;
   categories?: string[];
   techStack: string[];
   members: ProjectMember[];
@@ -34,6 +37,8 @@ export function OverviewTab({
   ownerName,
   status,
   taskCount,
+  completedTaskCount,
+  completionPercentage,
   categories = [],
   techStack = [],
   members,
@@ -148,6 +153,12 @@ export function OverviewTab({
             <div className="flex items-center justify-between">
               <span className="text-slate-500 dark:text-slate-400 font-medium">Total Tasks</span>
               <span className="font-bold text-slate-800 dark:text-slate-200">{taskCount}</span>
+            </div>
+            <div className="flex items-center justify-between">
+              <span className="text-slate-500 dark:text-slate-400 font-medium">Completion</span>
+              <span className="font-bold text-[#0033a0] dark:text-blue-400">
+                {completionPercentage ?? calculateCompletionPercentage(completedTaskCount || 0, taskCount)}%
+              </span>
             </div>
           </div>
         </div>

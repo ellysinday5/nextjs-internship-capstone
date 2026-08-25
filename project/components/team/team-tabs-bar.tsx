@@ -1,9 +1,9 @@
 "use client";
 
-import { BarChart2, Mail, UserCog, Users } from "lucide-react";
+import { Mail, Users } from "lucide-react";
 import { UserPlus } from "lucide-react";
 
-export type TeamTab = "all-teams" | "all-people" | "analytics" | "my-invites";
+export type TeamTab = "all-people" | "my-invites";
 
 interface TeamTabsBarProps {
   activeTab: TeamTab;
@@ -19,9 +19,7 @@ type TabConfig = {
 };
 
 const TABS: TabConfig[] = [
-  { id: "all-teams", label: "All Teams", icon: Users },
-  { id: "all-people", label: "All People", icon: UserCog },
-  { id: "analytics", label: "Analytics", icon: BarChart2 },
+  { id: "all-people", label: "All People", icon: Users },
   { id: "my-invites", label: "My Invites", icon: Mail },
 ];
 

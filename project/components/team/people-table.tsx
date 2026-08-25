@@ -1,7 +1,6 @@
 "use client";
 
-import type { TeamMember } from "@/lib/team-data";
-import { MoreHorizontal } from "lucide-react";
+import { type TeamMember, formatRole } from "@/lib/team-data";
 
 interface PeopleTableProps {
   members: TeamMember[];
@@ -24,7 +23,6 @@ export function PeopleTable({ members, onSelectMember }: PeopleTableProps) {
             <th className="px-4 py-3 font-semibold">Email</th>
             <th className="px-4 py-3 font-semibold">Role</th>
             <th className="px-4 py-3 font-semibold">User Status</th>
-            <th className="px-4 py-3 text-right font-semibold">Action</th>
           </tr>
         </thead>
         <tbody className="divide-y divide-slate-100 bg-white dark:divide-slate-800 dark:bg-slate-900">
@@ -38,26 +36,20 @@ export function PeopleTable({ members, onSelectMember }: PeopleTableProps) {
                 {member.name}
               </td>
               <td className="px-4 py-3 text-slate-500 dark:text-slate-400">{member.email}</td>
-              <td className="px-4 py-3 text-slate-600 dark:text-slate-300">{member.role}</td>
+              <td className="px-4 py-3 font-medium text-slate-700 dark:text-slate-200">
+                {formatRole(member.role)}
+              </td>
               <td className="px-4 py-3">
                 <span className="flex items-center gap-1.5 text-slate-600 dark:text-slate-300">
                   <span className={`h-2 w-2 rounded-full ${STATUS_DOT[member.status]}`} />
                   {member.status}
                 </span>
               </td>
-              <td className="px-4 py-3 text-right">
-                <button
-                  onClick={(e) => e.stopPropagation()}
-                  className="rounded p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-600 dark:hover:bg-slate-800"
-                >
-                  <MoreHorizontal size={16} />
-                </button>
-              </td>
             </tr>
           ))}
           {members.length === 0 && (
             <tr>
-              <td colSpan={5} className="px-4 py-8 text-center text-slate-400">
+              <td colSpan={4} className="px-4 py-8 text-center text-slate-400">
                 No members found.
               </td>
             </tr>

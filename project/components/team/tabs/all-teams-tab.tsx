@@ -62,8 +62,8 @@ export function AllTeamsTab({ projects = [], onCreateTeam }: AllTeamsTabProps) {
 
   return (
     <div className="space-y-5">
-      {/* Search Bar */}
-      <div className="flex items-center justify-between gap-4">
+      {/* Search Bar + Create Team CTA */}
+      <div className="flex items-center justify-between gap-4 flex-wrap">
         <div className="relative flex-1 max-w-sm">
           <Search
             size={14}
@@ -87,9 +87,22 @@ export function AllTeamsTab({ projects = [], onCreateTeam }: AllTeamsTabProps) {
           )}
         </div>
 
-        <span className="text-xs font-semibold text-slate-400">
-          {filtered.length} / {projectList.length} {projectList.length === 1 ? "team" : "teams"}
-        </span>
+        <div className="flex items-center gap-3">
+          <span className="text-xs font-semibold text-slate-400">
+            {filtered.length} / {projectList.length} {projectList.length === 1 ? "team" : "teams"}
+          </span>
+
+          {onCreateTeam && (
+            <button
+              type="button"
+              onClick={onCreateTeam}
+              className="inline-flex items-center gap-1.5 rounded-xl bg-[#0033a0] hover:bg-[#00277a] px-3.5 py-2 text-xs font-semibold text-white shadow-sm shadow-blue-600/20 transition-all"
+            >
+              <Plus size={14} />
+              Create Team
+            </button>
+          )}
+        </div>
       </div>
 
       {filtered.length === 0 ? (

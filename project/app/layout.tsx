@@ -3,6 +3,7 @@ import { Inter } from "next/font/google";
 import type React from "react";
 import "./globals.css";
 import { AuthToast } from "@/components/auth/auth-toast";
+import { OfflineBanner } from "@/components/errors/offline-banner";
 import { SileoToaster } from "@/components/ui/sileo-toaster";
 import { ThemeProvider } from "@/components/ui/theme-provider";
 import { UserProfileProvider } from "@/context/user-profile-context";
@@ -34,6 +35,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
               <UserProfileProvider>
                 <AuthToast />
                 <SileoToaster />
+                {/* OfflineBanner is mounted at root level so it's active across
+                    landing, auth, and dashboard pages alike */}
+                <OfflineBanner />
                 {children}
               </UserProfileProvider>
             </ThemeProvider>

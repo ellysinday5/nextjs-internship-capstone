@@ -2,20 +2,25 @@
 
 import { type ProjectWithStats, getProjectsAction } from "@/actions/project-actions";
 import type { ProjectItem } from "@/lib/project-data";
+import { calculateCompletionPercentage } from "@/lib/project-stats";
 import { getCachedCount, setCachedCount } from "@/lib/skeleton-cache";
+import { useUser } from "@clerk/nextjs";
 import { useCallback, useEffect, useMemo, useState } from "react";
 
 export type DropdownKey = "status" | "priority" | "category" | "owner" | "team" | "members" | null;
 export type ViewMode = "grid" | "table";
 
 export function useProjectFilters() {
+  const { user } = useUser();
+  const userId = user?.id;
+
   const [dbProjects, setDbProjects] = useState<ProjectWithStats[]>([]);
   const [loading, setLoading] = useState(true);
   const [skeletonCount, setSkeletonCount] = useState(3);
 
   useEffect(() => {
-    setSkeletonCount(getCachedCount("projects", 3));
-  }, []);
+    setSkeletonCount(getCachedCount("projects", userId, 3));
+  }, [userId]);
 
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("All");
@@ -32,11 +37,11 @@ export function useProjectFilters() {
     const result = await getProjectsAction();
     setDbProjects(result);
     if (result.length > 0) {
-      setCachedCount("projects", result.length);
+      setCachedCount("projects", userId, result.length);
       setSkeletonCount(result.length);
     }
     setLoading(false);
-  }, []);
+  }, [userId]);
 
   useEffect(() => {
     fetchProjects();
@@ -48,19 +53,20 @@ export function useProjectFilters() {
 
     return dbProjects.map((p, idx) => {
       const completionPercent =
-        p.taskCount > 0 ? Math.round((p.completedTaskCount / p.taskCount) * 100) : 0;
+        p.completionPercentage ??
+        calculateCompletionPercentage(p.completedTaskCount || 0, p.taskCount || 0);
 
       return {
         id: p.id,
         name: p.name,
         description: p.description || "No description provided.",
-        techStack: ["Drizzle", "PostgreSQL", "Clerk"],
-        category: "Frontend",
-        status: completionPercent === 100 ? "Completed" : "In Progress",
-        priority: "High",
+        techStack: p.techStack && p.techStack.length > 0 ? p.techStack : ["Drizzle", "PostgreSQL", "Clerk"],
+        category: p.categories && p.categories.length > 0 ? p.categories[0] : "Frontend",
+        status: completionPercent === 100 ? "Completed" : p.status || "In Progress",
+        priority: p.priority || "Medium",
         progress: completionPercent,
-        members: 1,
-        owner: ownerOptions[idx % ownerOptions.length],
+        members: p.memberCount || 1,
+        owner: p.ownerName || ownerOptions[idx % ownerOptions.length],
         teamName: teamOptions[idx % teamOptions.length],
         tasksCount: p.taskCount,
         updatedAt: p.updatedAt ? new Date(p.updatedAt).toLocaleDateString() : "Just now",

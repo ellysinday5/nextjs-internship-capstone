@@ -46,6 +46,7 @@ export function useTasks(projectId: string) {
         commentsCount: 0,
         createdAt: new Date(),
         updatedAt: new Date(),
+        completedAt: null,
       };
 
       queryClient.setQueryData<TaskRecord[]>(queryKey, (old: TaskRecord[] | undefined = []) => [...old, optimisticTask]);

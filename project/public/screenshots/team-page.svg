@@ -1,0 +1,77 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 750" width="1200" height="750">
+  <defs>
+    <linearGradient id="teamBg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#070f1c" />
+      <stop offset="100%" stop-color="#0e1e35" />
+    </linearGradient>
+  </defs>
+  <rect width="100%" height="100%" fill="url(#teamBg)" />
+
+  <!-- Top App Navigation Bar -->
+  <rect x="0" y="0" width="1200" height="60" fill="#0d1b2e" />
+  <line x1="0" y1="60" x2="1200" y2="60" stroke="#1c3352" stroke-width="1" />
+  <circle cx="36" cy="30" r="14" fill="#0052cc" />
+  <text x="36" y="35" fill="#ffffff" font-family="sans-serif" font-size="12" font-weight="900" text-anchor="middle">SF</text>
+  <text x="64" y="35" fill="#ffffff" font-family="sans-serif" font-size="16" font-weight="bold">SyntraFlow</text>
+
+  <!-- Nav Links -->
+  <text x="258" y="35" fill="#94a3b8" font-family="sans-serif" font-size="13" font-weight="600" text-anchor="middle">Projects</text>
+  <rect x="305" y="16" width="60" height="28" rx="6" fill="#142843" />
+  <text x="335" y="35" fill="#38bdf8" font-family="sans-serif" font-size="13" font-weight="bold" text-anchor="middle">Team</text>
+  <text x="410" y="35" fill="#94a3b8" font-family="sans-serif" font-size="13" font-weight="600">Calendar</text>
+  <text x="500" y="35" fill="#94a3b8" font-family="sans-serif" font-size="13" font-weight="600">Analytics</text>
+
+  <!-- Page Header -->
+  <text x="50" y="110" fill="#ffffff" font-family="sans-serif" font-size="24" font-weight="900">Workspace Members</text>
+  <text x="50" y="132" fill="#64748b" font-family="sans-serif" font-size="13" font-weight="500">Manage permissions, invite collaborators, and view active roles</text>
+
+  <!-- Invite Button -->
+  <rect x="1020" y="92" width="130" height="38" rx="8" fill="#0052cc" />
+  <text x="1085" y="116" fill="#ffffff" font-family="sans-serif" font-size="13" font-weight="bold" text-anchor="middle">+ Invite Member</text>
+
+  <!-- Table Container -->
+  <rect x="50" y="170" width="1100" height="500" rx="16" fill="#142843" stroke="#1e3a5f" stroke-width="1.5" />
+
+  <!-- Table Header -->
+  <rect x="50" y="170" width="1100" height="50" rx="16" fill="#0f2038" />
+  <text x="80" y="201" fill="#64748b" font-family="sans-serif" font-size="12" font-weight="bold">MEMBER</text>
+  <text x="400" y="201" fill="#64748b" font-family="sans-serif" font-size="12" font-weight="bold">ROLE</text>
+  <text x="650" y="201" fill="#64748b" font-family="sans-serif" font-size="12" font-weight="bold">STATUS</text>
+  <text x="900" y="201" fill="#64748b" font-family="sans-serif" font-size="12" font-weight="bold">JOINED DATE</text>
+
+  <!-- Row 1 -->
+  <line x1="50" y1="280" x2="1150" y2="280" stroke="#1e3a5f" stroke-width="1" />
+  <circle cx="100" cy="250" r="16" fill="#0052cc" />
+  <text x="100" y="255" fill="#ffffff" font-family="sans-serif" font-size="11" font-weight="bold" text-anchor="middle">ES</text>
+  <text x="130" y="248" fill="#ffffff" font-family="sans-serif" font-size="14" font-weight="bold">Elly Sinday</text>
+  <text x="130" y="264" fill="#64748b" font-family="sans-serif" font-size="11">elly.sinday@stratpoint.com</text>
+  <rect x="400" y="238" width="60" height="24" rx="6" fill="#0052cc" fill-opacity="0.2" />
+  <text x="430" y="254" fill="#38bdf8" font-family="sans-serif" font-size="11" font-weight="bold" text-anchor="middle">Owner</text>
+  <rect x="650" y="238" width="60" height="24" rx="6" fill="#059669" fill-opacity="0.2" />
+  <text x="680" y="254" fill="#34d399" font-family="sans-serif" font-size="11" font-weight="bold" text-anchor="middle">Active</text>
+  <text x="900" y="254" fill="#94a3b8" font-family="sans-serif" font-size="12">Aug 1, 2026</text>
+
+  <!-- Row 2 -->
+  <line x1="50" y1="340" x2="1150" y2="340" stroke="#1e3a5f" stroke-width="1" />
+  <circle cx="100" cy="310" r="16" fill="#7c3aed" />
+  <text x="100" y="315" fill="#ffffff" font-family="sans-serif" font-size="11" font-weight="bold" text-anchor="middle">JR</text>
+  <text x="130" y="308" fill="#ffffff" font-family="sans-serif" font-size="14" font-weight="bold">James Reyes</text>
+  <text x="130" y="324" fill="#64748b" font-family="sans-serif" font-size="11">james.reyes@team.io</text>
+  <rect x="400" y="298" width="60" height="24" rx="6" fill="#7c3aed" fill-opacity="0.2" />
+  <text x="430" y="314" fill="#c084fc" font-family="sans-serif" font-size="11" font-weight="bold" text-anchor="middle">Admin</text>
+  <rect x="650" y="298" width="60" height="24" rx="6" fill="#059669" fill-opacity="0.2" />
+  <text x="680" y="314" fill="#34d399" font-family="sans-serif" font-size="11" font-weight="bold" text-anchor="middle">Active</text>
+  <text x="900" y="314" fill="#94a3b8" font-family="sans-serif" font-size="12">Aug 10, 2026</text>
+
+  <!-- Row 3 -->
+  <line x1="50" y1="400" x2="1150" y2="400" stroke="#1e3a5f" stroke-width="1" />
+  <circle cx="100" cy="370" r="16" fill="#059669" />
+  <text x="100" y="375" fill="#ffffff" font-family="sans-serif" font-size="11" font-weight="bold" text-anchor="middle">MT</text>
+  <text x="130" y="368" fill="#ffffff" font-family="sans-serif" font-size="14" font-weight="bold">Maria Tan</text>
+  <text x="130" y="384" fill="#64748b" font-family="sans-serif" font-size="11">maria.tan@design.co</text>
+  <rect x="400" y="358" width="65" height="24" rx="6" fill="#0284c7" fill-opacity="0.2" />
+  <text x="432" y="374" fill="#38bdf8" font-family="sans-serif" font-size="11" font-weight="bold" text-anchor="middle">Member</text>
+  <rect x="650" y="358" width="60" height="24" rx="6" fill="#059669" fill-opacity="0.2" />
+  <text x="680" y="374" fill="#34d399" font-family="sans-serif" font-size="11" font-weight="bold" text-anchor="middle">Active</text>
+  <text x="900" y="374" fill="#94a3b8" font-family="sans-serif" font-size="12">Aug 15, 2026</text>
+</svg>

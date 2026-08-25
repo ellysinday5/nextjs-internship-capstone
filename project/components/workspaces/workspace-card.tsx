@@ -14,6 +14,7 @@ import {
   Users,
 } from "lucide-react";
 import React from "react";
+import Link from "next/link";
 
 interface WorkspaceCardProps {
   workspace: UserWorkspace;
@@ -164,6 +165,16 @@ export function WorkspaceCard({
               <ArrowRight size={11} className="transition-transform group-hover:translate-x-0.5" />
             </div>
           )}
+
+          {/* View Overview link — always visible */}
+          <Link
+            href={`/workspaces/${workspace.id}`}
+            onClick={(e) => e.stopPropagation()}
+            className="mt-2 flex items-center gap-1 text-[11px] font-semibold text-blue_munsell opacity-0 group-hover:opacity-100 transition-opacity hover:underline"
+          >
+            View workspace overview
+            <ArrowRight size={11} />
+          </Link>
         </div>
       </div>
     </div>

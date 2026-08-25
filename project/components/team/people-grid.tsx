@@ -1,7 +1,7 @@
 "use client";
 
 import { UserAvatar } from "@/components/ui/user-avatar";
-import type { TeamMember } from "@/lib/team-data";
+import { type TeamMember, formatRole } from "@/lib/team-data";
 
 interface PeopleGridProps {
   members: TeamMember[];
@@ -46,7 +46,7 @@ export function PeopleGrid({ members, selectedId, onSelectMember }: PeopleGridPr
           <span className="text-sm font-semibold text-slate-800 dark:text-slate-100">
             {member.name}
           </span>
-          <span className="text-xs text-slate-400 dark:text-slate-500">{member.role}</span>
+          <span className="text-xs text-slate-400 dark:text-slate-500">{formatRole(member.role)}</span>
         </button>
       ))}
     </div>

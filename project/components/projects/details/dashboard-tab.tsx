@@ -1,6 +1,7 @@
 "use client";
 
 import { Modal } from "@/components/modals/BaseModal";
+import { calculateCompletionPercentage, isTaskCompleted } from "@/lib/project-stats";
 import { sileo } from "@/utils/alerts";
 import { AlertTriangle, BarChart2, CheckCircle2, Clock, Plus, X } from "lucide-react";
 import React, { useState } from "react";
@@ -22,8 +23,9 @@ export function DashboardTab({ sections }: DashboardTabProps) {
 
   const allTasks = sections.flatMap((s) => s.tasks);
   const totalTasks = allTasks.length;
-  const completedTasks = allTasks.filter((t) => t.status === "On track" && false).length;
-  const incompleteTasks = totalTasks - completedTasks;
+  const completedTasks = allTasks.filter((t) => isTaskCompleted(t.status)).length;
+  const incompleteTasks = Math.max(0, totalTasks - completedTasks);
+  const completionPercentage = calculateCompletionPercentage(completedTasks, totalTasks);
   const overdueTasks = allTasks.filter(
     (t) => t.status === "Off track" || t.priority === "High",
   ).length;
@@ -140,18 +142,36 @@ export function DashboardTab({ sections }: DashboardTabProps) {
           </h4>
 
           <div className="h-44 flex items-center justify-center gap-6">
-            <div className="relative flex h-32 w-32 items-center justify-center rounded-full border-[14px] border-purple-400">
-              <div className="text-center">
-                <div className="text-xl font-bold text-slate-900 dark:text-white">
-                  {incompleteTasks}
+            <div className="relative flex h-32 w-32 items-center justify-center rounded-full border-[12px] border-slate-100 dark:border-slate-800">
+              <div
+                className="absolute inset-0 rounded-full border-[12px] border-[#0033a0] transition-all duration-700"
+                style={{
+                  clipPath:
+                    completionPercentage > 0
+                      ? undefined
+                      : "polygon(0 0, 0 0, 0 0)",
+                  opacity: completionPercentage > 0 ? 1 : 0.2,
+                }}
+              />
+              <div className="text-center z-10">
+                <div className="text-xl font-extrabold text-slate-900 dark:text-white">
+                  {completionPercentage}%
                 </div>
-                <div className="text-[10px] text-slate-400">Incomplete</div>
+                <div className="text-[10px] text-slate-400 font-semibold">
+                  {completedTasks}/{totalTasks} Done
+                </div>
               </div>
             </div>
 
-            <div className="flex items-center gap-2 text-xs font-medium text-slate-600 dark:text-slate-300">
-              <span className="h-3 w-3 rounded-xs bg-purple-400" />
-              Incomplete ({incompleteTasks})
+            <div className="flex flex-col gap-2 text-xs font-medium text-slate-600 dark:text-slate-300">
+              <div className="flex items-center gap-2">
+                <span className="h-3 w-3 rounded-xs bg-[#0033a0]" />
+                Completed ({completedTasks})
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="h-3 w-3 rounded-xs bg-slate-300 dark:bg-slate-700" />
+                Incomplete ({incompleteTasks})
+              </div>
             </div>
           </div>
         </div>

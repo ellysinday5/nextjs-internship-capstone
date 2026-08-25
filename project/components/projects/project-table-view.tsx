@@ -115,6 +115,7 @@ function ActionMenu({
                 completedTaskCount: Math.round(
                   ((project.tasksCount || 0) * (project.progress || 0)) / 100,
                 ),
+                completionPercentage: project.progress || 0,
                 memberCount: project.members || 1,
                 members: [],
               };

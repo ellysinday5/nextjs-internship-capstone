@@ -2,6 +2,7 @@
 
 import { type ProjectWithStats, getProjectsAction } from "@/actions/project-actions";
 import { type TaskRecord, getProjectTasksAction } from "@/actions/task-actions";
+import { calculateCompletionPercentage, isTaskCompleted } from "@/lib/project-stats";
 import {
   Activity,
   BarChart3,
@@ -54,14 +55,44 @@ export function AnalyticsPageClient() {
   }, []);
 
   const stats = useMemo(() => {
-    const totalProjects = dbProjects.length || 3;
-    const totalTasks = dbTasks.length || 18;
-    const completedTasks =
-      dbTasks.filter((t) => t.status === "Completed" || t.status === "Complete").length || 12;
-    const completionRate = Math.round((completedTasks / (totalTasks || 1)) * 100);
-    const velocity = (completedTasks / (totalProjects || 1)).toFixed(1);
-    const activeUsers = 5;
-    const avgTaskDays = (1.8 + (totalTasks % 3) * 0.4).toFixed(1);
+    const totalProjects = dbProjects.length;
+    const totalTasks = dbProjects.reduce((acc, p) => acc + (p.taskCount || 0), 0);
+    const completedTasks = dbProjects.reduce((acc, p) => acc + (p.completedTaskCount || 0), 0);
+    const completionRate = calculateCompletionPercentage(completedTasks, totalTasks);
+    const velocity = totalProjects > 0 ? (completedTasks / totalProjects).toFixed(1) : "0.0";
+
+    // 1. Calculate actual active workspace users across projects
+    const uniqueUserIds = new Set<string>();
+    dbProjects.forEach((p) => {
+      if (p.ownerId) uniqueUserIds.add(p.ownerId);
+      p.members?.forEach((m) => {
+        if (m.id) uniqueUserIds.add(m.id);
+      });
+    });
+    dbTasks.forEach((t) => {
+      if (t.assigneeId) uniqueUserIds.add(t.assigneeId);
+    });
+    const activeUsers = uniqueUserIds.size;
+
+    // 2. Calculate actual average resolution time for completed tasks.
+    // Only tasks with a real completedAt timestamp (set on status transition to
+    // "Complete") are counted. Tasks completed before this migration that have
+    // completedAt = null are intentionally excluded rather than approximated.
+    const completedWithDates = dbTasks.filter(
+      (t) => isTaskCompleted(t.status) && t.completedAt && t.createdAt,
+    );
+    let avgTaskDays = "Not enough data";
+    if (completedWithDates.length > 0) {
+      const totalDays = completedWithDates.reduce((acc, t) => {
+        const created = new Date(t.createdAt!).getTime();
+        const completed = new Date(t.completedAt!).getTime();
+        const diffDays = Math.max(0, (completed - created) / (1000 * 60 * 60 * 24));
+        return acc + diffDays;
+      }, 0);
+      const avg = totalDays / completedWithDates.length;
+      avgTaskDays = `${avg.toFixed(1)}d`;
+    }
+
     return {
       totalProjects,
       totalTasks,
@@ -76,9 +107,9 @@ export function AnalyticsPageClient() {
   const allProjectProgressData = useMemo(() => {
     if (dbProjects.length > 0) {
       return dbProjects.map((p) => {
-        const total = p.taskCount || 1;
-        const completed = p.completedTaskCount || Math.round(total * 0.7);
-        const percent = Math.min(100, Math.round((completed / total) * 100));
+        const total = p.taskCount || 0;
+        const completed = p.completedTaskCount || 0;
+        const percent = p.completionPercentage ?? calculateCompletionPercentage(completed, total);
         return {
           id: p.id,
           name: p.name,
@@ -86,48 +117,11 @@ export function AnalyticsPageClient() {
           status: p.status || "Active",
           completed,
           total,
-          percent: percent || 65,
+          percent,
         };
       });
     }
-    return [
-      {
-        id: "p1",
-        name: "Ellen's first project",
-        category: "Fullstack",
-        status: "In Progress",
-        completed: 14,
-        total: 18,
-        percent: 78,
-      },
-      {
-        id: "p2",
-        name: "Project Title 1",
-        category: "Frontend",
-        status: "In Progress",
-        completed: 8,
-        total: 12,
-        percent: 66,
-      },
-      {
-        id: "p3",
-        name: "Project Title 2",
-        category: "Backend",
-        status: "Review",
-        completed: 15,
-        total: 20,
-        percent: 75,
-      },
-      {
-        id: "p4",
-        name: "Project Title 3",
-        category: "AI & Data",
-        status: "Review",
-        completed: 9,
-        total: 10,
-        percent: 90,
-      },
-    ];
+    return [];
   }, [dbProjects]);
 
   const filteredModalProjects = useMemo(() => {
@@ -153,14 +147,14 @@ export function AnalyticsPageClient() {
     },
     {
       label: "Active Workspace Users",
-      value: stats.activeUsers,
-      unit: "team members",
+      value: loading ? "..." : String(stats.activeUsers),
+      unit: stats.activeUsers === 1 ? "team member" : "team members",
       icon: Users,
     },
     {
       label: "Avg. Task Resolution Time",
-      value: stats.avgTaskDays,
-      unit: "days/task",
+      value: loading ? "..." : stats.avgTaskDays,
+      unit: stats.avgTaskDays === "Not enough data" ? "" : "resolution time",
       icon: Clock,
     },
   ];
@@ -250,6 +244,10 @@ export function AnalyticsPageClient() {
                 {[1, 2, 3].map((i) => (
                   <div key={i} className="h-10 bg-slate-100 dark:bg-slate-800 rounded-xl" />
                 ))}
+              </div>
+            ) : allProjectProgressData.length === 0 ? (
+              <div className="py-8 text-center text-xs text-slate-400 font-semibold">
+                No active projects found. Create a project to track completion analytics.
               </div>
             ) : (
               <div className="space-y-4 flex-1 flex flex-col justify-center">

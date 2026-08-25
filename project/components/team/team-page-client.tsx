@@ -1,8 +1,8 @@
 "use client";
 
-import { inviteTeamMember } from "@/actions/invite-member";
+import { createTeamWithMembersAction, inviteTeamMember } from "@/actions/invite-member";
 import { getProjectMembersAction, getProjectPermissionsAction } from "@/actions/member-actions";
-import { CreateTeamModal } from "@/components/modals/create-team-modal";
+import { type CreateTeamData, CreateTeamModal } from "@/components/modals/create-team-modal";
 import { type InviteMemberData, InviteMemberModal } from "@/components/modals/invite-member-modal";
 import { MemberProfilePanel } from "@/components/team/member-profile-panel";
 import { PendingInvitesList } from "@/components/team/pending-invites-list";
@@ -10,16 +10,17 @@ import { PeopleGrid } from "@/components/team/people-grid";
 import { PeopleGridSkeleton, PeopleTableSkeleton } from "@/components/team/people-skeleton";
 import { PeopleTable } from "@/components/team/people-table";
 import { PeopleToolbar } from "@/components/team/people-toolbar";
-import { AllTeamsTab } from "@/components/team/tabs/all-teams-tab";
-import { AnalyticsTab } from "@/components/team/tabs/analytics-tab";
 import { MyInvitesTab } from "@/components/team/tabs/my-invites-tab";
 import { TeamLanding } from "@/components/team/team-landing-page";
 import { type TeamTab, TeamTabsBar } from "@/components/team/team-tabs-bar";
-import type { CreateTeamFormValues } from "@/lib/db/team-schemas";
 import { getCachedCount, setCachedCount } from "@/lib/skeleton-cache";
-import type { Team, TeamMember } from "@/lib/team-data";
+import type { TeamMember } from "@/lib/team-data";
 import { sileo } from "@/utils/alerts";
-import { useEffect, useMemo, useState } from "react";
+import { useUser } from "@clerk/nextjs";
+import { FolderKanban, Plus, Users } from "lucide-react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import React, { useEffect, useMemo, useState } from "react";
 
 interface ProjectOption {
   id: string;
@@ -33,7 +34,10 @@ interface TeamPageClientProps {
 }
 
 export function TeamPageClient({ projectOptions }: TeamPageClientProps) {
-  const [teams, setTeams] = useState<Team[]>([]);
+  const { user } = useUser();
+  const userId = user?.id;
+  const router = useRouter();
+
   const [showLanding, setShowLanding] = useState(true);
   const [activeTab, setActiveTab] = useState<TeamTab>("all-people");
   const [viewMode, setViewMode] = useState<"grid" | "list">("list");
@@ -44,24 +48,31 @@ export function TeamPageClient({ projectOptions }: TeamPageClientProps) {
   const [selectedMember, setSelectedMember] = useState<TeamMember | null>(null);
   const [createModalOpen, setCreateModalOpen] = useState(false);
   const [inviteModalOpen, setInviteModalOpen] = useState(false);
-  const [selectedProjectId, setSelectedProjectId] = useState<string>(projectOptions[0]?.id ?? "");
+
+  // Default state: no project selected yet (shows clear prompt state)
+  const [selectedProjectId, setSelectedProjectId] = useState<string>("");
   const [inviteRefreshKey, setInviteRefreshKey] = useState(0);
   const [canInvite, setCanInvite] = useState(false);
   const [skeletonCount, setSkeletonCount] = useState(4);
+
+  const selectedProject = useMemo(() => {
+    return projectOptions.find((p) => p.id === selectedProjectId) ?? null;
+  }, [projectOptions, selectedProjectId]);
 
   useEffect(() => {
     if (!selectedProjectId) {
       setCanInvite(false);
       return;
     }
-    setSkeletonCount(getCachedCount(`team_members_${selectedProjectId}`, 4));
+    setSkeletonCount(
+      getCachedCount("team_members", `${userId || "anon"}:${selectedProjectId}`, 4),
+    );
     getProjectPermissionsAction(selectedProjectId).then((perm) => {
       setCanInvite(perm.canManageMembers);
     });
-  }, [selectedProjectId]);
+  }, [selectedProjectId, userId]);
 
   // Real, DB-backed members for the currently selected project
-  // (replaces the old MOCK_PEOPLE stub).
   const [people, setPeople] = useState<TeamMember[]>([]);
   const [loadingPeople, setLoadingPeople] = useState(false);
 
@@ -79,7 +90,11 @@ export function TeamPageClient({ projectOptions }: TeamPageClientProps) {
         if (!cancelled) {
           setPeople(result);
           if (result.length > 0) {
-            setCachedCount(`team_members_${selectedProjectId}`, result.length);
+            setCachedCount(
+              "team_members",
+              `${userId || "anon"}:${selectedProjectId}`,
+              result.length,
+            );
             setSkeletonCount(result.length);
           }
         }
@@ -91,7 +106,7 @@ export function TeamPageClient({ projectOptions }: TeamPageClientProps) {
     return () => {
       cancelled = true;
     };
-  }, [selectedProjectId]);
+  }, [selectedProjectId, userId]);
 
   const membersToShow = useMemo(() => {
     let result = people;
@@ -120,17 +135,32 @@ export function TeamPageClient({ projectOptions }: TeamPageClientProps) {
     return result;
   }, [people, search, statusFilter, accountType, sortBy]);
 
-  const handleCreateTeam = (data: CreateTeamFormValues) => {
-    const newTeam: Team = {
-      id: crypto.randomUUID(),
-      name: data.name,
-      description: data.description || undefined,
-      members: people,
-    };
-    setTeams((prev) => [...prev, newTeam]);
-    setCreateModalOpen(false);
-    setShowLanding(false);
-    setActiveTab("all-teams");
+  const handleCreateTeam = async (data: CreateTeamData) => {
+    try {
+      const res = await createTeamWithMembersAction({
+        name: data.name,
+        description: data.description || undefined,
+        invites: data.invites || [],
+      });
+
+      if (!res.success) {
+        sileo.error(res.error || "Failed to create team.", "Create Failed");
+        return;
+      }
+
+      sileo.success(
+        `Team "${data.name}" created with ${data.invites?.length || 0} initial member invite${(data.invites?.length || 0) === 1 ? "" : "s"}!`,
+        "Team Created",
+      );
+      setCreateModalOpen(false);
+      setShowLanding(false);
+      router.refresh();
+      if (res.project?.id) {
+        setSelectedProjectId(res.project.id);
+      }
+    } catch (err: any) {
+      sileo.error(err?.message || "Failed to create team.", "Error");
+    }
   };
 
   const handleBrowsePeople = () => {
@@ -142,16 +172,20 @@ export function TeamPageClient({ projectOptions }: TeamPageClientProps) {
     setCreateModalOpen(true);
   };
 
+  const handleInviteClick = () => {
+    if (!selectedProjectId) {
+      sileo.info("Please select a project first to invite members.", "Select Project");
+      return;
+    }
+    setInviteModalOpen(true);
+  };
+
   const handleInviteMember = (data: InviteMemberData) => {
     if (!selectedProjectId) {
       sileo.error("No project selected — invite email was not sent.", "Missing Project");
       return;
     }
 
-    // No optimistic mock member here anymore — a person only becomes a real
-    // TeamMember (with a usable userId) once they accept the invite and a
-    // projectMembers row with a linked users.id exists. We just refresh the
-    // real list from the DB once the invite email is confirmed sent.
     inviteTeamMember(selectedProjectId, data.email, data.role.toLowerCase()).then(
       (result: { success: boolean; error?: string }) => {
         if (!result.success) {
@@ -177,7 +211,7 @@ export function TeamPageClient({ projectOptions }: TeamPageClientProps) {
             <TeamTabsBar
               activeTab={activeTab}
               onTabChange={setActiveTab}
-              onInviteClick={() => setInviteModalOpen(true)}
+              onInviteClick={handleInviteClick}
               canInvite={canInvite}
             />
           </div>
@@ -196,48 +230,104 @@ export function TeamPageClient({ projectOptions }: TeamPageClientProps) {
             </div>
           )}
 
+          {/* All People Tab (Project-Scoped) */}
           {activeTab === "all-people" && (
             <div className="space-y-4 pt-4">
-              <PeopleToolbar
-                search={search}
-                onSearchChange={setSearch}
-                viewMode={viewMode}
-                onViewModeChange={setViewMode}
-                statusFilter={statusFilter}
-                onStatusFilterChange={setStatusFilter}
-                sortBy={sortBy}
-                onSortChange={setSortBy}
-                accountType={accountType}
-                onAccountTypeChange={setAccountType}
-              />
+              {/* Project Selector Bar */}
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm">
+                <div className="flex items-center gap-3">
+                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-blue-50 dark:bg-blue-950/50 text-[#0033a0] dark:text-blue-400 font-bold">
+                    <FolderKanban size={20} />
+                  </div>
+                  <div>
+                    <label className="text-[10px] font-extrabold uppercase tracking-wider text-slate-400 block">
+                      Active Workspace Project
+                    </label>
+                    <span className="text-xs font-semibold text-slate-800 dark:text-slate-100">
+                      {selectedProject ? selectedProject.name : "Select a project to view its team"}
+                    </span>
+                  </div>
+                </div>
 
-              {loadingPeople ? (
-                viewMode === "list" ? (
-                  <PeopleTableSkeleton count={skeletonCount} />
-                ) : (
-                  <PeopleGridSkeleton count={skeletonCount} />
-                )
-              ) : viewMode === "list" ? (
-                <PeopleTable members={membersToShow} onSelectMember={setSelectedMember} />
+                <div className="flex items-center gap-2">
+                  <select
+                    value={selectedProjectId}
+                    onChange={(e) => setSelectedProjectId(e.target.value)}
+                    className="w-full sm:w-auto rounded-xl border border-slate-200 bg-slate-50 dark:border-slate-700 dark:bg-slate-800 px-3.5 py-2 text-xs font-semibold text-slate-800 dark:text-slate-100 outline-none focus:ring-2 focus:ring-[#0033a0]/30 focus:border-[#0033a0] transition-colors"
+                  >
+                    <option value="">-- Choose a project --</option>
+                    {projectOptions.map((proj) => (
+                      <option key={proj.id} value={proj.id}>
+                        {proj.name} ({proj.ownerName || "Owner"})
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+
+              {/* State 1: No project selected yet */}
+              {!selectedProjectId ? (
+                <div className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-slate-300 dark:border-slate-800 bg-white/60 dark:bg-slate-900/40 px-6 py-16 text-center">
+                  <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-blue-50 text-[#0033a0] dark:bg-blue-950/50 dark:text-blue-400">
+                    <FolderKanban size={28} />
+                  </div>
+                  <h3 className="text-lg font-bold text-slate-900 dark:text-white">
+                    Select a project to see its members
+                  </h3>
+                  <p className="mt-1.5 max-w-sm text-sm text-slate-500 dark:text-slate-400">
+                    {projectOptions.length > 0
+                      ? "Choose a project from the dropdown above to view, filter, and collaborate with its team members."
+                      : "No projects found in this workspace yet. Create a project to start collaborating with your team."}
+                  </p>
+
+                  {projectOptions.length === 0 && (
+                    <Link
+                      href="/projects/create"
+                      className="mt-5 inline-flex items-center gap-1.5 rounded-xl bg-[#0033a0] hover:bg-[#00277a] px-4 py-2 text-xs font-semibold text-white shadow-sm transition-colors"
+                    >
+                      <Plus size={14} />
+                      Create Project
+                    </Link>
+                  )}
+                </div>
               ) : (
-                <PeopleGrid
-                  members={membersToShow}
-                  selectedId={selectedMember?.id}
-                  onSelectMember={setSelectedMember}
-                />
+                /* State 2: Project selected -> Show pending invites + toolbar + member list */
+                <>
+                  <PendingInvitesList
+                    projectId={selectedProjectId}
+                    refreshKey={inviteRefreshKey}
+                  />
+
+                  <PeopleToolbar
+                    search={search}
+                    onSearchChange={setSearch}
+                    viewMode={viewMode}
+                    onViewModeChange={setViewMode}
+                    statusFilter={statusFilter}
+                    onStatusFilterChange={setStatusFilter}
+                    sortBy={sortBy}
+                    onSortChange={setSortBy}
+                    accountType={accountType}
+                    onAccountTypeChange={setAccountType}
+                  />
+
+                  {loadingPeople ? (
+                    viewMode === "list" ? (
+                      <PeopleTableSkeleton count={skeletonCount} />
+                    ) : (
+                      <PeopleGridSkeleton count={skeletonCount} />
+                    )
+                  ) : viewMode === "list" ? (
+                    <PeopleTable members={membersToShow} onSelectMember={setSelectedMember} />
+                  ) : (
+                    <PeopleGrid
+                      members={membersToShow}
+                      selectedId={selectedMember?.id}
+                      onSelectMember={setSelectedMember}
+                    />
+                  )}
+                </>
               )}
-            </div>
-          )}
-
-          {activeTab === "all-teams" && (
-            <div className="pt-4">
-              <AllTeamsTab projects={projectOptions} onCreateTeam={handleOpenCreateTeam} />
-            </div>
-          )}
-
-          {activeTab === "analytics" && (
-            <div className="pt-4">
-              <AnalyticsTab members={people} teams={teams} />
             </div>
           )}
 
@@ -246,12 +336,8 @@ export function TeamPageClient({ projectOptions }: TeamPageClientProps) {
             allMembers={people}
             onSelectMember={setSelectedMember}
             projectId={selectedProjectId}
-            projectOwnerName={
-              projectOptions.find((p) => p.id === selectedProjectId)?.ownerName ?? ""
-            }
-            projectDescription={
-              projectOptions.find((p) => p.id === selectedProjectId)?.description ?? null
-            }
+            projectOwnerName={selectedProject?.ownerName ?? ""}
+            projectDescription={selectedProject?.description ?? null}
             onClose={() => setSelectedMember(null)}
           />
         </>
@@ -267,10 +353,8 @@ export function TeamPageClient({ projectOptions }: TeamPageClientProps) {
         isOpen={inviteModalOpen}
         onClose={() => setInviteModalOpen(false)}
         onInvite={handleInviteMember}
-        projectName={projectOptions.find((p) => p.id === selectedProjectId)?.name ?? ""}
-        projectDescription={
-          projectOptions.find((p) => p.id === selectedProjectId)?.description ?? null
-        }
+        projectName={selectedProject?.name ?? ""}
+        projectDescription={selectedProject?.description ?? null}
       />
     </>
   );
