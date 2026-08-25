@@ -20,9 +20,9 @@ import { useProjectTitle } from "@/context/project-title-context";
 import { useTaskFilters } from "@/hooks/use-task-filters";
 import { buildSectionsFromBoard } from "@/lib/board-to-sections";
 import { loadProjectMeta, saveProjectMeta } from "@/lib/project-meta";
+import { calculateCompletionPercentage, isTaskCompleted } from "@/lib/project-stats";
+import { ProjectNotFoundError } from "@/components/errors/project-not-found-error";
 import { useBoardStore } from "@/stores/board-store";
-import { FolderX } from "lucide-react";
-import Link from "next/link";
 import React, { use, useState, useEffect, useMemo, useCallback } from "react";
 
 function slugToTitle(slug: string): string {
@@ -296,42 +296,14 @@ export default function ProjectPage({ params }: { params: Promise<{ id: string }
     });
   };
 
+  // Note: this page is a "use client" component with useEffect-based data fetching.
+  // notFound() from next/navigation cannot be called in a useEffect (it only works
+  // during the render phase of server or client components). We therefore keep the
+  // resolveError state pattern and render the shared ProjectNotFoundError component.
   if (resolveError) {
     return (
-      <div className="flex h-full items-center justify-center bg-white dark:bg-[#0f1d31] px-6">
-        <div className="text-center max-w-md space-y-5">
-          {/* Icon */}
-          <div className="mx-auto w-20 h-20 rounded-2xl bg-gradient-to-br from-blue-100 to-indigo-100 dark:from-[#142035] dark:to-[#1a2a45] flex items-center justify-center shadow-inner">
-            <FolderX size={36} className="text-[#0033a0] dark:text-blue-400 opacity-80" />
-          </div>
-
-          {/* Heading */}
-          <div className="space-y-2">
-            <h2 className="text-xl font-bold text-slate-900 dark:text-slate-100">
-              Project Not Found or Inaccessible
-            </h2>
-            <p className="text-sm text-slate-500 dark:text-slate-400 leading-relaxed">
-              This project may have been deleted, renamed, or you may no longer have access. If
-              you believe this is a mistake, ask a project admin to re-invite you.
-            </p>
-          </div>
-
-          {/* Actions */}
-          <div className="flex items-center justify-center gap-3 pt-1">
-            <Link
-              href="/projects"
-              className="inline-flex items-center gap-2 px-5 py-2.5 text-sm font-bold text-white bg-[#0033a0] hover:bg-[#002a80] rounded-xl shadow-sm transition-colors"
-            >
-              ← Back to Projects
-            </Link>
-            <Link
-              href="/dashboard"
-              className="inline-flex items-center gap-2 px-4 py-2.5 text-sm font-semibold text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800/60 rounded-xl transition-colors"
-            >
-              Go to Dashboard
-            </Link>
-          </div>
-        </div>
+      <div className="flex h-full bg-white dark:bg-[#0f1d31]">
+        <ProjectNotFoundError />
       </div>
     );
   }
@@ -396,6 +368,11 @@ export default function ProjectPage({ params }: { params: Promise<{ id: string }
               ownerName={ownerName}
               status={status as string}
               taskCount={tasks.length}
+              completedTaskCount={tasks.filter((t) => isTaskCompleted(t.status)).length}
+              completionPercentage={calculateCompletionPercentage(
+                tasks.filter((t) => isTaskCompleted(t.status)).length,
+                tasks.length,
+              )}
               categories={categories}
               techStack={techStack}
               members={members}

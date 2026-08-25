@@ -6,6 +6,7 @@ import {
   getPendingInvitesAction,
   resendInviteAction,
 } from "@/actions/invite-actions";
+import { formatRole } from "@/lib/team-data";
 import { sileo } from "@/utils/alerts";
 import { Clock, Mail, RotateCcw, X } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
@@ -98,7 +99,7 @@ export function PendingInvitesList({ projectId, refreshKey }: PendingInvitesList
                   {invite.email}
                 </span>
                 <span className="shrink-0 rounded-full bg-slate-200 px-2 py-0.5 text-[10px] font-bold text-slate-600 dark:bg-slate-700 dark:text-slate-300">
-                  {invite.role}
+                  {formatRole(invite.role)}
                 </span>
               </div>
 

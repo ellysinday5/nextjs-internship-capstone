@@ -26,12 +26,16 @@ import { PeopleToolbar } from "@/components/team/people-toolbar";
 import { getCachedCount, setCachedCount } from "@/lib/skeleton-cache";
 import type { TeamMember } from "@/lib/team-data";
 import { sileo } from "@/utils/alerts";
+import { useUser } from "@clerk/nextjs";
 
 interface ScopedTeamPageClientProps {
   project: ProjectWithStats;
 }
 
 export function ScopedTeamPageClient({ project }: ScopedTeamPageClientProps) {
+  const { user } = useUser();
+  const userId = user?.id;
+
   const [members, setMembers] = useState<TeamMember[]>([]);
   const [loadingMembers, setLoadingMembers] = useState(true);
   // Hydration-safe initial state: server and client hydration render identical fallback count
@@ -43,11 +47,17 @@ export function ScopedTeamPageClient({ project }: ScopedTeamPageClientProps) {
 
   useEffect(() => {
     // Read from client-side localStorage cache safely after mount
-    setSkeletonCount(getCachedCount(`team_members_${project.id}`, project.memberCount || 3));
+    setSkeletonCount(
+      getCachedCount(
+        "team_members",
+        `${userId || "anon"}:${project.id}`,
+        project.memberCount || 3,
+      ),
+    );
     getProjectPermissionsAction(project.id).then((perm) => {
       setCanInvite(perm.canManageMembers);
     });
-  }, [project.id, project.memberCount]);
+  }, [project.id, project.memberCount, userId]);
 
   const [search, setSearch] = useState("");
   const [viewMode, setViewMode] = useState<"grid" | "list">("list");
@@ -60,11 +70,15 @@ export function ScopedTeamPageClient({ project }: ScopedTeamPageClientProps) {
     const data = await getProjectMembersAction(project.id);
     setMembers(data);
     if (data.length > 0) {
-      setCachedCount(`team_members_${project.id}`, data.length);
+      setCachedCount(
+        "team_members",
+        `${userId || "anon"}:${project.id}`,
+        data.length,
+      );
       setSkeletonCount(data.length);
     }
     setLoadingMembers(false);
-  }, [project.id]);
+  }, [project.id, userId]);
 
   useEffect(() => {
     loadMembers();

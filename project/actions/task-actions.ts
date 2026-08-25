@@ -20,6 +20,7 @@ import {
   moveTaskSchema,
   updateTaskSchema,
 } from "@/lib/db/task-schemas";
+import { isTaskCompleted } from "@/lib/project-stats";
 import { and, asc, eq, inArray, sql } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 
@@ -43,6 +44,8 @@ export interface TaskRecord {
   commentsCount: number;
   createdAt: Date | null;
   updatedAt: Date | null;
+  /** Set when status transitions TO "Complete"; cleared when reopened. */
+  completedAt: Date | null;
 }
 
 async function getProjectIdForList(listId: string): Promise<string | null> {
@@ -102,6 +105,7 @@ export async function getProjectTasksAction(projectId: string): Promise<TaskReco
         position: tasks.position,
         createdAt: tasks.createdAt,
         updatedAt: tasks.updatedAt,
+        completedAt: tasks.completedAt,
         assigneeName: users.name,
         assigneeEmail: users.email,
         commentsCount: sql<number>`(
@@ -131,6 +135,7 @@ export async function getProjectTasksAction(projectId: string): Promise<TaskReco
       commentsCount: r.commentsCount,
       createdAt: r.createdAt,
       updatedAt: r.updatedAt,
+      completedAt: r.completedAt,
     }));
   } catch (error) {
     console.error("[getProjectTasksAction] Error fetching tasks:", error);
@@ -235,7 +240,7 @@ export async function updateTaskAction(data: UpdateTaskFormValues) {
     const { id, dueDate, ...rest } = validated.data;
 
     const [existing] = await db
-      .select({ listId: tasks.listId })
+      .select({ listId: tasks.listId, status: tasks.status })
       .from(tasks)
       .where(eq(tasks.id, id));
     if (!existing) return { success: false, error: "Task not found." };
@@ -246,12 +251,28 @@ export async function updateTaskAction(data: UpdateTaskFormValues) {
     const hasAccess = await assertProjectAccess(projectId, user.id);
     if (!hasAccess) return { success: false, error: "Access denied." };
 
+    // Compute completedAt based on status transition:
+    // - Transitioning TO "Complete" from any other status → stamp now
+    // - Transitioning AWAY from "Complete" to any other status → clear it
+    // - Status not changing (or not included in this update) → leave as-is (undefined = no change)
+    let completedAtUpdate: Date | null | undefined = undefined;
+    if (rest.status !== undefined) {
+      const becomingComplete = isTaskCompleted(rest.status);
+      const wasComplete = isTaskCompleted(existing.status);
+      if (becomingComplete && !wasComplete) {
+        completedAtUpdate = new Date();
+      } else if (!becomingComplete && wasComplete) {
+        completedAtUpdate = null;
+      }
+    }
+
     const [updatedTask] = await db
       .update(tasks)
       .set({
         ...rest,
         dueDate: dueDate === undefined ? undefined : dueDate ? new Date(dueDate) : null,
         updatedAt: new Date(),
+        ...(completedAtUpdate !== undefined ? { completedAt: completedAtUpdate } : {}),
       })
       .where(eq(tasks.id, id))
       .returning();

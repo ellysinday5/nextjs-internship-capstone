@@ -3,7 +3,7 @@
 import { getMemberCommentsAction, getMemberTasksAction } from "@/actions/member-actions";
 import { UserAvatar } from "@/components/ui/user-avatar";
 import { useUserProfile } from "@/context/user-profile-context";
-import type { TeamMember } from "@/lib/team-data";
+import { type TeamMember, formatRole } from "@/lib/team-data";
 import { Check, ChevronDown, Clock, Filter, MessageSquare, Plus, Search, X } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 
@@ -63,10 +63,9 @@ export function MemberProfilePanel({
   // Check if the currently viewed member is the logged-in user
   const isCurrentUser = !!member && member.email === profile.email;
 
-  // Use profile data for the logged-in user
   const displayName = isCurrentUser ? profile.fullName : (member?.name ?? "");
   const displayEmail = isCurrentUser ? profile.email : (member?.email ?? "");
-  const displayRole = isCurrentUser ? profile.role : (member?.role ?? "");
+  const displayRole = formatRole(isCurrentUser ? profile.role : (member?.role ?? ""));
   const displayAvatar = isCurrentUser ? profile.avatarUrl : member?.avatarUrl;
 
   // Reset tabs & data when member changes
@@ -248,7 +247,7 @@ export function MemberProfilePanel({
                         <p className="text-xs font-semibold text-slate-700 dark:text-slate-200 truncate">
                           {m.name}
                         </p>
-                        <p className="text-[10px] text-slate-400 truncate">{m.role}</p>
+                        <p className="text-[10px] text-slate-400 truncate">{formatRole(m.role)}</p>
                       </div>
                       {m.id === member.id && <Check size={12} className="text-blue-500 shrink-0" />}
                     </button>

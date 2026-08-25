@@ -6,12 +6,15 @@ import { db } from "@/lib/db";
 import { canManageProjectMembers, syncUser } from "@/lib/db/auth";
 import {
   invites,
+  lists,
   projectMembers,
   projects,
   users,
   workspaceMembers,
   workspaces,
 } from "@/lib/db/schema";
+import { toSlug } from "@/lib/project-data";
+import { getActiveWorkspaceId } from "@/lib/workspace-helpers";
 import { clerkClient } from "@clerk/nextjs/server";
 import { and, eq, sql } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
@@ -254,3 +257,104 @@ export async function inviteTeamMember(projectId: string, email: string, role = 
     return { success: false, error: "Failed to send invite. Please try again." };
   }
 }
+
+export interface QueuedTeamInvite {
+  email: string;
+  role: string;
+}
+
+export interface CreateTeamWithMembersInput {
+  name: string;
+  description?: string;
+  invites?: QueuedTeamInvite[];
+}
+
+/**
+ * Creates a new team (project) in the active workspace and invites members
+ * in the same submission using the established dual-branch invite strategy.
+ */
+export async function createTeamWithMembersAction(input: CreateTeamWithMembersInput) {
+  try {
+    const currentUser = await syncUser();
+    if (!currentUser) return { success: false, error: "Unauthorized. Please sign in." };
+
+    const activeWorkspaceId = await getActiveWorkspaceId(currentUser.id);
+    if (!activeWorkspaceId) {
+      return {
+        success: false,
+        error: "No active workspace found. Please select or create a workspace first.",
+      };
+    }
+
+    const trimmedName = input.name.trim();
+    if (!trimmedName) {
+      return { success: false, error: "Team name is required." };
+    }
+
+    // 1. Create team project record in the active workspace
+    const [project] = await db
+      .insert(projects)
+      .values({
+        name: trimmedName,
+        description: input.description?.trim() || null,
+        ownerId: currentUser.id,
+        workspaceId: activeWorkspaceId,
+        status: "Not Started",
+        priority: "Medium",
+        categories: [],
+        techStack: [],
+      })
+      .returning();
+
+    // 2. Add creator to projectMembers as Owner
+    await db.insert(projectMembers).values({
+      projectId: project.id,
+      userId: currentUser.id,
+      name: currentUser.name || "Owner",
+      role: "Owner",
+    });
+
+    // 3. Seed default Kanban lists
+    await db.insert(lists).values([
+      { name: "To Do", projectId: project.id, position: 0 },
+      { name: "In Progress", projectId: project.id, position: 1 },
+      { name: "Review", projectId: project.id, position: 2 },
+      { name: "Done", projectId: project.id, position: 3 },
+    ]);
+
+    // 4. Invite each queued member using the dual-branch invite logic
+    const inviteResults = [];
+    if (input.invites && input.invites.length > 0) {
+      for (const inv of input.invites) {
+        if (inv.email && inv.email.trim()) {
+          const res = await inviteTeamMember(
+            project.id,
+            inv.email.trim(),
+            (inv.role || "member").toLowerCase(),
+          );
+          inviteResults.push({ email: inv.email, ...res });
+        }
+      }
+    }
+
+    revalidatePath("/team");
+    revalidatePath("/projects");
+    revalidatePath("/dashboard");
+    revalidatePath("/workspaces");
+
+    return {
+      success: true,
+      project: {
+        id: project.id,
+        name: project.name,
+        slug: toSlug(project.name),
+        description: project.description,
+      },
+      inviteCount: inviteResults.length,
+    };
+  } catch (error) {
+    console.error("[createTeamWithMembersAction] Error:", error);
+    return { success: false, error: "Failed to create team. Please try again." };
+  }
+}
+

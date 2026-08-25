@@ -167,6 +167,7 @@ export const tasks = pgTable("tasks", {
   position: integer("position").notNull(),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
+  completedAt: timestamp("completed_at"),
 });
 
 // ============================================

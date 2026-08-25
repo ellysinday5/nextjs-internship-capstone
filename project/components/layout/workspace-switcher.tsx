@@ -265,6 +265,16 @@ export function WorkspaceSwitcher({ isCollapsed = false }: WorkspaceSwitcherProp
 
         {/* Footer Actions */}
         <div className="border-t border-white/10 pt-2 space-y-1">
+          {activeWs && (
+            <Link
+              href={`/workspaces/${activeWs.id}`}
+              onClick={() => setIsOpen(false)}
+              className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-xs font-semibold text-slate-300 hover:bg-white/10 hover:text-white transition-colors"
+            >
+              <Building2 size={14} className="text-blue-400" />
+              <span>View Active Workspace</span>
+            </Link>
+          )}
           <Link
             href="/workspaces"
             onClick={() => setIsOpen(false)}

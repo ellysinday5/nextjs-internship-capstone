@@ -6,6 +6,7 @@ import {
   declineProjectInviteAction,
   getMyPendingInvitesAction,
 } from "@/actions/member-actions";
+import { formatRole } from "@/lib/team-data";
 import { sileo } from "@/utils/alerts";
 import {
   Building2,
@@ -151,7 +152,7 @@ export function MyInvitesTab({ onInviteHandled }: MyInvitesTabProps) {
 
                   <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-blue-50 dark:bg-blue-950/50 text-[#0033a0] dark:text-blue-300 border border-blue-200/60 dark:border-blue-800/60 flex-shrink-0">
                     <Shield className="w-3 h-3" />
-                    {invite.role}
+                    {formatRole(invite.role)}
                   </span>
                 </div>
 

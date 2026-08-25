@@ -21,6 +21,7 @@ export function deriveStatusForList(
   if (/off.?track|delay/.test(name)) return "Off track";
   if (/hold|backlog|paused/.test(name)) return "On hold";
   if (/drop|cancel|archiv/.test(name)) return "Dropped";
-
   return "On track";
 }
+
+export { calculateCompletionPercentage, isTaskCompleted } from "@/lib/project-stats";

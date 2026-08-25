@@ -1,0 +1,79 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 750" width="1200" height="750">
+  <defs>
+    <linearGradient id="calBg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#070f1c" />
+      <stop offset="100%" stop-color="#0e1e35" />
+    </linearGradient>
+  </defs>
+  <rect width="100%" height="100%" fill="url(#calBg)" />
+
+  <!-- Top App Navigation Bar -->
+  <rect x="0" y="0" width="1200" height="60" fill="#0d1b2e" />
+  <line x1="0" y1="60" x2="1200" y2="60" stroke="#1c3352" stroke-width="1" />
+  <circle cx="36" cy="30" r="14" fill="#0052cc" />
+  <text x="36" y="35" fill="#ffffff" font-family="sans-serif" font-size="12" font-weight="900" text-anchor="middle">SF</text>
+  <text x="64" y="35" fill="#ffffff" font-family="sans-serif" font-size="16" font-weight="bold">SyntraFlow</text>
+
+  <!-- Nav Links -->
+  <text x="258" y="35" fill="#94a3b8" font-family="sans-serif" font-size="13" font-weight="600" text-anchor="middle">Projects</text>
+  <text x="340" y="35" fill="#94a3b8" font-family="sans-serif" font-size="13" font-weight="600">Team</text>
+  <rect x="385" y="16" width="75" height="28" rx="6" fill="#142843" />
+  <text x="422" y="35" fill="#38bdf8" font-family="sans-serif" font-size="13" font-weight="bold" text-anchor="middle">Calendar</text>
+  <text x="500" y="35" fill="#94a3b8" font-family="sans-serif" font-size="13" font-weight="600">Analytics</text>
+
+  <!-- Page Header -->
+  <text x="50" y="110" fill="#ffffff" font-family="sans-serif" font-size="24" font-weight="900">August 2026</text>
+  <text x="50" y="132" fill="#64748b" font-family="sans-serif" font-size="13" font-weight="500">Upcoming deadlines, milestone sprints, and scheduled deliverables</text>
+
+  <!-- View Mode Pills -->
+  <rect x="980" y="92" width="170" height="38" rx="8" fill="#142843" stroke="#1c3352" />
+  <rect x="984" y="96" width="50" height="30" rx="6" fill="#0052cc" />
+  <text x="1009" y="115" fill="#ffffff" font-family="sans-serif" font-size="12" font-weight="bold" text-anchor="middle">Month</text>
+  <text x="1062" y="115" fill="#64748b" font-family="sans-serif" font-size="12" text-anchor="middle">Week</text>
+  <text x="1118" y="115" fill="#64748b" font-family="sans-serif" font-size="12" text-anchor="middle">Day</text>
+
+  <!-- Calendar Grid Container -->
+  <rect x="50" y="160" width="1100" height="520" rx="16" fill="#142843" stroke="#1e3a5f" stroke-width="1.5" />
+
+  <!-- Days Header -->
+  <rect x="50" y="160" width="1100" height="40" rx="16" fill="#0f2038" />
+  <text x="128" y="185" fill="#64748b" font-family="sans-serif" font-size="12" font-weight="bold" text-anchor="middle">MON</text>
+  <text x="285" y="185" fill="#64748b" font-family="sans-serif" font-size="12" font-weight="bold" text-anchor="middle">TUE</text>
+  <text x="442" y="185" fill="#64748b" font-family="sans-serif" font-size="12" font-weight="bold" text-anchor="middle">WED</text>
+  <text x="599" y="185" fill="#64748b" font-family="sans-serif" font-size="12" font-weight="bold" text-anchor="middle">THU</text>
+  <text x="756" y="185" fill="#64748b" font-family="sans-serif" font-size="12" font-weight="bold" text-anchor="middle">FRI</text>
+  <text x="913" y="185" fill="#64748b" font-family="sans-serif" font-size="12" font-weight="bold" text-anchor="middle">SAT</text>
+  <text x="1070" y="185" fill="#64748b" font-family="sans-serif" font-size="12" font-weight="bold" text-anchor="middle">SUN</text>
+
+  <!-- Grid Rows -->
+  <line x1="50" y1="280" x2="1150" y2="280" stroke="#1e3a5f" />
+  <line x1="50" y1="400" x2="1150" y2="400" stroke="#1e3a5f" />
+  <line x1="50" y1="520" x2="1150" y2="520" stroke="#1e3a5f" />
+
+  <!-- Grid Columns -->
+  <line x1="207" y1="200" x2="207" y2="680" stroke="#1e3a5f" />
+  <line x1="364" y1="200" x2="364" y2="680" stroke="#1e3a5f" />
+  <line x1="521" y1="200" x2="521" y2="680" stroke="#1e3a5f" />
+  <line x1="678" y1="200" x2="678" y2="680" stroke="#1e3a5f" />
+  <line x1="835" y1="200" x2="835" y2="680" stroke="#1e3a5f" />
+  <line x1="992" y1="200" x2="992" y2="680" stroke="#1e3a5f" />
+
+  <!-- Sample Event Badges -->
+  <!-- Event 1 -->
+  <rect x="60" y="240" width="135" height="24" rx="5" fill="#0052cc" />
+  <text x="70" y="256" fill="#ffffff" font-family="sans-serif" font-size="10" font-weight="bold">Sprint Planning #4</text>
+
+  <!-- Event 2 -->
+  <rect x="375" y="235" width="135" height="24" rx="5" fill="#059669" />
+  <text x="385" y="251" fill="#ffffff" font-family="sans-serif" font-size="10" font-weight="bold">Design Review · 10 AM</text>
+
+  <!-- Event 3 -->
+  <rect x="690" y="235" width="135" height="24" rx="5" fill="#7c3aed" />
+  <text x="700" y="251" fill="#ffffff" font-family="sans-serif" font-size="10" font-weight="bold">Release v2.4.0</text>
+
+  <!-- Event 4 (Today: 12th) -->
+  <rect x="217" y="325" width="135" height="24" rx="5" fill="#0284c7" />
+  <text x="227" y="341" fill="#ffffff" font-family="sans-serif" font-size="10" font-weight="bold">Milestone Demo</text>
+  <rect x="217" y="355" width="135" height="24" rx="5" fill="#d97706" />
+  <text x="227" y="371" fill="#ffffff" font-family="sans-serif" font-size="10" font-weight="bold">Database Backup</text>
+</svg>

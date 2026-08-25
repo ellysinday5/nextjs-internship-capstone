@@ -95,6 +95,7 @@ export const useBoardStore = create<BoardState>()(
         commentsCount: 0,
         createdAt: new Date(),
         updatedAt: new Date(),
+        completedAt: null,
       };
 
       set((state) => ({ tasks: [...state.tasks, optimisticTask], isSaving: true }));
