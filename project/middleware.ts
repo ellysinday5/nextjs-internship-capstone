@@ -1,5 +1,3 @@
-// Clerk v7 uses Node.js-only modules (crypto, etc.) that are not available
-// in the Edge runtime. Force Node.js runtime so the middleware can run correctly.
 export const runtime = "nodejs";
 
 import { clerkMiddleware, createRouteMatcher } from "@clerk/nextjs/server";

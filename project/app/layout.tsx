@@ -1,8 +1,6 @@
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import type React from "react";
-import "./globals.css";
-
 import { AuthToast } from "@/components/auth/auth-toast";
 import { OfflineBanner } from "@/components/errors/offline-banner";
 import { SileoToaster } from "@/components/ui/sileo-toaster";
