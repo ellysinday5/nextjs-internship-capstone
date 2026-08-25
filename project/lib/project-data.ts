@@ -15,8 +15,10 @@ export interface ProjectItem {
   updatedAt: string;
   color: string;
   isDb?: boolean;
+  isPublic?: boolean;
   dbProject?: ProjectWithStats;
 }
+
 
 /* Convert a project name to a URL-friendly slug */
 export function toSlug(name: string): string {

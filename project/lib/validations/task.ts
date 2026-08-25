@@ -96,6 +96,7 @@ export const moveTaskSchema = z.object({
     .number({ message: "Position must be a number" })
     .int("Position must be an integer")
     .min(0, "Position must be 0 or greater"),
+  status: z.enum(VALID_STATUSES).optional(),
 });
 
 export type MoveTaskFormValues = z.infer<typeof moveTaskSchema>;

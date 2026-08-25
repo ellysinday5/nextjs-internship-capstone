@@ -2,6 +2,7 @@
 
 import { type ProjectWithStats, getProjectsAction } from "@/actions/project-actions";
 import type { ProjectItem } from "@/lib/project-data";
+import { loadProjectMeta } from "@/lib/project-meta";
 import { calculateCompletionPercentage } from "@/lib/project-stats";
 import { getCachedCount, setCachedCount } from "@/lib/skeleton-cache";
 import { useUser } from "@clerk/nextjs";
@@ -67,6 +68,7 @@ export function useProjectFilters() {
         updatedAt: p.updatedAt ? new Date(p.updatedAt).toLocaleDateString() : "Just now",
         color: "bg-[#00b4d8]",
         isDb: true,
+        isPublic: loadProjectMeta(p.id)?.isPublic ?? false,
         dbProject: p,
       };
     });

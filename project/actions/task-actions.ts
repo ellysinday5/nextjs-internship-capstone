@@ -369,7 +369,7 @@ export async function moveTaskAction(data: MoveTaskFormValues) {
     const validated = moveTaskSchema.safeParse(data);
     if (!validated.success) return { success: false, error: "Invalid move data" };
 
-    const { taskId, toListId, toPosition } = validated.data;
+    const { taskId, toListId, toPosition, status: nextStatus } = validated.data;
 
     const [task] = await db.select().from(tasks).where(eq(tasks.id, taskId));
     if (!task) return { success: false, error: "Task not found." };
@@ -380,27 +380,82 @@ export async function moveTaskAction(data: MoveTaskFormValues) {
     const hasAccess = await assertProjectAccess(destProjectId, user.id);
     if (!hasAccess) return { success: false, error: "Access denied." };
 
-    await db.transaction(async (tx) => {
-      const fromListId = task.listId;
+    const fromListId = task.listId;
+    const oldPos = task.position;
+    const newPos = toPosition;
 
-      // close the gap left behind in the source list
-      await tx
+    // Calculate completedAt if nextStatus is specified
+    let completedAtUpdate: Date | null | undefined = undefined;
+    if (nextStatus !== undefined) {
+      const becomingComplete = isTaskCompleted(nextStatus);
+      const wasComplete = isTaskCompleted(task.status);
+      if (becomingComplete && !wasComplete) {
+        completedAtUpdate = new Date();
+      } else if (!becomingComplete && wasComplete) {
+        completedAtUpdate = null;
+      }
+    }
+
+    if (fromListId === toListId) {
+      if (oldPos < newPos) {
+        // Shift tasks between (oldPos, newPos] DOWN by 1
+        await db
+          .update(tasks)
+          .set({ position: sql`${tasks.position} - 1` })
+          .where(
+            and(
+              eq(tasks.listId, fromListId),
+              sql`${tasks.position} > ${oldPos} AND ${tasks.position} <= ${newPos}`,
+            ),
+          );
+      } else if (oldPos > newPos) {
+        // Shift tasks between [newPos, oldPos) UP by 1
+        await db
+          .update(tasks)
+          .set({ position: sql`${tasks.position} + 1` })
+          .where(
+            and(
+              eq(tasks.listId, fromListId),
+              sql`${tasks.position} >= ${newPos} AND ${tasks.position} < ${oldPos}`,
+            ),
+          );
+      }
+
+      await db
+        .update(tasks)
+        .set({
+          position: newPos,
+          updatedAt: new Date(),
+          ...(nextStatus !== undefined ? { status: nextStatus } : {}),
+          ...(completedAtUpdate !== undefined ? { completedAt: completedAtUpdate } : {}),
+        })
+        .where(eq(tasks.id, taskId));
+    } else {
+      // Moving across lists:
+      // 1. Close the gap left behind in the source list
+      await db
         .update(tasks)
         .set({ position: sql`${tasks.position} - 1` })
-        .where(and(eq(tasks.listId, fromListId), sql`${tasks.position} > ${task.position}`));
+        .where(and(eq(tasks.listId, fromListId), sql`${tasks.position} > ${oldPos}`));
 
-      // make room at the target slot in the destination list
-      await tx
+      // 2. Make room at the target slot in the destination list
+      await db
         .update(tasks)
         .set({ position: sql`${tasks.position} + 1` })
-        .where(and(eq(tasks.listId, toListId), sql`${tasks.position} >= ${toPosition}`));
+        .where(and(eq(tasks.listId, toListId), sql`${tasks.position} >= ${newPos}`));
 
-      // place the task itself
-      await tx
+      // 3. Place the task in the destination list
+      await db
         .update(tasks)
-        .set({ listId: toListId, position: toPosition, updatedAt: new Date() })
+        .set({
+          listId: toListId,
+          position: newPos,
+          updatedAt: new Date(),
+          ...(nextStatus !== undefined ? { status: nextStatus } : {}),
+          ...(completedAtUpdate !== undefined ? { completedAt: completedAtUpdate } : {}),
+        })
         .where(eq(tasks.id, taskId));
-    });
+    }
 
     revalidatePath(`/projects/${destProjectId}`);
     return { success: true };

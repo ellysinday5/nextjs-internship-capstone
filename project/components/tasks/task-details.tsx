@@ -5,7 +5,6 @@ import { type SharedTeamRecord } from "@/actions/task-actions";
 import { ConfirmationModal } from "@/components/modals/ConfirmationModal";
 import { FilePreviewModal, type PreviewableFile } from "@/components/modals/file-preview-modal";
 import { CommentThread } from "@/components/tasks/comments/comment-thread";
-import { TaskPrivacyBar } from "@/components/tasks/task-privacy-bar";
 import { UserAvatar } from "@/components/ui/user-avatar";
 import { useUser } from "@clerk/nextjs";
 import {
@@ -340,16 +339,6 @@ export function TaskDetailsPane({
           </div>
         </div>
 
-        {/* ── Privacy bar ── */}
-        <TaskPrivacyBar
-          taskId={task.id}
-          initialIsPublic={task.isPublic ?? false}
-          initialSharedTeams={task.sharedTeams ?? []}
-          onPrivacyChange={(newIsPublic, newSharedTeams) => {
-            onUpdateTask({ ...task, isPublic: newIsPublic, sharedTeams: newSharedTeams });
-          }}
-        />
-
         {/* ── Scrollable content ── */}
         <div className="flex-1 overflow-y-auto p-6 space-y-5">
           {/* Title */}
@@ -380,10 +369,10 @@ export function TaskDetailsPane({
                         setAssignee(undefined);
                         return;
                       }
-                      const found = members.find((m) => m.id === val);
+                      const found = members.find((m) => (m.userId ?? m.id) === val);
                       if (found) {
                         setAssignee({
-                          id: found.id,
+                          id: found.userId ?? found.id,
                           name: found.name,
                           initials: getInitials(found.name),
                         });
@@ -394,7 +383,7 @@ export function TaskDetailsPane({
                   >
                     <option value="unassigned">Unassigned</option>
                     {members.map((m) => (
-                      <option key={m.id} value={m.id}>
+                      <option key={m.userId ?? m.id} value={m.userId ?? m.id}>
                         {m.name}
                       </option>
                     ))}

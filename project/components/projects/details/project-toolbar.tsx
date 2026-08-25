@@ -331,7 +331,7 @@ export function ProjectToolbar({
         {/* Right side options */}
         <div className="flex items-center gap-2 flex-wrap ml-auto">
           {/* Search box */}
-          <div className="relative w-52">
+          <div className="relative flex-1 min-w-[160px] sm:min-w-[200px] max-w-xs">
             <input
               type="text"
               value={searchQuery}
@@ -386,7 +386,7 @@ export function ProjectToolbar({
             {/* Compact Right-Anchored Filter Popover */}
             {showFilterPanel && (
               <div
-                className="absolute right-0 top-full mt-2 w-[360px] sm:w-[440px] bg-white dark:bg-[#101f35] border border-slate-200 dark:border-slate-700 rounded-2xl shadow-2xl z-50 p-3.5 space-y-3 animate-in fade-in zoom-in-95 duration-100"
+                className="absolute right-0 top-full mt-2 w-[380px] sm:w-[500px] md:w-[560px] bg-white dark:bg-[#101f35] border border-slate-200 dark:border-slate-700 rounded-2xl shadow-2xl z-50 p-4 space-y-3 animate-in fade-in zoom-in-95 duration-100 overflow-visible"
                 onMouseDown={(e) => e.stopPropagation()}
               >
                 {/* Popover Header */}
@@ -436,7 +436,7 @@ export function ProjectToolbar({
                     </button>
                   </div>
                 ) : (
-                  <div className="max-h-[280px] overflow-y-auto pr-1 space-y-2">
+                  <div className="space-y-2.5 overflow-visible">
                     {filtersList.map((rule, idx) => {
                       const isFieldDropdownOpen = activeDropdownRuleId === rule.id;
                       const isOperatorDropdownOpen = activeOperatorRuleId === rule.id;
@@ -452,10 +452,10 @@ export function ProjectToolbar({
                       return (
                         <div
                           key={rule.id}
-                          className="flex items-center gap-1.5 p-1.5 rounded-xl bg-slate-50/70 dark:bg-slate-900/40 border border-slate-100 dark:border-slate-800"
+                          className="flex items-center gap-2 p-2 rounded-xl bg-slate-50/70 dark:bg-slate-900/40 border border-slate-100 dark:border-slate-800"
                         >
                           {/* Prefix: Where / AND */}
-                          <span className="text-[10px] font-bold text-slate-400 uppercase w-10 shrink-0 text-center bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 py-1 rounded-md">
+                          <span className="text-[10px] font-bold text-slate-400 uppercase w-12 shrink-0 text-center bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 py-1 rounded-md">
                             {idx === 0 ? "Where" : "AND"}
                           </span>
 
@@ -468,14 +468,14 @@ export function ProjectToolbar({
                                 setActiveOperatorRuleId(null);
                                 setActiveValueRuleId(null);
                               }}
-                              className="px-2 py-1 border border-slate-200 dark:border-slate-700 rounded-lg text-xs font-semibold bg-white dark:bg-[#1c304a] text-[#142843] dark:text-white inline-flex items-center gap-1 cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800"
+                              className="px-2.5 py-1 border border-slate-200 dark:border-slate-700 rounded-lg text-xs font-semibold bg-white dark:bg-[#1c304a] text-[#142843] dark:text-white inline-flex items-center gap-1.5 cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800"
                             >
                               <span>{rule.field}</span>
-                              <ChevronDown size={10} className="opacity-70" />
+                              <ChevronDown size={11} className="opacity-70" />
                             </button>
 
                             {isFieldDropdownOpen && (
-                              <div className="absolute left-0 top-full mt-1 w-36 bg-white dark:bg-[#1c304a] border border-slate-200 dark:border-slate-700 rounded-xl shadow-xl z-50 py-1 text-xs">
+                              <div className="absolute left-0 top-full mt-1 w-36 bg-white dark:bg-[#1c304a] border border-slate-200 dark:border-slate-700 rounded-xl shadow-2xl z-50 py-1 text-xs max-h-52 overflow-y-auto">
                                 {FILTER_FIELDS.map((f) => (
                                   <button
                                     key={f.value}
@@ -507,14 +507,14 @@ export function ProjectToolbar({
                                 setActiveDropdownRuleId(null);
                                 setActiveValueRuleId(null);
                               }}
-                              className="px-2 py-1 border border-slate-200 dark:border-slate-700 rounded-lg text-xs font-semibold bg-white dark:bg-[#1c304a] text-[#142843] dark:text-white inline-flex items-center gap-1 cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800"
+                              className="px-2.5 py-1 border border-slate-200 dark:border-slate-700 rounded-lg text-xs font-semibold bg-white dark:bg-[#1c304a] text-[#142843] dark:text-white inline-flex items-center gap-1.5 cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800"
                             >
                               <span>{rule.operator}</span>
-                              <ChevronDown size={10} className="opacity-70" />
+                              <ChevronDown size={11} className="opacity-70" />
                             </button>
 
                             {isOperatorDropdownOpen && (
-                              <div className="absolute left-0 top-full mt-1 w-36 bg-white dark:bg-[#1c304a] border border-slate-200 dark:border-slate-700 rounded-xl shadow-xl z-50 py-1 text-xs">
+                              <div className="absolute left-0 top-full mt-1 w-40 bg-white dark:bg-[#1c304a] border border-slate-200 dark:border-slate-700 rounded-xl shadow-2xl z-50 py-1 text-xs max-h-52 overflow-y-auto">
                                 {availableOperators.map((op) => (
                                   <button
                                     key={op}
@@ -538,7 +538,7 @@ export function ProjectToolbar({
                           </div>
 
                           {/* Value Selector */}
-                          <div className="relative flex-1 min-w-[100px]">
+                          <div className="relative flex-1 min-w-[120px]">
                             {isSelectOperator ? (
                               <div className="px-2.5 py-1 text-xs text-slate-400 bg-slate-100 dark:bg-slate-800/50 rounded-lg border border-slate-200 dark:border-slate-700 italic">
                                 Any value
@@ -552,13 +552,13 @@ export function ProjectToolbar({
                                     setActiveDropdownRuleId(null);
                                     setActiveOperatorRuleId(null);
                                   }}
-                                  className="w-full px-2 py-1 border border-slate-200 dark:border-slate-700 rounded-lg text-xs font-semibold bg-white dark:bg-[#1c304a] text-[#142843] dark:text-white inline-flex items-center justify-between cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800"
+                                  className="w-full px-2.5 py-1 border border-slate-200 dark:border-slate-700 rounded-lg text-xs font-semibold bg-white dark:bg-[#1c304a] text-[#142843] dark:text-white inline-flex items-center justify-between cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800"
                                 >
                                   <span className="truncate">{rule.value || "Select status"}</span>
-                                  <ChevronDown size={10} className="opacity-70 shrink-0 ml-1" />
+                                  <ChevronDown size={11} className="opacity-70 shrink-0 ml-1" />
                                 </button>
                                 {isValueDropdownOpen && (
-                                  <div className="absolute right-0 top-full mt-1 w-40 bg-white dark:bg-[#1c304a] border border-slate-200 dark:border-slate-700 rounded-xl shadow-xl z-50 py-1 text-xs">
+                                  <div className="absolute right-0 top-full mt-1 w-44 bg-white dark:bg-[#1c304a] border border-slate-200 dark:border-slate-700 rounded-xl shadow-2xl z-50 py-1 text-xs max-h-52 overflow-y-auto">
                                     {STATUS_VALUES.map((st) => (
                                       <button
                                         key={st}
@@ -589,13 +589,13 @@ export function ProjectToolbar({
                                     setActiveDropdownRuleId(null);
                                     setActiveOperatorRuleId(null);
                                   }}
-                                  className="w-full px-2 py-1 border border-slate-200 dark:border-slate-700 rounded-lg text-xs font-semibold bg-white dark:bg-[#1c304a] text-[#142843] dark:text-white inline-flex items-center justify-between cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800"
+                                  className="w-full px-2.5 py-1 border border-slate-200 dark:border-slate-700 rounded-lg text-xs font-semibold bg-white dark:bg-[#1c304a] text-[#142843] dark:text-white inline-flex items-center justify-between cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800"
                                 >
                                   <span className="truncate">{rule.value || "Select priority"}</span>
-                                  <ChevronDown size={10} className="opacity-70 shrink-0 ml-1" />
+                                  <ChevronDown size={11} className="opacity-70 shrink-0 ml-1" />
                                 </button>
                                 {isValueDropdownOpen && (
-                                  <div className="absolute right-0 top-full mt-1 w-36 bg-white dark:bg-[#1c304a] border border-slate-200 dark:border-slate-700 rounded-xl shadow-xl z-50 py-1 text-xs">
+                                  <div className="absolute right-0 top-full mt-1 w-40 bg-white dark:bg-[#1c304a] border border-slate-200 dark:border-slate-700 rounded-xl shadow-2xl z-50 py-1 text-xs max-h-52 overflow-y-auto">
                                     {PRIORITY_VALUES.map((pr) => (
                                       <button
                                         key={pr}
@@ -626,13 +626,13 @@ export function ProjectToolbar({
                                     setActiveDropdownRuleId(null);
                                     setActiveOperatorRuleId(null);
                                   }}
-                                  className="w-full px-2 py-1 border border-slate-200 dark:border-slate-700 rounded-lg text-xs font-semibold bg-white dark:bg-[#1c304a] text-[#142843] dark:text-white inline-flex items-center justify-between cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800"
+                                  className="w-full px-2.5 py-1 border border-slate-200 dark:border-slate-700 rounded-lg text-xs font-semibold bg-white dark:bg-[#1c304a] text-[#142843] dark:text-white inline-flex items-center justify-between cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800"
                                 >
                                   <span className="truncate">{rule.value || "Select member"}</span>
-                                  <ChevronDown size={10} className="opacity-70 shrink-0 ml-1" />
+                                  <ChevronDown size={11} className="opacity-70 shrink-0 ml-1" />
                                 </button>
                                 {isValueDropdownOpen && (
-                                  <div className="absolute right-0 top-full mt-1 w-48 bg-white dark:bg-[#1c304a] border border-slate-200 dark:border-slate-700 rounded-xl shadow-xl z-50 py-1 text-xs max-h-48 overflow-y-auto">
+                                  <div className="absolute right-0 top-full mt-1 w-52 bg-white dark:bg-[#1c304a] border border-slate-200 dark:border-slate-700 rounded-xl shadow-2xl z-50 py-1 text-xs max-h-52 overflow-y-auto">
                                     {memberList.length === 0 ? (
                                       <div className="py-2 text-center text-slate-400 text-xs">
                                         No members available
@@ -672,7 +672,7 @@ export function ProjectToolbar({
                                 onChange={(e) =>
                                   updateFilterRule(rule.id, { value: e.target.value })
                                 }
-                                className="w-full px-2 py-1 border border-slate-200 dark:border-slate-700 rounded-lg text-xs font-medium bg-white dark:bg-[#1c304a] text-[#142843] dark:text-white focus:outline-none focus:border-[#0033a0]"
+                                className="w-full px-2.5 py-1 border border-slate-200 dark:border-slate-700 rounded-lg text-xs font-medium bg-white dark:bg-[#1c304a] text-[#142843] dark:text-white focus:outline-none focus:border-[#0033a0]"
                               />
                             )}
                           </div>

@@ -7,6 +7,8 @@ import {
   ChevronRight,
   Edit3,
   Eye,
+  Globe,
+  Lock,
   MoreHorizontal,
   Trash2,
   User,
@@ -193,23 +195,20 @@ export function ProjectTableView({ projects, onEdit, onDelete }: ProjectTableVie
     <div className="flex flex-col gap-0">
       <div className="overflow-hidden rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm bg-white dark:bg-[#14263e]">
         <div className="overflow-x-auto">
-          <table className="w-full text-sm text-left table-fixed">
+          <table className="w-full text-sm text-left table-fixed min-w-[640px]">
             <thead className="bg-[#142843] text-white">
               <tr>
-                <th className="px-6 py-4 text-xs font-bold uppercase tracking-wider text-slate-100 w-[35%]">
+                <th className="px-6 py-4 text-xs font-bold uppercase tracking-wider text-slate-100 w-[42%]">
                   Project
                 </th>
-                <th className="px-6 py-4 text-xs font-bold uppercase tracking-wider text-slate-100 w-[16%]">
+                <th className="px-6 py-4 text-xs font-bold uppercase tracking-wider text-slate-100 w-[20%]">
                   Status
                 </th>
-                <th className="px-6 py-4 text-xs font-bold uppercase tracking-wider text-slate-100 w-[14%]">
+                <th className="px-6 py-4 text-xs font-bold uppercase tracking-wider text-slate-100 w-[16%]">
                   Priority
                 </th>
-                <th className="px-6 py-4 text-xs font-bold uppercase tracking-wider text-slate-100 w-[18%]">
+                <th className="px-6 py-4 text-xs font-bold uppercase tracking-wider text-slate-100 w-[22%]">
                   Owner
-                </th>
-                <th className="px-6 py-4 text-xs font-bold uppercase tracking-wider text-slate-100 w-[17%]">
-                  Team
                 </th>
                 <th className="px-4 py-4 text-xs font-bold uppercase tracking-wider text-slate-100 text-center w-[70px]">
                   Actions
@@ -230,13 +229,15 @@ export function ProjectTableView({ projects, onEdit, onDelete }: ProjectTableVie
                         <p className="font-bold text-[#142843] dark:text-white truncate text-sm">
                           {project.name}
                         </p>
-                        {project.isDb ? (
-                          <span className="text-[10px] font-extrabold text-[#00b4d8]">
-                            Database
+                        {project.isPublic ? (
+                          <span className="flex items-center gap-1 text-[10px] font-bold text-sky-500 dark:text-sky-400">
+                            <Globe size={10} />
+                            Public
                           </span>
                         ) : (
-                          <span className="text-[10px] font-semibold text-slate-400">
-                            Workspace
+                          <span className="flex items-center gap-1 text-[10px] font-semibold text-slate-400 dark:text-slate-500">
+                            <Lock size={10} />
+                            Private
                           </span>
                         )}
                       </div>
@@ -275,11 +276,6 @@ export function ProjectTableView({ projects, onEdit, onDelete }: ProjectTableVie
                       <User size={14} className="text-[#00b4d8] shrink-0" />
                       <span className="truncate">{project.owner || "Unassigned"}</span>
                     </div>
-                  </td>
-                  <td className="px-6 py-4 text-xs text-slate-600 dark:text-slate-300 font-medium">
-                    <span className="inline-block px-2.5 py-1 text-xs font-semibold rounded-md bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 truncate max-w-full">
-                      {project.teamName || "General"}
-                    </span>
                   </td>
                   <td className="px-4 py-4 text-center" onClick={(e) => e.stopPropagation()}>
                     <ActionMenu project={project} onDelete={onDelete} />

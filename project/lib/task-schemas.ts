@@ -33,6 +33,7 @@ export const moveTaskSchema = z.object({
   taskId: z.string().uuid(),
   toListId: z.string().uuid(),
   toPosition: z.number().int().min(0),
+  status: z.enum(STATUS_VALUES).optional(),
 });
 
 export type CreateTaskFormValues = z.infer<typeof createTaskSchema>;

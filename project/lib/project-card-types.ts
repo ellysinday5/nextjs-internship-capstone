@@ -11,4 +11,6 @@ export interface ProjectCardData {
   accentColor?: string;
   isFavorite?: boolean;
   iconIndex?: number;
+  /** Whether the project is publicly visible to all workspace members */
+  isPublic?: boolean;
 }

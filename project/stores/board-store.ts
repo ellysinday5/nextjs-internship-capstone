@@ -185,6 +185,7 @@ export const useBoardStore = create<BoardState>()(
         taskId,
         toListId: newListId,
         toPosition: newPosition,
+        status: derivedStatus,
       });
 
       if (!moveResult.success) {
@@ -194,17 +195,6 @@ export const useBoardStore = create<BoardState>()(
           error: moveResult.error ?? "Failed to move task.",
         });
         return;
-      }
-
-      if (derivedStatus) {
-        const statusResult = await updateTaskAction({ id: taskId, status: derivedStatus });
-        if (!statusResult.success) {
-          set({
-            isSaving: false,
-            error: statusResult.error ?? "Task moved, but failed to update status.",
-          });
-          return;
-        }
       }
 
       set({ isSaving: false });

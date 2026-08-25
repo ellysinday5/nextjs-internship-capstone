@@ -237,12 +237,10 @@ export function CreateTaskModal({
       resetAndClose();
     } catch {
       sileo.error("Failed to create task. Please try again.", "Error");
-    } finally {
-      setIsSubmitting(false);
     }
   };
 
-  const selectedMember = members.find((m) => m.id === assigneeId);
+  const selectedMember = members.find((m) => (m.userId ?? m.id) === assigneeId);
 
   return (
     <>
@@ -288,17 +286,6 @@ export function CreateTaskModal({
             className="space-y-5"
             noValidate
           >
-            {/* Privacy indicator matching task details */}
-            <div className="flex items-center justify-between px-3 py-1.5 bg-slate-50 dark:bg-[#14263e] border border-slate-200 dark:border-slate-800 rounded-lg text-xs text-slate-500 dark:text-slate-400">
-              <span className="flex items-center gap-1.5 font-medium">
-                <Lock size={12} className="text-amber-500 shrink-0" />
-                This task is private to members of this project.
-              </span>
-              <span className="text-blue-600 dark:text-blue-400 text-[11px] font-semibold">
-                Project Task
-              </span>
-            </div>
-
             {/* Title */}
             <div>
               <input
@@ -336,27 +323,11 @@ export function CreateTaskModal({
                   >
                     <option value="unassigned">No assignee</option>
                     {members.map((m) => (
-                      <option key={m.id} value={m.id}>
+                      <option key={m.userId ?? m.id} value={m.userId ?? m.id}>
                         {m.name} ({m.role})
                       </option>
                     ))}
                   </select>
-                  {selectedMember && (
-                    <UserAvatar
-                      name={selectedMember.name}
-                      size="xs"
-                      fallbackBg="bg-amber-400 text-amber-950 font-bold"
-                    />
-                  )}
-                </div>
-              </div>
-
-              {/* Due Date */}
-              <div className="grid grid-cols-[130px_1fr] items-center px-3.5 py-2.5">
-                <span className="flex items-center gap-2 text-xs font-medium text-slate-500 dark:text-slate-400">
-                  <Calendar size={13} /> Due date
-                </span>
-                <div className="flex items-center gap-2">
                   <input
                     type="date"
                     value={dueDate}

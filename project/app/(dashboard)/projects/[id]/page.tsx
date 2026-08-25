@@ -10,6 +10,7 @@ import { DashboardTab } from "@/components/projects/details/dashboard-tab";
 import { ListTab } from "@/components/projects/details/list-tab";
 import { OverviewTab } from "@/components/projects/details/overview-tab";
 import { ProjectHeader } from "@/components/projects/details/project-header";
+import { ProjectPrivacyBar } from "@/components/projects/details/project-privacy-bar";
 import { ProjectTabs } from "@/components/projects/details/project-tabs";
 import { ProjectToolbar } from "@/components/projects/details/project-toolbar";
 import { TimelineTab } from "@/components/projects/details/timeline-tab";
@@ -57,6 +58,7 @@ export default function ProjectPage({ params }: { params: Promise<{ id: string }
   const [projectColor, setProjectColor] = useState("#3b82f6");
   const [selectedIconIndex, setSelectedIconIndex] = useState(0);
   const [isFavorite, setIsFavorite] = useState(false);
+  const [isPublic, setIsPublic] = useState(false);
   const [status, setStatus] = useState<ProjectStatusType>("On track");
   const [members, setMembers] = useState<ProjectMember[]>([]);
 
@@ -95,6 +97,7 @@ export default function ProjectPage({ params }: { params: Promise<{ id: string }
         setProjectColor(saved.color);
         setSelectedIconIndex(saved.iconIndex);
         setIsFavorite(saved.isFavorite);
+        if (saved.isPublic !== undefined) setIsPublic(saved.isPublic);
         if (saved.views && saved.views.length > 0) {
           setAvailableTabs(saved.views);
           setActiveTab(saved.views[0]);
@@ -147,8 +150,9 @@ export default function ProjectPage({ params }: { params: Promise<{ id: string }
       color: projectColor,
       iconIndex: selectedIconIndex,
       isFavorite,
+      isPublic,
     });
-  }, [resolvedProjectId, projectColor, selectedIconIndex, isFavorite]);
+  }, [resolvedProjectId, projectColor, selectedIconIndex, isFavorite, isPublic]);
 
   const [isCreateTaskOpen, setIsCreateTaskOpen] = useState(false);
   const [defaultTaskListId, setDefaultTaskListId] = useState<string | undefined>(undefined);
@@ -342,6 +346,15 @@ export default function ProjectPage({ params }: { params: Promise<{ id: string }
             if (resolvedProjectId) fetchMembers(resolvedProjectId);
           }}
         />
+
+        {resolvedProjectId && (
+          <ProjectPrivacyBar
+            projectId={resolvedProjectId}
+            projectTitle={projectTitle}
+            initialIsPublic={isPublic}
+            onPrivacyChange={(newIsPublic) => setIsPublic(newIsPublic)}
+          />
+        )}
 
         <ProjectTabs
           activeTab={activeTab}

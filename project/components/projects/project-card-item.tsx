@@ -3,7 +3,7 @@
 import type { ProjectCardData } from "@/lib/project-card-types";
 import { toSlug } from "@/lib/project-data";
 import { PROJECT_ICON_LIST } from "@/lib/project-meta";
-import { Calendar, Star, Users } from "lucide-react";
+import { Calendar, Globe, Lock, Star, Users } from "lucide-react";
 import { ListTodo } from "lucide-react";
 import { useRouter } from "next/navigation";
 
@@ -77,14 +77,26 @@ export function ProjectCardItem({ project, isLoading }: ProjectCardItemProps) {
             </div>
           </div>
 
-          {/* Favorite star badge */}
-          {isFav && (
-            <div className="flex items-center shrink-0">
+          {/* Public/private badge + Favorite star */}
+          <div className="flex items-center gap-1.5 shrink-0">
+            {/* Privacy icon */}
+            <span
+              title={project.isPublic ? "Public project" : "Private project"}
+              className={`flex items-center justify-center rounded-full p-1 ${
+                project.isPublic
+                  ? "bg-sky-100 text-sky-600 dark:bg-sky-900/30 dark:text-sky-400"
+                  : "bg-slate-100 text-slate-500 dark:bg-slate-700/60 dark:text-slate-400"
+              }`}
+            >
+              {project.isPublic ? <Globe size={11} /> : <Lock size={11} />}
+            </span>
+            {/* Favorite star */}
+            {isFav && (
               <span title="Favorite">
                 <Star size={14} className="fill-amber-400 text-amber-400 shrink-0" />
               </span>
-            </div>
-          )}
+            )}
+          </div>
         </div>
 
         {/* Description */}
@@ -180,23 +192,20 @@ export function ProjectTableSkeleton({ count = 3 }: { count?: number }) {
   return (
     <div className="overflow-hidden rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm bg-white dark:bg-[#14263e]">
       <div className="overflow-x-auto">
-        <table className="w-full text-sm text-left table-fixed">
+        <table className="w-full text-sm text-left table-fixed min-w-[640px]">
           <thead className="bg-[#142843] text-white">
             <tr>
-              <th className="px-6 py-4 text-xs font-bold uppercase tracking-wider text-slate-100 w-[35%]">
+              <th className="px-6 py-4 text-xs font-bold uppercase tracking-wider text-slate-100 w-[42%]">
                 Project
               </th>
-              <th className="px-6 py-4 text-xs font-bold uppercase tracking-wider text-slate-100 w-[16%]">
+              <th className="px-6 py-4 text-xs font-bold uppercase tracking-wider text-slate-100 w-[20%]">
                 Status
               </th>
-              <th className="px-6 py-4 text-xs font-bold uppercase tracking-wider text-slate-100 w-[14%]">
+              <th className="px-6 py-4 text-xs font-bold uppercase tracking-wider text-slate-100 w-[16%]">
                 Priority
               </th>
-              <th className="px-6 py-4 text-xs font-bold uppercase tracking-wider text-slate-100 w-[18%]">
+              <th className="px-6 py-4 text-xs font-bold uppercase tracking-wider text-slate-100 w-[22%]">
                 Owner
-              </th>
-              <th className="px-6 py-4 text-xs font-bold uppercase tracking-wider text-slate-100 w-[17%]">
-                Team
               </th>
               <th className="px-4 py-4 text-xs font-bold uppercase tracking-wider text-slate-100 text-center w-[70px]">
                 Actions
@@ -223,9 +232,6 @@ export function ProjectTableSkeleton({ count = 3 }: { count?: number }) {
                 </td>
                 <td className="px-6 py-4">
                   <div className="h-3.5 w-24 rounded bg-slate-200 dark:bg-slate-700/60" />
-                </td>
-                <td className="px-6 py-4">
-                  <div className="h-4 w-16 rounded bg-slate-200 dark:bg-slate-700/60" />
                 </td>
                 <td className="px-4 py-4 text-center">
                   <div className="mx-auto h-4 w-6 rounded bg-slate-200 dark:bg-slate-700/60" />

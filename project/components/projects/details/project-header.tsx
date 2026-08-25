@@ -1,7 +1,9 @@
 "use client";
 
+import { deleteProjectAction } from "@/actions/project-actions";
 import { inviteTeamMember } from "@/actions/invite-member";
 import { Modal } from "@/components/modals/BaseModal";
+import { ConfirmationModal } from "@/components/modals/ConfirmationModal";
 import { BackButton } from "@/components/ui/back-button";
 import { UserAvatar } from "@/components/ui/user-avatar";
 import { toSlug } from "@/lib/project-data";
@@ -16,6 +18,7 @@ import {
   Pencil,
   Share2,
   Star,
+  Trash2,
   User,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
@@ -51,6 +54,7 @@ interface ProjectHeaderProps {
   members?: HeaderMember[];
   onAddMember?: () => void;
   onInviteSuccess?: () => void;
+  onDeleted?: () => void;
 }
 
 const AVATAR_STYLES = [
@@ -160,6 +164,7 @@ export function ProjectHeader({
   members = [],
   onAddMember,
   onInviteSuccess,
+  onDeleted,
 }: ProjectHeaderProps) {
   const router = useRouter();
   const [isCustomizeOpen, setIsCustomizeOpen] = useState(false);
@@ -172,6 +177,8 @@ export function ProjectHeader({
   const [inviteSuccessMsg, setInviteSuccessMsg] = useState<string | null>(null);
   const [inviteErrorMsg, setInviteErrorMsg] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
+  const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   const ActiveProjectIcon = iconList[selectedIconIndex]?.Icon || ListTodo;
   const currentStatusMeta = STATUS_OPTIONS.find((s) => s.value === status);
@@ -238,6 +245,24 @@ export function ProjectHeader({
       sileo.success(`Added "${projectTitle}" to favorites!`, "Favorites");
     } else {
       sileo.info(`Removed "${projectTitle}" from favorites`, "Favorites");
+    }
+  };
+
+  const handleDeleteProject = async () => {
+    if (!projectId) return;
+    setIsDeleting(true);
+    const res = await deleteProjectAction(projectId);
+    setIsDeleting(false);
+    if (res.success) {
+      sileo.success(`Project "${projectTitle}" deleted.`, "Deleted");
+      setIsDeleteConfirmOpen(false);
+      if (onDeleted) {
+        onDeleted();
+      } else {
+        router.push("/projects");
+      }
+    } else {
+      sileo.error(res.error || "Failed to delete project.", "Error");
     }
   };
 
@@ -485,6 +510,15 @@ export function ProjectHeader({
             </div>
 
             <button
+              onClick={() => setIsDeleteConfirmOpen(true)}
+              className="flex items-center gap-1 bg-red-50 hover:bg-red-100 dark:bg-red-900/20 dark:hover:bg-red-900/40 text-red-600 dark:text-red-400 text-xs font-bold px-3.5 py-1.5 rounded-xl transition-colors border border-red-200 dark:border-red-800/50"
+              title="Delete project"
+            >
+              <Trash2 size={13} />
+              Delete
+            </button>
+
+            <button
               onClick={() => setIsShareModalOpen(true)}
               className="flex items-center gap-1 bg-[#0f2d5a] hover:bg-[#0c2447] text-white text-xs font-bold px-3.5 py-1.5 rounded-xl transition-colors shadow-xs"
             >
@@ -576,6 +610,19 @@ export function ProjectHeader({
           </form>
         </div>
       </Modal>
+
+      {/* Delete Project Confirmation */}
+      <ConfirmationModal
+        isOpen={isDeleteConfirmOpen}
+        onClose={() => !isDeleting && setIsDeleteConfirmOpen(false)}
+        onConfirm={handleDeleteProject}
+        variant="delete"
+        title={`Delete "${projectTitle}"?`}
+        description="This will permanently remove the project and all its lists, tasks, and comments. This action cannot be undone."
+        confirmLabel="Delete Permanently"
+        isLoading={isDeleting}
+        showCloseButton={false}
+      />
     </>
   );
 }
