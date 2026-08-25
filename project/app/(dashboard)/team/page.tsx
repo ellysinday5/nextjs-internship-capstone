@@ -1,6 +1,8 @@
 import { getProjectsAction } from "@/actions/project-actions";
 import { TeamPageClient } from "@/components/team/team-page-client";
 
+export const dynamic = "force-dynamic";
+
 export default async function TeamPage() {
   const projects = await getProjectsAction();
   const projectOptions = projects.map(

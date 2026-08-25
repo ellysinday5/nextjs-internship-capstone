@@ -10,6 +10,7 @@ import { UserProfileProvider } from "@/context/user-profile-context";
 import { ClerkProvider } from "@clerk/nextjs";
 import { QueryProvider } from "./providers";
 
+
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
@@ -17,6 +18,8 @@ export const metadata: Metadata = {
   description: "Team collaboration and project management platform",
   generator: "v0.dev",
 };
+
+export const dynamic = 'force-dynamic';
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
