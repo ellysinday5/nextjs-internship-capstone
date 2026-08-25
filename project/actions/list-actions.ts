@@ -53,6 +53,17 @@ async function assertProjectAccess(projectId: string, userId: string): Promise<b
       .from(workspaces)
       .where(and(eq(workspaces.id, project.workspaceId), eq(workspaces.ownerId, userId)));
     if (ws) return true;
+
+    const [wsMember] = await db
+      .select({ id: workspaceMembers.id })
+      .from(workspaceMembers)
+      .where(
+        and(
+          eq(workspaceMembers.workspaceId, project.workspaceId),
+          eq(workspaceMembers.userId, userId),
+        ),
+      );
+    if (wsMember) return true;
   }
 
   return false;
@@ -116,13 +127,33 @@ export async function getListsAction(projectId: string): Promise<ListWithTasks[]
     const hasAccess = await assertProjectAccess(projectId, user.id);
     if (!hasAccess) return [];
 
-    const projectLists = await db
+    let projectLists = await db
       .select()
       .from(lists)
       .where(eq(lists.projectId, projectId))
       .orderBy(asc(lists.position));
 
-    if (projectLists.length === 0) return [];
+    if (projectLists.length === 0) {
+      const seeded = await db
+        .insert(lists)
+        .values([
+          { name: "To Do", projectId, position: 0 },
+          { name: "In Progress", projectId, position: 1 },
+          { name: "Review", projectId, position: 2 },
+          { name: "Done", projectId, position: 3 },
+        ])
+        .returning();
+
+      return seeded.map((list) => ({
+        id: list.id,
+        name: list.name,
+        projectId: list.projectId,
+        position: list.position,
+        createdAt: list.createdAt,
+        updatedAt: list.updatedAt,
+        taskCount: 0,
+      }));
+    }
 
     const listIds = projectLists.map((l) => l.id);
 
@@ -231,11 +262,10 @@ export async function reorderListsAction(data: ReorderListsFormValues) {
     const hasAccess = await assertProjectAccess(projectId, user.id);
     if (!hasAccess) return { success: false, error: "Access denied." };
 
-    await db.transaction(async (tx) => {
-      for (let i = 0; i < orderedIds.length; i++) {
-        await tx.update(lists).set({ position: i }).where(eq(lists.id, orderedIds[i]));
-      }
-    });
+    // Sequential updates (neon-http driver does not support transactions)
+    for (let i = 0; i < orderedIds.length; i++) {
+      await db.update(lists).set({ position: i }).where(eq(lists.id, orderedIds[i]));
+    }
 
     revalidatePath(`/projects/${projectId}`);
     return { success: true };

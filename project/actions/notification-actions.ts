@@ -358,7 +358,8 @@ export async function acceptProjectInvitationNotificationAction(notificationId: 
     return { success: true, projectId: result.projectId, projectSlug: result.projectSlug };
   } catch (error) {
     console.error("[acceptProjectInvitationNotificationAction] Error:", error);
-    return { success: false, error: "Failed to accept invitation." };
+    const msg = error instanceof Error ? error.message : "Failed to accept invitation.";
+    return { success: false, error: msg };
   }
 }
 

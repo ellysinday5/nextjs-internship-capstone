@@ -90,6 +90,17 @@ async function assertProjectAccess(projectId: string, userId: string): Promise<b
       .from(workspaces)
       .where(and(eq(workspaces.id, project.workspaceId), eq(workspaces.ownerId, userId)));
     if (ws) return true;
+
+    const [wsMember] = await db
+      .select({ id: workspaceMembers.id })
+      .from(workspaceMembers)
+      .where(
+        and(
+          eq(workspaceMembers.workspaceId, project.workspaceId),
+          eq(workspaceMembers.userId, userId),
+        ),
+      );
+    if (wsMember) return true;
   }
 
   return false;
@@ -176,74 +187,69 @@ export async function createCommentAction(
 
     const trimmedContent = validated.data.content.trim();
 
-    // Wrap comment insertion and notification creation in a single atomic transaction
-    const newComment = await db.transaction(async (tx) => {
-      const [inserted] = await tx
-        .insert(comments)
-        .values({
-          taskId,
-          authorId: user.clerkId,
-          content: trimmedContent,
-          parentCommentId: parentCommentId || null,
-        })
-        .returning();
-
-      const projectSlug = toSlug(taskCtx.projectName);
-      const deepLinkHref = `/projects/${projectSlug}?taskId=${taskId}&commentId=${inserted.id}#comment-${inserted.id}`;
-
-      // Determine recipients and notification payloads
-      if (parentCommentId && parentAuthorClerkId) {
-        // Reply notification -> notify parent comment author (skip if self)
-        const [parentAuthorUser] = await tx
-          .select({ id: users.id, name: users.name })
-          .from(users)
-          .where(eq(users.clerkId, parentAuthorClerkId));
-
-        if (parentAuthorUser?.id && parentAuthorUser.id !== user.id) {
-          await tx.insert(notifications).values({
-            workspaceId: taskCtx.workspaceId || null,
-            recipientId: parentAuthorUser.id,
-            actorId: user.id,
-            type: "comment_added",
-            title: "New Reply",
-            message: `${user.name} replied to your comment on "${taskCtx.taskTitle}".`,
-            href: deepLinkHref,
-            metadata: {
-              taskId,
-              commentId: inserted.id,
-              parentCommentId,
-              projectId: taskCtx.projectId,
-              projectSlug,
-              notificationKind: "comment_reply",
-            },
-          });
-        }
-      } else if (!parentCommentId && taskCtx.assigneeId) {
-        // Top-level comment -> notify task assignee (skip if self)
-        if (taskCtx.assigneeId !== user.id) {
-          await tx.insert(notifications).values({
-            workspaceId: taskCtx.workspaceId || null,
-            recipientId: taskCtx.assigneeId,
-            actorId: user.id,
-            type: "comment_added",
-            title: "New Comment",
-            message: `${user.name} commented on "${taskCtx.taskTitle}".`,
-            href: deepLinkHref,
-            metadata: {
-              taskId,
-              commentId: inserted.id,
-              projectId: taskCtx.projectId,
-              projectSlug,
-              notificationKind: "task_comment",
-            },
-          });
-        }
-      }
-
-      return inserted;
-    });
+    // Sequential queries (neon-http driver does not support transactions)
+    const [newComment] = await db
+      .insert(comments)
+      .values({
+        taskId,
+        authorId: user.clerkId,
+        content: trimmedContent,
+        parentCommentId: parentCommentId || null,
+      })
+      .returning();
 
     const projectSlug = toSlug(taskCtx.projectName);
+    const deepLinkHref = `/projects/${projectSlug}?taskId=${taskId}&commentId=${newComment.id}#comment-${newComment.id}`;
+
+    // Determine recipients and notification payloads
+    if (parentCommentId && parentAuthorClerkId) {
+      // Reply notification -> notify parent comment author (skip if self)
+      const [parentAuthorUser] = await db
+        .select({ id: users.id, name: users.name })
+        .from(users)
+        .where(eq(users.clerkId, parentAuthorClerkId));
+
+      if (parentAuthorUser?.id && parentAuthorUser.id !== user.id) {
+        await db.insert(notifications).values({
+          workspaceId: taskCtx.workspaceId || null,
+          recipientId: parentAuthorUser.id,
+          actorId: user.id,
+          type: "comment_added",
+          title: "New Reply",
+          message: `${user.name} replied to your comment on "${taskCtx.taskTitle}".`,
+          href: deepLinkHref,
+          metadata: {
+            taskId,
+            commentId: newComment.id,
+            parentCommentId,
+            projectId: taskCtx.projectId,
+            projectSlug,
+            notificationKind: "comment_reply",
+          },
+        });
+      }
+    } else if (!parentCommentId && taskCtx.assigneeId) {
+      // Top-level comment -> notify task assignee (skip if self)
+      if (taskCtx.assigneeId !== user.id) {
+        await db.insert(notifications).values({
+          workspaceId: taskCtx.workspaceId || null,
+          recipientId: taskCtx.assigneeId,
+          actorId: user.id,
+          type: "comment_added",
+          title: "New Comment",
+          message: `${user.name} commented on "${taskCtx.taskTitle}".`,
+          href: deepLinkHref,
+          metadata: {
+            taskId,
+            commentId: newComment.id,
+            projectId: taskCtx.projectId,
+            projectSlug,
+            notificationKind: "task_comment",
+          },
+        });
+      }
+    }
+
     revalidatePath(`/projects/${projectSlug}`);
     revalidatePath(`/projects/${taskCtx.projectId}`);
 

@@ -157,7 +157,16 @@ export const useBoardStore = create<BoardState>()(
         });
         return;
       }
-      set({ isSaving: false });
+      if (result.task) {
+        set((state) => ({
+          tasks: state.tasks.map((t) =>
+            t.id === taskId ? { ...t, ...result.task } : t,
+          ),
+          isSaving: false,
+        }));
+      } else {
+        set({ isSaving: false });
+      }
     },
 
     moveTask: async (taskId, newListId, newPosition) => {

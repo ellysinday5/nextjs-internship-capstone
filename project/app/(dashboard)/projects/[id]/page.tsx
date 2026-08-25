@@ -178,6 +178,9 @@ export default function ProjectPage({ params }: { params: Promise<{ id: string }
       ? (updatedTask.status as ValidStatus)
       : undefined;
 
+    // Optimistically keep selectedTask so the UI doesn't flicker
+    setSelectedTask(updatedTask);
+
     await updateTask(updatedTask.id, {
       title: updatedTask.title,
       description: updatedTask.description ?? null,
@@ -188,7 +191,13 @@ export default function ProjectPage({ params }: { params: Promise<{ id: string }
     });
 
     const freshRecord = useBoardStore.getState().tasks.find((t) => t.id === updatedTask.id);
-    setSelectedTask(freshRecord ? taskRecordToItem(freshRecord) : updatedTask);
+    if (freshRecord) {
+      const converted = taskRecordToItem(freshRecord);
+      if (!converted.assignee && updatedTask.assignee) {
+        converted.assignee = updatedTask.assignee;
+      }
+      setSelectedTask(converted);
+    }
   }
 
   async function handleDeleteTask(taskId: string) {
@@ -206,17 +215,31 @@ export default function ProjectPage({ params }: { params: Promise<{ id: string }
     const listName = lists.find((l) => l.id === task.listId)?.name ?? task.listId;
     const dueDateISO = task.dueDate ? new Date(task.dueDate).toISOString().slice(0, 10) : undefined;
 
+    let resolvedAssignee: TaskItem["assignee"] = undefined;
+    if (task.assignee && task.assignee.name) {
+      resolvedAssignee = {
+        id: task.assignee.id || task.assigneeId || "",
+        name: task.assignee.name,
+        initials: getInitials(task.assignee.name),
+      };
+    } else if (task.assigneeId) {
+      const match = members.find(
+        (m) => (m.userId && m.userId === task.assigneeId) || m.id === task.assigneeId,
+      );
+      if (match) {
+        resolvedAssignee = {
+          id: match.userId ?? match.id,
+          name: match.name,
+          initials: getInitials(match.name),
+        };
+      }
+    }
+
     return {
       id: task.id,
       title: task.title,
       description: task.description ?? undefined,
-      assignee: task.assignee
-        ? {
-            id: task.assigneeId ?? "",
-            name: task.assignee.name,
-            initials: getInitials(task.assignee.name),
-          }
-        : undefined,
+      assignee: resolvedAssignee,
       dueDate: task.dueDate
         ? new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric" }).format(
             new Date(task.dueDate),

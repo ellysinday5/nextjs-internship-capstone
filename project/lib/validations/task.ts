@@ -33,7 +33,11 @@ export const createTaskSchema = z.object({
     .optional()
     .nullable(),
   listId: z.string().uuid("Invalid list ID"),
-  assigneeId: z.string().uuid("Invalid assignee ID").optional().nullable(),
+  assigneeId: z
+    .string()
+    .optional()
+    .nullable()
+    .transform((val) => (val && val.trim() && val !== "unassigned" ? val.trim() : null)),
   // Zod v4: use { message } for simple custom messages on enum
   priority: z
     .enum(TASK_PRIORITIES, {
@@ -67,7 +71,11 @@ export const updateTaskSchema = z.object({
     .max(2000, "Description must be under 2000 characters")
     .optional()
     .nullable(),
-  assigneeId: z.string().uuid("Invalid assignee ID").optional().nullable(),
+  assigneeId: z
+    .string()
+    .optional()
+    .nullable()
+    .transform((val) => (val && val.trim() && val !== "unassigned" ? val.trim() : null)),
   priority: z
     .enum(TASK_PRIORITIES, {
       message: `Priority must be one of: ${TASK_PRIORITIES.join(", ")}`,

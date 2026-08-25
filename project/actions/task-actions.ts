@@ -11,6 +11,7 @@ import {
   taskSharedTeams,
   tasks,
   users,
+  workspaceMembers,
   workspaces,
 } from "@/lib/db/schema";
 import {
@@ -22,6 +23,7 @@ import {
   updateTaskSchema,
 } from "@/lib/db/task-schemas";
 import { isTaskCompleted } from "@/lib/project-stats";
+import { toSlug } from "@/lib/project-data";
 import { and, asc, eq, inArray, isNotNull, ne, or, sql } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 
@@ -86,6 +88,17 @@ async function assertProjectAccess(projectId: string, userId: string): Promise<b
       .from(workspaces)
       .where(and(eq(workspaces.id, project.workspaceId), eq(workspaces.ownerId, userId)));
     if (ws) return true;
+
+    const [wsMember] = await db
+      .select({ id: workspaceMembers.id })
+      .from(workspaceMembers)
+      .where(
+        and(
+          eq(workspaceMembers.workspaceId, project.workspaceId),
+          eq(workspaceMembers.userId, userId),
+        ),
+      );
+    if (wsMember) return true;
   }
 
   return false;
@@ -155,6 +168,7 @@ export async function getProjectTasksAction(projectId: string): Promise<TaskReco
         completedAt: tasks.completedAt,
         assigneeName: users.name,
         assigneeEmail: users.email,
+        pmName: projectMembers.name,
         commentsCount: sql<number>`(
           select count(*)::int from ${comments} where ${comments.taskId} = ${tasks.id}
         )`,
@@ -162,6 +176,13 @@ export async function getProjectTasksAction(projectId: string): Promise<TaskReco
       .from(tasks)
       .innerJoin(lists, eq(tasks.listId, lists.id))
       .leftJoin(users, eq(tasks.assigneeId, users.id))
+      .leftJoin(
+        projectMembers,
+        and(
+          eq(projectMembers.projectId, projectId),
+          or(eq(projectMembers.userId, tasks.assigneeId), eq(projectMembers.id, tasks.assigneeId)),
+        ),
+      )
       .where(eq(lists.projectId, projectId))
       .orderBy(asc(tasks.position));
 
@@ -186,27 +207,30 @@ export async function getProjectTasksAction(projectId: string): Promise<TaskReco
       }
     }
 
-    return rows.map((r) => ({
-      id: r.id,
-      title: r.title,
-      description: r.description,
-      listId: r.listId,
-      assigneeId: r.assigneeId,
-      assignee:
-        r.assigneeId && r.assigneeName && r.assigneeEmail
-          ? { id: r.assigneeId, name: r.assigneeName, email: r.assigneeEmail }
-          : null,
-      priority: r.priority,
-      status: r.status,
-      dueDate: r.dueDate,
-      position: r.position,
-      commentsCount: r.commentsCount,
-      isPublic: r.isPublic ?? false,
-      sharedTeams: sharedTeamsMap.get(r.id) || [],
-      createdAt: r.createdAt,
-      updatedAt: r.updatedAt,
-      completedAt: r.completedAt,
-    }));
+    return rows.map((r) => {
+      const name = r.assigneeName || r.pmName;
+      return {
+        id: r.id,
+        title: r.title,
+        description: r.description,
+        listId: r.listId,
+        assigneeId: r.assigneeId,
+        assignee:
+          r.assigneeId && name
+            ? { id: r.assigneeId, name, email: r.assigneeEmail || "" }
+            : null,
+        priority: r.priority,
+        status: r.status,
+        dueDate: r.dueDate,
+        position: r.position,
+        commentsCount: r.commentsCount,
+        isPublic: r.isPublic ?? false,
+        sharedTeams: sharedTeamsMap.get(r.id) || [],
+        createdAt: r.createdAt,
+        updatedAt: r.updatedAt,
+        completedAt: r.completedAt,
+      };
+    });
   } catch (error) {
     console.error("[getProjectTasksAction] Error fetching tasks:", error);
     return [];
@@ -232,6 +256,43 @@ export async function createTaskAction(data: CreateTaskFormValues) {
     const hasAccess = await assertProjectAccess(projectId, user.id);
     if (!hasAccess) return { success: false, error: "Access denied." };
 
+    const [project] = await db
+      .select({ id: projects.id, name: projects.name, workspaceId: projects.workspaceId })
+      .from(projects)
+      .where(eq(projects.id, projectId));
+
+    // Resolve assigneeId to a valid users.id if provided
+    let resolvedAssigneeId: string | null = null;
+    if (assigneeId && assigneeId !== "unassigned") {
+      const [u] = await db
+        .select({ id: users.id })
+        .from(users)
+        .where(eq(users.id, assigneeId));
+      if (u) {
+        resolvedAssigneeId = u.id;
+      } else {
+        const [pm] = await db
+          .select({ id: projectMembers.id, userId: projectMembers.userId, name: projectMembers.name })
+          .from(projectMembers)
+          .where(eq(projectMembers.id, assigneeId));
+        if (pm?.userId) {
+          resolvedAssigneeId = pm.userId;
+        } else if (pm?.name) {
+          const [uByName] = await db
+            .select({ id: users.id })
+            .from(users)
+            .where(eq(users.name, pm.name));
+          if (uByName) {
+            resolvedAssigneeId = uByName.id;
+            await db
+              .update(projectMembers)
+              .set({ userId: uByName.id })
+              .where(eq(projectMembers.id, pm.id));
+          }
+        }
+      }
+    }
+
     const [{ maxPosition }] = await db
       .select({ maxPosition: sql<number>`coalesce(max(${tasks.position}), -1)::int` })
       .from(tasks)
@@ -243,41 +304,38 @@ export async function createTaskAction(data: CreateTaskFormValues) {
         title,
         description: description || null,
         listId,
-        assigneeId: assigneeId || null,
+        assigneeId: resolvedAssigneeId,
         priority: priority || null,
         status: status || "On track",
         dueDate: dueDate ? new Date(dueDate) : null,
         position: maxPosition + 1,
       })
       .returning();
+
     let assigneeInfo: TaskAssignee | null = null;
-    if (assigneeId) {
+    if (resolvedAssigneeId) {
       const assignedUser = await db.query.users.findFirst({
-        where: (u, { eq }) => eq(u.id, assigneeId),
+        where: (u, { eq }) => eq(u.id, resolvedAssigneeId!),
         columns: { id: true, name: true, email: true },
       });
       if (assignedUser) {
         assigneeInfo = assignedUser;
-      } else {
-        const member = await db.query.projectMembers.findFirst({
-          where: (pm, { eq }) => eq(pm.id, assigneeId),
-          columns: { id: true, name: true },
-        });
-        if (member) {
-          assigneeInfo = { id: member.id, name: member.name, email: "" };
-        }
       }
     }
 
-    if (assigneeId && assigneeId !== user.id) {
+    const projectSlug = toSlug(project?.name || "project");
+    const href = `/projects/${projectSlug}?taskId=${newTask.id}`;
+
+    if (resolvedAssigneeId && resolvedAssigneeId !== user.id) {
       await createNotification({
-        recipientId: assigneeId,
+        workspaceId: project?.workspaceId ?? undefined,
+        recipientId: resolvedAssigneeId,
         actorId: user.id,
         type: "task_assigned",
         title: "Task Assigned",
         message: `${user.name} assigned you to "${title}".`,
-        href: `/projects/${projectId}`,
-        metadata: { taskId: newTask.id, projectId },
+        href,
+        metadata: { taskId: newTask.id, projectId, projectSlug },
       });
     }
 
@@ -292,7 +350,8 @@ export async function createTaskAction(data: CreateTaskFormValues) {
     };
   } catch (error: unknown) {
     console.error("[createTaskAction] Error creating task:", error);
-    return { success: false, error: "Failed to create task. Please try again." };
+    const msg = error instanceof Error ? error.message : "Failed to create task. Please try again.";
+    return { success: false, error: msg };
   }
 }
 
@@ -307,10 +366,19 @@ export async function updateTaskAction(data: UpdateTaskFormValues) {
       return { success: false, error: validated.error.issues[0]?.message || "Invalid task data" };
     }
 
-    const { id, dueDate, ...rest } = validated.data;
+    const { id, dueDate, assigneeId, ...rest } = validated.data;
 
     const [existing] = await db
-      .select({ listId: tasks.listId, status: tasks.status })
+      .select({
+        id: tasks.id,
+        title: tasks.title,
+        description: tasks.description,
+        listId: tasks.listId,
+        status: tasks.status,
+        priority: tasks.priority,
+        dueDate: tasks.dueDate,
+        assigneeId: tasks.assigneeId,
+      })
       .from(tasks)
       .where(eq(tasks.id, id));
     if (!existing) return { success: false, error: "Task not found." };
@@ -321,10 +389,52 @@ export async function updateTaskAction(data: UpdateTaskFormValues) {
     const hasAccess = await assertProjectAccess(projectId, user.id);
     if (!hasAccess) return { success: false, error: "Access denied." };
 
-    // Compute completedAt based on status transition:
-    // - Transitioning TO "Complete" from any other status → stamp now
-    // - Transitioning AWAY from "Complete" to any other status → clear it
-    // - Status not changing (or not included in this update) → leave as-is (undefined = no change)
+    const [project] = await db
+      .select({ id: projects.id, name: projects.name, workspaceId: projects.workspaceId })
+      .from(projects)
+      .where(eq(projects.id, projectId));
+
+    // Resolve assigneeId if provided
+    let resolvedAssigneeId: string | null | undefined = undefined;
+    if (assigneeId !== undefined) {
+      if (assigneeId === null || assigneeId === "unassigned" || assigneeId === "") {
+        resolvedAssigneeId = null;
+      } else {
+        const [u] = await db
+          .select({ id: users.id })
+          .from(users)
+          .where(eq(users.id, assigneeId));
+        if (u) {
+          resolvedAssigneeId = u.id;
+        } else {
+          const [pm] = await db
+            .select({ id: projectMembers.id, userId: projectMembers.userId, name: projectMembers.name })
+            .from(projectMembers)
+            .where(eq(projectMembers.id, assigneeId));
+          if (pm?.userId) {
+            resolvedAssigneeId = pm.userId;
+          } else if (pm?.name) {
+            const [uByName] = await db
+              .select({ id: users.id })
+              .from(users)
+              .where(eq(users.name, pm.name));
+            if (uByName) {
+              resolvedAssigneeId = uByName.id;
+              await db
+                .update(projectMembers)
+                .set({ userId: uByName.id })
+                .where(eq(projectMembers.id, pm.id));
+            } else {
+              resolvedAssigneeId = null;
+            }
+          } else {
+            resolvedAssigneeId = null;
+          }
+        }
+      }
+    }
+
+    // Compute completedAt based on status transition
     let completedAtUpdate: Date | null | undefined = undefined;
     if (rest.status !== undefined) {
       const becomingComplete = isTaskCompleted(rest.status);
@@ -340,6 +450,7 @@ export async function updateTaskAction(data: UpdateTaskFormValues) {
       .update(tasks)
       .set({
         ...rest,
+        ...(resolvedAssigneeId !== undefined ? { assigneeId: resolvedAssigneeId } : {}),
         dueDate: dueDate === undefined ? undefined : dueDate ? new Date(dueDate) : null,
         updatedAt: new Date(),
         ...(completedAtUpdate !== undefined ? { completedAt: completedAtUpdate } : {}),
@@ -347,20 +458,111 @@ export async function updateTaskAction(data: UpdateTaskFormValues) {
       .where(eq(tasks.id, id))
       .returning();
 
+    // Fetch updated assignee information for return
+    let assigneeInfo: TaskAssignee | null = null;
+    const finalAssigneeId = updatedTask.assigneeId;
+    if (finalAssigneeId) {
+      const assignedUser = await db.query.users.findFirst({
+        where: (u, { eq }) => eq(u.id, finalAssigneeId),
+        columns: { id: true, name: true, email: true },
+      });
+      if (assignedUser) {
+        assigneeInfo = assignedUser;
+      }
+    }
+
+    // --- NOTIFICATIONS ---
+    const projectSlug = toSlug(project?.name || "project");
+    const href = `/projects/${projectSlug}?taskId=${id}`;
+    const taskTitle = updatedTask.title || existing.title;
+
+    // 1. If newly assigned or reassigned to a user (and not self)
+    const isNewAssignment =
+      resolvedAssigneeId !== undefined &&
+      resolvedAssigneeId !== null &&
+      resolvedAssigneeId !== existing.assigneeId &&
+      resolvedAssigneeId !== user.id;
+
+    if (isNewAssignment && resolvedAssigneeId) {
+      await createNotification({
+        workspaceId: project?.workspaceId ?? undefined,
+        recipientId: resolvedAssigneeId,
+        actorId: user.id,
+        type: "task_assigned",
+        title: "Task Assigned",
+        message: `${user.name} assigned you to "${taskTitle}".`,
+        href,
+        metadata: {
+          taskId: id,
+          projectId,
+          projectSlug,
+        },
+      });
+    }
+
+    // 2. If task was updated (status, title, priority, due date, description) and the task has an assignee (who is not the editor and wasn't already notified about new assignment)
+    const targetRecipientId = isNewAssignment ? null : finalAssigneeId;
+    if (targetRecipientId && targetRecipientId !== user.id) {
+      const statusChanged = rest.status !== undefined && rest.status !== existing.status;
+      const titleChanged = rest.title !== undefined && rest.title !== existing.title;
+      const priorityChanged = rest.priority !== undefined && rest.priority !== existing.priority;
+      const dueDateChanged =
+        dueDate !== undefined &&
+        ((dueDate === null && existing.dueDate !== null) ||
+          (dueDate !== null &&
+            (!existing.dueDate ||
+              new Date(dueDate).getTime() !== new Date(existing.dueDate).getTime())));
+      const descChanged = rest.description !== undefined && rest.description !== existing.description;
+
+      if (statusChanged) {
+        await createNotification({
+          workspaceId: project?.workspaceId ?? undefined,
+          recipientId: targetRecipientId,
+          actorId: user.id,
+          type: "task_status_changed",
+          title: "Task Status Updated",
+          message: `${user.name} changed status of "${taskTitle}" to "${rest.status}".`,
+          href,
+          metadata: {
+            taskId: id,
+            projectId,
+            projectSlug,
+            status: rest.status,
+          },
+        });
+      } else if (titleChanged || priorityChanged || dueDateChanged || descChanged) {
+        await createNotification({
+          workspaceId: project?.workspaceId ?? undefined,
+          recipientId: targetRecipientId,
+          actorId: user.id,
+          type: "task_status_changed",
+          title: "Task Updated",
+          message: `${user.name} updated your task "${taskTitle}".`,
+          href,
+          metadata: {
+            taskId: id,
+            projectId,
+            projectSlug,
+          },
+        });
+      }
+    }
+
     revalidatePath(`/projects/${projectId}`);
-    return { success: true, task: updatedTask };
+    return {
+      success: true,
+      task: {
+        ...updatedTask,
+        assignee: assigneeInfo,
+      },
+    };
   } catch (error: unknown) {
     console.error("[updateTaskAction] Error updating task:", error);
     return { success: false, error: "Failed to update task. Please try again." };
   }
 }
 
-/* Move Task — drag to another column, or reorder within the same one.
-   Works for both cases: shift the source list's positions down past the
-   old slot, shift the destination list's positions up from the new slot,
-   then place the task. When fromListId === toListId this still produces
-   a correct reorder because the two updates run against the same rows
-   using the pre-move position as the pivot. */
+/* Move Task — drag to another column, or reorder within the same one. */
 export async function moveTaskAction(data: MoveTaskFormValues) {
   try {
     const user = await syncUser();
@@ -455,6 +657,35 @@ export async function moveTaskAction(data: MoveTaskFormValues) {
           ...(completedAtUpdate !== undefined ? { completedAt: completedAtUpdate } : {}),
         })
         .where(eq(tasks.id, taskId));
+    }
+
+    // Notify assignee if status changed due to column move
+    if (
+      nextStatus !== undefined &&
+      nextStatus !== task.status &&
+      task.assigneeId &&
+      task.assigneeId !== user.id
+    ) {
+      const [destProject] = await db
+        .select({ id: projects.id, name: projects.name, workspaceId: projects.workspaceId })
+        .from(projects)
+        .where(eq(projects.id, destProjectId));
+      const projectSlug = toSlug(destProject?.name || "project");
+      await createNotification({
+        workspaceId: destProject?.workspaceId ?? undefined,
+        recipientId: task.assigneeId,
+        actorId: user.id,
+        type: "task_status_changed",
+        title: "Task Status Updated",
+        message: `${user.name} moved your task "${task.title}" to "${nextStatus}".`,
+        href: `/projects/${projectSlug}?taskId=${taskId}`,
+        metadata: {
+          taskId,
+          projectId: destProjectId,
+          projectSlug,
+          status: nextStatus,
+        },
+      });
     }
 
     revalidatePath(`/projects/${destProjectId}`);
@@ -692,22 +923,21 @@ export async function setTaskSharedTeamsAction(taskId: string, teamIds: string[]
     const hasAccess = await assertProjectAccess(projectId, user.id);
     if (!hasAccess) return { success: false, error: "Access denied." };
 
-    await db.transaction(async (tx) => {
-      await tx.delete(taskSharedTeams).where(eq(taskSharedTeams.taskId, taskId));
+    // Sequential queries (neon-http driver does not support transactions)
+    await db.delete(taskSharedTeams).where(eq(taskSharedTeams.taskId, taskId));
 
-      const validTeamIds = Array.from(new Set(teamIds.filter((t) => t && t.trim()))).filter(
-        (t) => t !== projectId,
+    const validTeamIds = Array.from(new Set(teamIds.filter((t) => t && t.trim()))).filter(
+      (t) => t !== projectId,
+    );
+
+    if (validTeamIds.length > 0) {
+      await db.insert(taskSharedTeams).values(
+        validTeamIds.map((teamId) => ({
+          taskId,
+          teamId,
+        })),
       );
-
-      if (validTeamIds.length > 0) {
-        await tx.insert(taskSharedTeams).values(
-          validTeamIds.map((teamId) => ({
-            taskId,
-            teamId,
-          })),
-        );
-      }
-    });
+    }
 
     const updatedShared = await db
       .select({
@@ -780,8 +1010,8 @@ export async function getTaskDetailsAction(taskId: string) {
         listId: r.listId,
         assigneeId: r.assigneeId,
         assignee:
-          r.assigneeId && r.assigneeName && r.assigneeEmail
-            ? { id: r.assigneeId, name: r.assigneeName, email: r.assigneeEmail }
+          r.assigneeId
+            ? { id: r.assigneeId, name: r.assigneeName || "Member", email: r.assigneeEmail || "" }
             : null,
         priority: r.priority,
         status: r.status,

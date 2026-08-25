@@ -9,6 +9,8 @@ import {
   CalendarDays,
   CheckCircle2,
   ChevronDown,
+  ChevronLeft,
+  ChevronRight,
   FileEdit,
   Filter,
   Flame,
@@ -295,6 +297,31 @@ export function ManageEventsPageClient() {
   const currentList =
     activeTab === "active" ? activeEvents : activeTab === "drafts" ? draftEvents : archivedEvents;
 
+  // ── Pagination ───────────────────────────────────────────────────────────
+  const EVENTS_PER_PAGE = 8;
+  const [eventsPage, setEventsPage] = React.useState(1);
+
+  // Reset to page 1 when tab or filters change
+  React.useEffect(() => {
+    setEventsPage(1);
+  }, [activeTab, search, filterCategory, filterPriority, filterStatus, sortBy]);
+
+  const totalEventPages = Math.max(1, Math.ceil(currentList.length / EVENTS_PER_PAGE));
+  const paginatedList = currentList.slice(
+    (eventsPage - 1) * EVENTS_PER_PAGE,
+    eventsPage * EVENTS_PER_PAGE,
+  );
+
+  const pageNumbers = Array.from({ length: totalEventPages }, (_, i) => i + 1).filter(
+    (p) => p === 1 || p === totalEventPages || Math.abs(p - eventsPage) <= 1,
+  );
+  // Insert ellipsis markers
+  const pageButtons: (number | "...")[] = [];
+  pageNumbers.forEach((p, idx) => {
+    if (idx > 0 && p - pageNumbers[idx - 1] > 1) pageButtons.push("...");
+    pageButtons.push(p);
+  });
+
   const inputCls =
     "w-full px-3 py-2.5 border-2 border-slate-200 dark:border-slate-600 rounded-xl bg-white dark:bg-[#1c304a] text-[#142843] dark:text-white text-sm font-medium focus:outline-none focus:border-[#0052cc]";
 
@@ -491,7 +518,8 @@ export function ManageEventsPageClient() {
                   )}
                 </div>
               ) : (
-                currentList.map((event) => (
+                <>
+                  {paginatedList.map((event) => (
                   <div
                     key={event.id}
                     className={`p-4 rounded-2xl border-2 transition-all flex items-start gap-3 group cursor-pointer ${
@@ -612,7 +640,55 @@ export function ManageEventsPageClient() {
                       </button>
                     </div>
                   </div>
-                ))
+                  ))}
+
+                  {/* Pagination Controls */}
+                  {totalEventPages > 1 && (
+                    <div className="flex items-center justify-between pt-3 px-1 border-t border-slate-100 dark:border-slate-800 mt-2">
+                      <span className="text-xs font-semibold text-slate-500 dark:text-slate-400">
+                        Page <strong className="text-[#142843] dark:text-white">{eventsPage}</strong> of{" "}
+                        <strong className="text-[#142843] dark:text-white">{totalEventPages}</strong>{" "}
+                        <span className="text-slate-400">({currentList.length} events)</span>
+                      </span>
+                      <div className="flex items-center gap-1">
+                        <button
+                          type="button"
+                          onClick={() => setEventsPage((p) => Math.max(1, p - 1))}
+                          disabled={eventsPage === 1}
+                          className="p-1.5 rounded-xl border border-slate-200 dark:border-slate-700 text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                        >
+                          <ChevronLeft size={13} />
+                        </button>
+                        {pageButtons.map((item, idx) =>
+                          item === "..." ? (
+                            <span key={`ellipsis-${idx}`} className="px-1 text-xs text-slate-400">…</span>
+                          ) : (
+                            <button
+                              key={item}
+                              type="button"
+                              onClick={() => setEventsPage(item as number)}
+                              className={`min-w-[28px] h-7 rounded-xl text-xs font-bold transition-colors ${
+                                item === eventsPage
+                                  ? "bg-[#0052cc] text-white shadow-sm"
+                                  : "border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800"
+                              }`}
+                            >
+                              {item}
+                            </button>
+                          ),
+                        )}
+                        <button
+                          type="button"
+                          onClick={() => setEventsPage((p) => Math.min(totalEventPages, p + 1))}
+                          disabled={eventsPage === totalEventPages}
+                          className="p-1.5 rounded-xl border border-slate-200 dark:border-slate-700 text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                        >
+                          <ChevronRight size={13} />
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </>
               )}
             </div>
           </div>

@@ -13,7 +13,11 @@ export const createTaskSchema = z.object({
   title: z.string().min(1, "Task title is required").max(200),
   description: z.string().max(2000).optional(),
   listId: z.string().uuid("Invalid list ID"),
-  assigneeId: z.string().uuid().optional().nullable(),
+  assigneeId: z
+    .string()
+    .optional()
+    .nullable()
+    .transform((val) => (val && val.trim() && val !== "unassigned" ? val.trim() : null)),
   priority: z.enum(["Low", "Medium", "High"]).optional(),
   status: z.enum(STATUS_VALUES).optional(),
   dueDate: z.string().optional(),
@@ -23,7 +27,11 @@ export const updateTaskSchema = z.object({
   id: z.string().uuid(),
   title: z.string().min(1).max(200).optional(),
   description: z.string().max(2000).optional().nullable(),
-  assigneeId: z.string().uuid().optional().nullable(),
+  assigneeId: z
+    .string()
+    .optional()
+    .nullable()
+    .transform((val) => (val && val.trim() && val !== "unassigned" ? val.trim() : null)),
   priority: z.enum(["Low", "Medium", "High"]).optional(),
   status: z.enum(STATUS_VALUES).optional(),
   dueDate: z.string().optional().nullable(),

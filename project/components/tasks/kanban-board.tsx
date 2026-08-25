@@ -260,7 +260,7 @@ export function KanbanBoard({ projectId, onSelectTask }: KanbanBoardProps) {
     );
   }
 
-  if (error) {
+  if (error && lists.length === 0) {
     return (
       <div className="m-6 rounded-xl border border-red-200 bg-red-50 p-4 text-sm font-medium text-red-600 dark:border-red-800 dark:bg-red-950/30 dark:text-red-400">
         {error}
@@ -270,6 +270,12 @@ export function KanbanBoard({ projectId, onSelectTask }: KanbanBoardProps) {
 
   return (
     <div className="flex flex-1 flex-col overflow-hidden bg-white dark:bg-[#0f1d31]">
+      {error && (
+        <div className="mx-6 mt-3 rounded-xl border border-red-200 bg-red-50 p-3 text-xs font-semibold text-red-600 dark:border-red-800 dark:bg-red-950/30 dark:text-red-400">
+          {error}
+        </div>
+      )}
+
       {/* Saving pill */}
       {isSaving && (
         <div className="flex items-center gap-1.5 border-b border-slate-100 bg-[#00b4d8]/5 px-6 py-1 text-[11px] font-semibold text-[#00b4d8] dark:border-slate-800 dark:bg-[#00b4d8]/10">

@@ -85,6 +85,17 @@ async function assertProjectAccess(projectId: string, userId: string): Promise<b
       .from(workspaces)
       .where(and(eq(workspaces.id, project.workspaceId), eq(workspaces.ownerId, userId)));
     if (ws) return true;
+
+    const [wsMember] = await db
+      .select({ id: workspaceMembers.id })
+      .from(workspaceMembers)
+      .where(
+        and(
+          eq(workspaceMembers.workspaceId, project.workspaceId),
+          eq(workspaceMembers.userId, userId),
+        ),
+      );
+    if (wsMember) return true;
   }
 
   return false;
@@ -95,6 +106,11 @@ export async function getProjectMembersAction(projectId: string): Promise<TeamMe
     const user = await syncUser();
     if (!user || !projectId) return [];
     if (!(await assertProjectAccess(projectId, user.id))) return [];
+
+    const [project] = await db
+      .select({ ownerId: projects.ownerId })
+      .from(projects)
+      .where(eq(projects.id, projectId));
 
     const rows = await db
       .select({
@@ -108,7 +124,7 @@ export async function getProjectMembersAction(projectId: string): Promise<TeamMe
       .leftJoin(users, eq(projectMembers.userId, users.id))
       .where(eq(projectMembers.projectId, projectId));
 
-    return rows.map((r) => {
+    const memberList: TeamMember[] = rows.map((r) => {
       const formatted = formatRole(r.role);
       return {
         id: r.id,
@@ -117,10 +133,31 @@ export async function getProjectMembersAction(projectId: string): Promise<TeamMe
         email: r.email ?? "—",
         role: formatted,
         status: "Offline" as const,
-        accountType: formatted === "Admin" ? "Admin" : "Member",
+        accountType: (formatted === "Admin" ? "Admin" : "Member") as "Admin" | "Member",
         projectCount: 0,
       };
     });
+
+    if (project?.ownerId && !memberList.some((m) => m.userId === project.ownerId)) {
+      const [owner] = await db
+        .select({ id: users.id, name: users.name, email: users.email })
+        .from(users)
+        .where(eq(users.id, project.ownerId));
+      if (owner) {
+        memberList.unshift({
+          id: owner.id,
+          userId: owner.id,
+          name: owner.name,
+          email: owner.email ?? "—",
+          role: "Owner",
+          status: "Offline" as const,
+          accountType: "Admin" as const,
+          projectCount: 0,
+        });
+      }
+    }
+
+    return memberList;
   } catch (error) {
     console.error("[getProjectMembersAction] Error:", error);
     return [];
@@ -641,23 +678,20 @@ export async function createWorkspaceAction(name: string) {
       slug = `${baseSlug}-${counter}`;
     }
 
-    const newWs = await db.transaction(async (tx) => {
-      const [ws] = await tx
-        .insert(workspaces)
-        .values({
-          name: trimmedName,
-          slug,
-          ownerId: user.id,
-        })
-        .returning();
+    // Sequential inserts (neon-http driver does not support transactions)
+    const [newWs] = await db
+      .insert(workspaces)
+      .values({
+        name: trimmedName,
+        slug,
+        ownerId: user.id,
+      })
+      .returning();
 
-      await tx.insert(workspaceMembers).values({
-        workspaceId: ws.id,
-        userId: user.id,
-        role: "owner",
-      });
-
-      return ws;
+    await db.insert(workspaceMembers).values({
+      workspaceId: newWs.id,
+      userId: user.id,
+      role: "owner",
     });
 
     // Auto-switch to newly created workspace
@@ -888,7 +922,7 @@ export async function acceptProjectInviteAction(inviteId: string) {
     const [invite] = await db.select().from(invites).where(eq(invites.id, inviteId));
 
     if (!invite) return { success: false, error: "Invitation not found." };
-    if (invite.email.toLowerCase() !== user.email.toLowerCase()) {
+    if (invite.email.trim().toLowerCase() !== user.email.trim().toLowerCase()) {
       return { success: false, error: "This invitation was sent to a different email address." };
     }
     if (invite.status !== "pending") {
@@ -903,66 +937,65 @@ export async function acceptProjectInviteAction(inviteId: string) {
     let joinedWorkspaceId: string | null = null;
     let joinedProjectName: string = "";
 
-    await db.transaction(async (tx) => {
-      // 1. Fetch project to get its linked workspaceId and name (for slug derivation)
-      const [project] = await tx
-        .select({ workspaceId: projects.workspaceId, name: projects.name })
-        .from(projects)
-        .where(eq(projects.id, invite.projectId));
+    // Sequential queries (neon-http driver does not support transactions)
+    // 1. Fetch project to get its linked workspaceId and name
+    const [project] = await db
+      .select({ workspaceId: projects.workspaceId, name: projects.name })
+      .from(projects)
+      .where(eq(projects.id, invite.projectId));
 
-      if (project) {
-        joinedWorkspaceId = project.workspaceId ?? null;
-        joinedProjectName = project.name;
-      }
+    if (project) {
+      joinedWorkspaceId = project.workspaceId ?? null;
+      joinedProjectName = project.name;
+    }
 
-      // 2. Add to project members if not already added
-      const [existingMember] = await tx
-        .select({ id: projectMembers.id })
-        .from(projectMembers)
+    // 2. Add to project members if not already added
+    const [existingMember] = await db
+      .select({ id: projectMembers.id })
+      .from(projectMembers)
+      .where(
+        and(eq(projectMembers.projectId, invite.projectId), eq(projectMembers.userId, user.id)),
+      );
+
+    const memberName = user.name?.trim() || (user.email ? user.email.split("@")[0] : "Member");
+
+    if (!existingMember) {
+      await db.insert(projectMembers).values({
+        projectId: invite.projectId,
+        userId: user.id,
+        name: memberName,
+        role: invite.role,
+      });
+    }
+
+    // 3. Auto workspace-membership: ensure user is a workspace member
+    if (joinedWorkspaceId) {
+      const [existingWsMember] = await db
+        .select({ id: workspaceMembers.id })
+        .from(workspaceMembers)
         .where(
-          and(eq(projectMembers.projectId, invite.projectId), eq(projectMembers.userId, user.id)),
+          and(
+            eq(workspaceMembers.workspaceId, joinedWorkspaceId),
+            eq(workspaceMembers.userId, user.id),
+          ),
         );
 
-      if (!existingMember) {
-        await tx.insert(projectMembers).values({
-          projectId: invite.projectId,
+      if (!existingWsMember) {
+        await db.insert(workspaceMembers).values({
+          workspaceId: joinedWorkspaceId,
           userId: user.id,
-          name: user.name,
-          role: invite.role,
+          role: "member",
         });
       }
+    }
 
-      // 3. Auto workspace-membership: ensure user is a workspace member
-      if (joinedWorkspaceId) {
-        const [existingWsMember] = await tx
-          .select({ id: workspaceMembers.id })
-          .from(workspaceMembers)
-          .where(
-            and(
-              eq(workspaceMembers.workspaceId, joinedWorkspaceId),
-              eq(workspaceMembers.userId, user.id),
-            ),
-          );
-
-        if (!existingWsMember) {
-          await tx.insert(workspaceMembers).values({
-            workspaceId: joinedWorkspaceId,
-            userId: user.id,
-            role: "member",
-          });
-        }
-      }
-
-      // 4. Mark invite as accepted
-      await tx
-        .update(invites)
-        .set({ status: "accepted", acceptedAt: new Date() })
-        .where(eq(invites.id, invite.id));
-    });
+    // 4. Mark invite as accepted
+    await db
+      .update(invites)
+      .set({ status: "accepted", acceptedAt: new Date() })
+      .where(eq(invites.id, invite.id));
 
     // 5. Active Workspace Context Management:
-    // Only auto-set current_workspace_id if the user currently has NO active workspace (first invite).
-    // If the user already has an active workspace, preserve their current context.
     const currentActiveWorkspaceId = await getActiveWorkspaceId(user.id);
     let isDifferentWorkspace = false;
     let joinedWorkspaceName: string | null = null;
@@ -974,16 +1007,20 @@ export async function acceptProjectInviteAction(inviteId: string) {
         .where(eq(workspaces.id, joinedWorkspaceId));
       joinedWorkspaceName = wsRow?.name ?? null;
 
-      if (!currentActiveWorkspaceId) {
-        // Brand-new user with no active workspace -> initialize cookie
-        const cookieStore = await cookies();
-        cookieStore.set("current_workspace_id", joinedWorkspaceId, {
-          path: "/",
-          maxAge: 60 * 60 * 24 * 365,
-          sameSite: "lax",
-        });
-      } else if (currentActiveWorkspaceId !== joinedWorkspaceId) {
-        isDifferentWorkspace = true;
+      if (!currentActiveWorkspaceId || currentActiveWorkspaceId !== joinedWorkspaceId) {
+        try {
+          const cookieStore = await cookies();
+          cookieStore.set("current_workspace_id", joinedWorkspaceId, {
+            path: "/",
+            maxAge: 60 * 60 * 24 * 365,
+            sameSite: "lax",
+          });
+        } catch (cookieErr) {
+          console.warn("Could not set workspace cookie:", cookieErr);
+        }
+        if (currentActiveWorkspaceId && currentActiveWorkspaceId !== joinedWorkspaceId) {
+          isDifferentWorkspace = true;
+        }
       }
     }
 
@@ -992,7 +1029,7 @@ export async function acceptProjectInviteAction(inviteId: string) {
     revalidatePath(`/dashboard`);
     revalidatePath(`/workspaces`);
 
-    // Derive a URL-safe slug from the project name (same function used everywhere else)
+    // Derive a URL-safe slug from the project name
     const projectSlug = joinedProjectName ? toSlug(joinedProjectName) : invite.projectId;
 
     return {
@@ -1005,7 +1042,8 @@ export async function acceptProjectInviteAction(inviteId: string) {
     };
   } catch (error) {
     console.error("[acceptProjectInviteAction] Error:", error);
-    return { success: false, error: "Failed to accept invite. Please try again." };
+    const msg = error instanceof Error ? error.message : "Failed to accept invite. Please try again.";
+    return { success: false, error: msg };
   }
 }
 

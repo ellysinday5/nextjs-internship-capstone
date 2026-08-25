@@ -92,57 +92,58 @@ export async function acceptInvite(token: string) {
       return { success: false, error: "This invite was sent to a different email address." };
     }
 
-    await db.transaction(async (tx) => {
-      // 1. Fetch project to get its linked workspaceId
-      const [project] = await tx
-        .select({ workspaceId: projects.workspaceId })
-        .from(projects)
-        .where(eq(projects.id, invite.projectId));
+    // Sequential queries (neon-http driver does not support transactions)
+    // 1. Fetch project to get its linked workspaceId
+    const [project] = await db
+      .select({ workspaceId: projects.workspaceId })
+      .from(projects)
+      .where(eq(projects.id, invite.projectId));
 
-      // 2. Add to project members if not already added
-      const [existingMember] = await tx
-        .select()
-        .from(projectMembers)
+    // 2. Add to project members if not already added
+    const [existingMember] = await db
+      .select()
+      .from(projectMembers)
+      .where(
+        and(eq(projectMembers.projectId, invite.projectId), eq(projectMembers.userId, user.id)),
+      );
+
+    const memberName = user.name?.trim() || (user.email ? user.email.split("@")[0] : "Member");
+
+    if (!existingMember) {
+      await db.insert(projectMembers).values({
+        projectId: invite.projectId,
+        userId: user.id,
+        name: memberName,
+        role: invite.role,
+      });
+    }
+
+    // 3. Auto workspace-membership: ensure user is a workspace member
+    if (project?.workspaceId) {
+      const [existingWsMember] = await db
+        .select({ id: workspaceMembers.id })
+        .from(workspaceMembers)
         .where(
-          and(eq(projectMembers.projectId, invite.projectId), eq(projectMembers.userId, user.id)),
+          and(
+            eq(workspaceMembers.workspaceId, project.workspaceId),
+            eq(workspaceMembers.userId, user.id),
+          ),
         );
 
-      if (!existingMember) {
-        await tx.insert(projectMembers).values({
-          projectId: invite.projectId,
+      if (!existingWsMember) {
+        await db.insert(workspaceMembers).values({
+          workspaceId: project.workspaceId,
           userId: user.id,
-          name: user.name,
-          role: invite.role,
+          role: "member",
         });
       }
+    }
 
-      // 3. Auto workspace-membership: ensure user is a workspace member
-      if (project?.workspaceId) {
-        const [existingWsMember] = await tx
-          .select({ id: workspaceMembers.id })
-          .from(workspaceMembers)
-          .where(
-            and(
-              eq(workspaceMembers.workspaceId, project.workspaceId),
-              eq(workspaceMembers.userId, user.id),
-            ),
-          );
-
-        if (!existingWsMember) {
-          await tx.insert(workspaceMembers).values({
-            workspaceId: project.workspaceId,
-            userId: user.id,
-            role: "member",
-          });
-        }
-      }
-
-      // 4. Mark invite as accepted
-      await tx
-        .update(invites)
-        .set({ status: "accepted", acceptedAt: new Date() })
-        .where(eq(invites.id, invite.id));
-    });
+    // 4. Mark invite as accepted
+    await db
+      .update(invites)
+      .set({ status: "accepted", acceptedAt: new Date() })
+      .where(eq(invites.id, invite.id));
 
     // Notify the person who sent the invite
     if (invite.invitedBy) {

@@ -7,12 +7,14 @@ import {
   markAllNotificationsAsReadAction,
   markNotificationAsReadAction,
 } from "@/actions/notification-actions";
+import { InvitationDetailModal } from "@/components/notifications/invitation-detail-modal";
 import {
   AlertTriangle,
   Bell,
   CheckCheck,
   ChevronLeft,
   ChevronRight,
+  FolderKanban,
   Info,
   Loader2,
   RefreshCw,
@@ -20,6 +22,7 @@ import {
   UserPlus,
   X,
 } from "lucide-react";
+import { useRouter } from "next/navigation";
 import React, { useCallback, useEffect, useState } from "react";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
@@ -131,8 +134,11 @@ const NOTIF_TABS: { key: NotifCategory; label: string }[] = [
 ];
 
 export function NotificationsTab() {
+  const router = useRouter();
   // ── Real notifications from DB ──────────────────────────────────────────
   const [notifications, setNotifications] = useState<NotificationWithActor[]>([]);
+  const [selectedInviteNotification, setSelectedInviteNotification] =
+    useState<NotificationWithActor | null>(null);
   const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(false);
@@ -214,6 +220,17 @@ export function NotificationsTab() {
     setNotifications((prev) => prev.filter((n) => n.id !== id));
     await deleteNotificationAction(id);
   }
+
+  const handleNotificationClick = (notif: NotificationWithActor) => {
+    if (!notif.isRead) {
+      handleMarkRead(notif.id);
+    }
+    if (notif.type === "project_invite") {
+      setSelectedInviteNotification(notif);
+    } else if (notif.href) {
+      router.push(notif.href);
+    }
+  };
 
   function updatePref<K extends keyof NotifPrefs>(key: K, value: boolean) {
     setSavingPref(key);
@@ -370,10 +387,11 @@ export function NotificationsTab() {
             filteredNotifs.map((notif) => (
               <div
                 key={notif.id}
-                className={`p-3.5 rounded-xl border flex items-start gap-3 group transition-all ${
+                onClick={() => handleNotificationClick(notif)}
+                className={`p-3.5 rounded-xl border flex items-start gap-3 group transition-all cursor-pointer hover:shadow-xs ${
                   notif.isRead
-                    ? "border-slate-200 dark:border-slate-700 bg-white dark:bg-[#1c304a] opacity-70"
-                    : "border-[#0052cc]/30 bg-blue-50/40 dark:bg-blue-950/10"
+                    ? "border-slate-200 dark:border-slate-700 bg-white dark:bg-[#1c304a] hover:bg-slate-50 dark:hover:bg-slate-800/60 opacity-80"
+                    : "border-[#0052cc]/30 bg-blue-50/40 dark:bg-blue-950/10 hover:bg-blue-50/70 dark:hover:bg-blue-950/20 shadow-xs"
                 }`}
               >
                 <div className="w-8 h-8 rounded-full bg-blue-100 dark:bg-blue-950 flex items-center justify-center shrink-0 mt-0.5 text-[#0052cc]">
@@ -400,7 +418,7 @@ export function NotificationsTab() {
                       {notif.message}
                     </p>
                   )}
-                  <div className="flex items-center gap-3 mt-1 flex-wrap">
+                  <div className="flex items-center gap-3 mt-1.5 flex-wrap">
                     <p className="text-[10px] text-slate-400">{formatTime(notif.createdAt)}</p>
                     {notif.actor && (
                       <p className="text-[10px] text-slate-400">
@@ -408,10 +426,18 @@ export function NotificationsTab() {
                         <span className="font-semibold text-slate-500">{notif.actor.name}</span>
                       </p>
                     )}
+                    {notif.type === "project_invite" && (
+                      <span className="text-[10px] font-bold text-blue-600 dark:text-blue-400 bg-blue-100/70 dark:bg-blue-950 px-2 py-0.5 rounded-md border border-blue-200 dark:border-blue-800">
+                        Review &amp; Accept &rarr;
+                      </span>
+                    )}
                     {!notif.isRead && (
                       <button
                         type="button"
-                        onClick={() => handleMarkRead(notif.id)}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleMarkRead(notif.id);
+                        }}
                         className="text-[10px] text-[#0052cc] hover:underline cursor-pointer"
                       >
                         Mark read
@@ -421,7 +447,10 @@ export function NotificationsTab() {
                 </div>
                 <button
                   type="button"
-                  onClick={() => handleDismiss(notif.id)}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleDismiss(notif.id);
+                  }}
                   className="p-1 rounded text-slate-300 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-all cursor-pointer"
                   title="Dismiss"
                 >
@@ -519,6 +548,14 @@ export function NotificationsTab() {
           ))}
         </div>
       </div>
+
+      {/* Inline Project Invitation Detail / Accept Modal */}
+      <InvitationDetailModal
+        isOpen={Boolean(selectedInviteNotification)}
+        notification={selectedInviteNotification}
+        onClose={() => setSelectedInviteNotification(null)}
+        onSuccess={() => fetchNotifications(page)}
+      />
     </div>
   );
 }

@@ -89,16 +89,18 @@ const PRIORITY_STYLE: Record<string, string> = {
 
 interface AttachedFile {
   id: string;
-  file: File;
+  name: string;
+  size: number;
+  type: string;
   url: string;
 }
 
-function getFileIcon(file: File) {
-  if (file.type.startsWith("image/"))
+function getFileIcon(type: string) {
+  if (type.startsWith("image/"))
     return <ImageIcon size={14} className="text-sky-500 shrink-0" />;
-  if (file.type.startsWith("video/"))
+  if (type.startsWith("video/"))
     return <Film size={14} className="text-purple-500 shrink-0" />;
-  if (file.type === "application/pdf")
+  if (type === "application/pdf")
     return <FileText size={14} className="text-rose-500 shrink-0" />;
   return <Archive size={14} className="text-slate-400 shrink-0" />;
 }
@@ -265,29 +267,59 @@ export function TaskDetailsPane({
 
   function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
     const files = Array.from(e.target.files ?? []);
-    const newAttachments: AttachedFile[] = files.map((f) => ({
-      id: `${Date.now()}-${f.name}`,
-      file: f,
-      url: URL.createObjectURL(f),
-    }));
-    setAttachedFiles((prev) => [...prev, ...newAttachments]);
+    files.forEach((f) => {
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        const dataUrl = event.target?.result as string;
+        const newAttachment: AttachedFile = {
+          id: `${Date.now()}-${f.name}`,
+          name: f.name,
+          size: f.size,
+          type: f.type,
+          url: dataUrl,
+        };
+        setAttachedFiles((prev) => {
+          const updated = [...prev, newAttachment];
+          try {
+            localStorage.setItem(
+              `syntraflow_attachments_${task.id}`,
+              JSON.stringify(updated),
+            );
+          } catch (err) {
+            console.warn("Could not save attachments to localStorage:", err);
+          }
+          return updated;
+        });
+      };
+      reader.readAsDataURL(f);
+    });
     e.target.value = "";
   }
 
   function handleRemoveFile(id: string) {
     setAttachedFiles((prev) => {
-      const toRemove = prev.find((f) => f.id === id);
-      if (toRemove) URL.revokeObjectURL(toRemove.url);
-      return prev.filter((f) => f.id !== id);
+      const updated = prev.filter((f) => f.id !== id);
+      try {
+        localStorage.setItem(`syntraflow_attachments_${task.id}`, JSON.stringify(updated));
+      } catch (err) {
+        console.warn("Could not save attachments to localStorage:", err);
+      }
+      return updated;
     });
   }
 
   useEffect(() => {
-    return () => {
-      attachedFiles.forEach((af) => URL.revokeObjectURL(af.url));
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+    try {
+      const saved = localStorage.getItem(`syntraflow_attachments_${task.id}`);
+      if (saved) {
+        setAttachedFiles(JSON.parse(saved));
+      } else {
+        setAttachedFiles([]);
+      }
+    } catch {
+      setAttachedFiles([]);
+    }
+  }, [task.id]);
 
   const paneClass = isExpanded
     ? "fixed inset-0 z-50 flex items-center justify-center bg-black/50"
@@ -361,7 +393,15 @@ export function TaskDetailsPane({
                 {isEditingAssignee ? (
                   <select
                     autoFocus
-                    value={assignee?.id || "unassigned"}
+                    value={
+                      (() => {
+                        if (!assignee?.id) return "unassigned";
+                        const match = members.find(
+                          (m) => (m.userId && m.userId === assignee.id) || m.id === assignee.id,
+                        );
+                        return match ? (match.userId ?? match.id) : assignee.id;
+                      })()
+                    }
                     onChange={(e) => {
                       setIsEditingAssignee(false);
                       const val = e.target.value;
@@ -369,7 +409,7 @@ export function TaskDetailsPane({
                         setAssignee(undefined);
                         return;
                       }
-                      const found = members.find((m) => (m.userId ?? m.id) === val);
+                      const found = members.find((m) => (m.userId ?? m.id) === val || m.id === val);
                       if (found) {
                         setAssignee({
                           id: found.userId ?? found.id,
@@ -379,7 +419,7 @@ export function TaskDetailsPane({
                       }
                     }}
                     onBlur={() => setIsEditingAssignee(false)}
-                    className="text-xs rounded-lg border border-[#00b4d8] bg-white dark:bg-slate-900 px-2 py-1 outline-none dark:text-slate-100"
+                    className="text-xs rounded-lg border border-[#00b4d8] bg-white dark:bg-slate-900 px-2 py-1 outline-none dark:text-slate-100 cursor-pointer"
                   >
                     <option value="unassigned">Unassigned</option>
                     {members.map((m) => (
@@ -576,34 +616,34 @@ export function TaskDetailsPane({
                     key={af.id}
                     className="flex items-center gap-3 rounded-xl border border-slate-100 dark:border-slate-800 bg-slate-50/60 dark:bg-slate-900/40 px-3 py-2 group"
                   >
-                    {getFileIcon(af.file)}
+                    {getFileIcon(af.type)}
                     <div className="flex-1 min-w-0">
                       <button
                         type="button"
                         onClick={() =>
                           setPreviewFile({
                             id: af.id,
-                            name: af.file.name,
-                            size: af.file.size,
-                            type: af.file.type,
+                            name: af.name,
+                            size: af.size,
+                            type: af.type,
                             url: af.url,
                           })
                         }
                         className="text-xs font-semibold text-slate-700 dark:text-slate-200 truncate hover:text-[#00b4d8] text-left block w-full cursor-pointer"
                       >
-                        {af.file.name}
+                        {af.name}
                       </button>
-                      <p className="text-[10px] text-slate-400">{formatBytes(af.file.size)}</p>
+                      <p className="text-[10px] text-slate-400">{formatBytes(af.size)}</p>
                     </div>
-                    {af.file.type.startsWith("image/") && (
+                    {af.type.startsWith("image/") && (
                       <button
                         type="button"
                         onClick={() =>
                           setPreviewFile({
                             id: af.id,
-                            name: af.file.name,
-                            size: af.file.size,
-                            type: af.file.type,
+                            name: af.name,
+                            size: af.size,
+                            type: af.type,
                             url: af.url,
                           })
                         }
@@ -613,7 +653,7 @@ export function TaskDetailsPane({
                         {/* eslint-disable-next-line @next/next/no-img-element */}
                         <img
                           src={af.url}
-                          alt={af.file.name}
+                          alt={af.name}
                           className="h-9 w-9 rounded-lg object-cover border border-slate-200 dark:border-slate-700 hover:ring-2 hover:ring-[#00b4d8] transition-all"
                         />
                       </button>
@@ -621,9 +661,9 @@ export function TaskDetailsPane({
                     <button
                       onClick={() => handleRemoveFile(af.id)}
                       className="opacity-0 group-hover:opacity-100 p-1 rounded-md text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-950/20 transition-all"
-                      title="Remove"
+                      title="Remove file"
                     >
-                      <X size={13} />
+                      <X size={14} />
                     </button>
                   </div>
                 ))}

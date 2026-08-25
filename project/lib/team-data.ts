@@ -1,5 +1,6 @@
 export interface TeamMember {
   id: string;
+  userId?: string | null;
   name: string;
   email: string;
   role: string;

@@ -334,21 +334,39 @@ export async function createProjectAction(data: CreateProjectFormValues) {
       members = [],
     } = validated.data;
 
-    const newProject = await db.transaction(async (tx) => {
-      // 1. Look up user's owned workspace or auto-create one if none exists
-      let [workspace] = await tx
+    const activeWorkspaceId = await getActiveWorkspaceId(user.id);
+
+    // Sequential queries (neon-http driver does not support transactions)
+    // 1. Resolve target workspace
+    let targetWorkspaceId = activeWorkspaceId;
+
+    if (targetWorkspaceId) {
+      const [existing] = await db
+        .select({ id: workspaces.id })
+        .from(workspaces)
+        .where(eq(workspaces.id, targetWorkspaceId))
+        .limit(1);
+      if (!existing) {
+        targetWorkspaceId = null;
+      }
+    }
+
+    if (!targetWorkspaceId) {
+      const [ownedWs] = await db
         .select({ id: workspaces.id })
         .from(workspaces)
         .where(eq(workspaces.ownerId, user.id))
         .limit(1);
 
-      if (!workspace) {
+      if (ownedWs) {
+        targetWorkspaceId = ownedWs.id;
+      } else {
         const ownerName = user.name || (user.email ? user.email.split("@")[0] : "User");
-        const baseSlug = toSlug(ownerName + "-workspace") || "workspace";
+        const baseSlug = toSlug(ownerName + "-workspace") || `workspace-${Date.now()}`;
         let slug = baseSlug;
         let counter = 1;
         while (true) {
-          const existing = await tx
+          const existing = await db
             .select({ id: workspaces.id })
             .from(workspaces)
             .where(eq(workspaces.slug, slug))
@@ -358,7 +376,7 @@ export async function createProjectAction(data: CreateProjectFormValues) {
           slug = `${baseSlug}-${counter}`;
         }
 
-        const [createdWs] = await tx
+        const [createdWs] = await db
           .insert(workspaces)
           .values({
             name: `${ownerName}'s Workspace`,
@@ -367,55 +385,73 @@ export async function createProjectAction(data: CreateProjectFormValues) {
           })
           .returning({ id: workspaces.id });
 
-        await tx.insert(workspaceMembers).values({
+        await db.insert(workspaceMembers).values({
           workspaceId: createdWs.id,
           userId: user.id,
           role: "owner",
         });
 
-        workspace = createdWs;
+        targetWorkspaceId = createdWs.id;
       }
+    }
 
-      const [project] = await tx
-        .insert(projects)
-        .values({
-          name,
-          description: description || null,
-          ownerId: user.id,
-          workspaceId: workspace.id,
-          dueDate: dueDate ? new Date(dueDate) : null,
-          techStack,
-          status,
-          priority,
-        })
-        .returning();
+    let parsedDueDate: Date | null = null;
+    if (dueDate) {
+      const d = new Date(dueDate);
+      if (!isNaN(d.getTime())) {
+        parsedDueDate = d;
+      }
+    }
 
-      if (members.length > 0) {
-        await tx.insert(projectMembers).values(
-          members.map((m) => ({
-            projectId: project.id,
-            name: m.name,
-            role: m.role,
-          })),
-        );
-      } else {
-        await tx.insert(projectMembers).values({
-          projectId: project.id,
+    const [newProject] = await db
+      .insert(projects)
+      .values({
+        name,
+        description: description || null,
+        ownerId: user.id,
+        workspaceId: targetWorkspaceId,
+        dueDate: parsedDueDate,
+        techStack,
+        status,
+        priority,
+      })
+      .returning();
+
+    if (members.length > 0) {
+      await db.insert(projectMembers).values(
+        members.map((m) => ({
+          projectId: newProject.id,
+          name: m.name,
+          role: m.role,
+        })),
+      );
+      const creatorAlreadyIncluded = members.some(
+        (m) => m.name.toLowerCase() === (user.name || "").toLowerCase(),
+      );
+      if (!creatorAlreadyIncluded) {
+        await db.insert(projectMembers).values({
+          projectId: newProject.id,
+          userId: user.id,
           name: user.name || "Owner",
-          role: "Owner",
+          role: "owner",
         });
       }
+    } else {
+      await db.insert(projectMembers).values({
+        projectId: newProject.id,
+        userId: user.id,
+        name: user.name || "Owner",
+        role: "owner",
+      });
+    }
 
-      // Seed the four default Kanban columns
-      await tx.insert(lists).values([
-        { name: "To Do", projectId: project.id, position: 0 },
-        { name: "In Progress", projectId: project.id, position: 1 },
-        { name: "Review", projectId: project.id, position: 2 },
-        { name: "Done", projectId: project.id, position: 3 },
-      ]);
-
-      return project;
-    });
+    // Seed the four default Kanban columns
+    await db.insert(lists).values([
+      { name: "To Do", projectId: newProject.id, position: 0 },
+      { name: "In Progress", projectId: newProject.id, position: 1 },
+      { name: "Review", projectId: newProject.id, position: 2 },
+      { name: "Done", projectId: newProject.id, position: 3 },
+    ]);
 
     revalidatePath("/dashboard");
     revalidatePath("/projects");
@@ -423,7 +459,8 @@ export async function createProjectAction(data: CreateProjectFormValues) {
     return { success: true, project: { ...newProject, views } };
   } catch (error: unknown) {
     console.error("[createProjectAction] Error creating project:", error);
-    return { success: false, error: "Failed to create project. Please try again." };
+    const msg = error instanceof Error ? error.message : "Failed to create project. Please try again.";
+    return { success: false, error: msg };
   }
 }
 
@@ -531,35 +568,31 @@ export async function updateProjectAction(data: UpdateProjectFormValues) {
       return { success: false, error: "Only project managers and owners can update this project." };
     }
 
-    const updatedProject = await db.transaction(async (tx) => {
-      const [project] = await tx
-        .update(projects)
-        .set({
-          name,
-          description: description || null,
-          dueDate: dueDate ? new Date(dueDate) : null,
-          techStack,
-          status,
-          priority,
-          updatedAt: new Date(),
-        })
-        .where(eq(projects.id, id))
-        .returning();
+    // Sequential queries (neon-http driver does not support transactions)
+    const [updatedProject] = await db
+      .update(projects)
+      .set({
+        name,
+        description: description || null,
+        dueDate: dueDate ? new Date(dueDate) : null,
+        techStack,
+        status,
+        priority,
+        updatedAt: new Date(),
+      })
+      .where(eq(projects.id, id))
+      .returning();
 
-      if (members && members.length > 0) {
-        // Simplest correct approach: replace members wholesale if provided
-        await tx.delete(projectMembers).where(eq(projectMembers.projectId, id));
-        await tx.insert(projectMembers).values(
-          members.map((m) => ({
-            projectId: id,
-            name: m.name,
-            role: m.role,
-          })),
-        );
-      }
-
-      return project;
-    });
+    if (members && members.length > 0) {
+      await db.delete(projectMembers).where(eq(projectMembers.projectId, id));
+      await db.insert(projectMembers).values(
+        members.map((m) => ({
+          projectId: id,
+          name: m.name,
+          role: m.role,
+        })),
+      );
+    }
 
     revalidatePath("/dashboard");
     revalidatePath("/projects");
