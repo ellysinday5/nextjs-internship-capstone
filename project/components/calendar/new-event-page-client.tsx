@@ -4,18 +4,24 @@ import { notifyProjectEventCreatedAction } from "@/actions/notification-actions"
 import { type ProjectWithStats, getProjectsAction } from "@/actions/project-actions";
 import { BackButton } from "@/components/ui/back-button";
 import { useCategories } from "@/context/category-context";
+import {
+  getCalendarStorageKey,
+  loadCleanEvents,
+  saveCleanEvents,
+} from "@/lib/calendar-storage";
+import { useUser } from "@clerk/nextjs";
 import { CheckCircle2 } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
 import type React from "react";
 import { useCallback, useEffect, useRef, useState } from "react";
 
-const STORAGE_KEY = "syntraflow_custom_events";
-
 export function NewEventPageClient() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const draftId = searchParams.get("draft");
+  const { user } = useUser();
   const { eventCategoryNames } = useCategories();
+  const storageKey = getCalendarStorageKey(user?.id);
 
   const [projects, setProjects] = useState<ProjectWithStats[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -77,11 +83,9 @@ export function NewEventPageClient() {
   useEffect(() => {
     if (!draftId) return;
     try {
-      const stored = localStorage.getItem(STORAGE_KEY);
-      if (!stored) return;
-      const events = JSON.parse(stored);
+      const events = loadCleanEvents(storageKey);
       const draft = events.find(
-        (e: { id: string; isDraft: boolean }) => e.id === draftId && e.isDraft,
+        (e: { id: string; isDraft?: boolean }) => e.id === draftId && e.isDraft,
       );
       if (draft) {
         setTitle(draft.title || "");
@@ -89,19 +93,18 @@ export function NewEventPageClient() {
         setCategory(draft.type || "Project Deadline");
         setEventDate(draft.rawDate || "");
         setEventTime(draft.time || "09:00");
-        setPriority(draft.priority || "High");
+        setPriority((draft.priority as "High" | "Medium" | "Low") || "High");
         setLocationLink(draft.locationLink || "");
       }
     } catch {}
-  }, [draftId]);
+  }, [draftId, storageKey]);
 
   const saveDraft = useCallback(() => {
     const f = formRef.current;
     if (!isDirtyRef.current || !f.title.trim()) return;
     try {
-      const stored = localStorage.getItem(STORAGE_KEY);
-      const events = stored ? JSON.parse(stored) : [];
-      const filtered = draftId ? events.filter((e: { id: string }) => e.id !== draftId) : events;
+      const events = loadCleanEvents(storageKey);
+      const filtered = draftId ? events.filter((e) => e.id !== draftId) : events;
       const parsedDate = new Date(f.eventDate);
       const dateFormatted = !isNaN(parsedDate.getTime())
         ? parsedDate.toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })
@@ -120,13 +123,9 @@ export function NewEventPageClient() {
         isDraft: true,
         createdAt: new Date().toISOString(),
       };
-      // Deduplicate by id — ensure no two entries share the same key.
-      const byId = new Map<string, object>();
-      for (const e of filtered) byId.set((e as { id: string }).id, e);
-      byId.set(draft.id, draft); // overwrite or insert draft
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(Array.from(byId.values())));
+      saveCleanEvents(storageKey, [draft, ...filtered]);
     } catch {}
-  }, [draftId]);
+  }, [draftId, storageKey]);
 
   useEffect(() => {
     const handleUnload = () => saveDraft();
@@ -150,10 +149,9 @@ export function NewEventPageClient() {
     setIsSubmitting(true);
     isDirtyRef.current = false;
     try {
-      const stored = localStorage.getItem(STORAGE_KEY);
-      const existing = stored ? JSON.parse(stored) : [];
+      const existing = loadCleanEvents(storageKey);
       const filtered = draftId
-        ? existing.filter((ev: { id: string }) => ev.id !== draftId)
+        ? existing.filter((ev) => ev.id !== draftId)
         : existing;
       const parsedDate = new Date(eventDate);
       const dateFormatted = !isNaN(parsedDate.getTime())
@@ -177,7 +175,7 @@ export function NewEventPageClient() {
         archived: false,
         createdAt: new Date().toISOString(),
       };
-      localStorage.setItem(STORAGE_KEY, JSON.stringify([newEvent, ...filtered]));
+      saveCleanEvents(storageKey, [newEvent, ...filtered]);
 
       if (selectedProjectId !== "general") {
         notifyProjectEventCreatedAction({

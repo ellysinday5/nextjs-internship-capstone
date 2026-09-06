@@ -83,6 +83,8 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
           <main className="flex-1 w-full min-w-0 overflow-hidden bg-[#f0f4f8] dark:bg-[#0b1728] flex flex-col">
             <Suspense>{children}</Suspense>
           </main>
+
+          <Footer />
         </div>
       </div>
     </CategoryProvider>

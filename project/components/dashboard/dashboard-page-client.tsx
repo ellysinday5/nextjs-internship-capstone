@@ -9,6 +9,7 @@ import {
 import { AddMemberModal } from "@/components/modals/add-member-modal";
 import { CreateProjectModal } from "@/components/modals/create-project-modal";
 import { CreateTaskModal } from "@/components/modals/create-task-modal";
+import { StatCard } from "@/components/ui/stat-card";
 import { isTaskCompleted } from "@/lib/project-stats";
 import { useUser } from "@clerk/nextjs";
 import {
@@ -232,32 +233,35 @@ export function DashboardPageClient() {
   const dynamicStats = [
     {
       name: "Active Projects",
-      value: String(totalProjects),
-      change: "+2.5%",
+      value: totalProjects,
       icon: TrendingUp,
-      color: "bg-[#0033a0]",
+      accentColor: "#0033a0",
+      color: "text-[#0033a0] dark:text-blue-400",
+      pillBg: "bg-blue-50 text-[#0033a0] dark:bg-blue-950/60 dark:text-blue-400",
     },
     {
       name: "Total Tasks",
-      value: String(totalTasks),
-      change: "+4.1%",
+      value: totalTasks,
       icon: Users,
-      color: "bg-[#6c7fd8]",
+      accentColor: "#6c7fd8",
+      color: "text-[#6c7fd8] dark:text-indigo-400",
+      pillBg: "bg-indigo-50 text-[#6c7fd8] dark:bg-indigo-950/60 dark:text-indigo-400",
     },
     {
       name: "Completed Tasks",
-      value: String(completedTasks),
-      change: "+12.3%",
+      value: completedTasks,
       icon: CheckCircle2,
-      color: "bg-[#059669]",
+      accentColor: "#059669",
+      color: "text-emerald-600 dark:text-emerald-400",
+      pillBg: "bg-emerald-50 text-emerald-600 dark:bg-emerald-950/60 dark:text-emerald-400",
     },
     {
       name: "Pending Tasks",
-      value: String(pendingTasks),
-      change: "-2.1%",
+      value: pendingTasks,
       icon: Clock,
-      color: "bg-[#d97706]",
-      highlight: pendingTasks > 0,
+      accentColor: "#d97706",
+      color: "text-amber-600 dark:text-amber-400",
+      pillBg: "bg-amber-50 text-amber-600 dark:bg-amber-950/60 dark:text-amber-400",
     },
   ];
 
@@ -285,39 +289,15 @@ export function DashboardPageClient() {
         {/* ── 2. Stat Cards ── */}
         <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
           {dynamicStats.map((stat) => (
-            <div
+            <StatCard
               key={stat.name}
-              className={`group bg-white dark:bg-[#14263e] border border-slate-200 dark:border-slate-700/80 rounded-2xl p-5 flex items-center justify-between shadow-xs transition-all duration-200 ease-out hover:shadow-md hover:-translate-y-0.5 ${
-                stat.highlight ? "ring-1 ring-amber-400/40" : ""
-              }`}
-            >
-              <div className="space-y-1.5">
-                <p className="text-xs sm:text-sm font-semibold text-slate-500 dark:text-slate-400">
-                  {stat.name}
-                </p>
-                <div className="flex items-baseline gap-2">
-                  <span className="text-3xl font-extrabold text-[#142843] dark:text-white">
-                    {stat.value}
-                  </span>
-                  <span
-                    className={`text-xs font-bold flex items-center gap-0.5 ${
-                      stat.change.startsWith("+") ? "text-emerald-500" : "text-amber-500"
-                    }`}
-                  >
-                    <ArrowUpRight
-                      size={13}
-                      className={stat.change.startsWith("-") ? "rotate-180" : ""}
-                    />
-                    {stat.change}
-                  </span>
-                </div>
-              </div>
-              <div
-                className={`w-12 h-12 rounded-2xl ${stat.color} flex items-center justify-center shadow-xs shrink-0 ml-3 transition-transform duration-200 group-hover:scale-105`}
-              >
-                <stat.icon size={22} className="text-white" />
-              </div>
-            </div>
+              label={stat.name}
+              value={stat.value}
+              icon={stat.icon}
+              accentColor={stat.accentColor}
+              color={stat.color}
+              pillBg={stat.pillBg}
+            />
           ))}
         </div>
 

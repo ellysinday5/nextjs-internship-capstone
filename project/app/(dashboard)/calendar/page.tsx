@@ -1,11 +1,20 @@
 "use client";
 
 import { getProjectsAction } from "@/actions/project-actions";
-import { getProjectTasksAction } from "@/actions/task-actions";
+import { getTasksForProjectsAction } from "@/actions/task-actions";
 import { CalendarGrid, SelectedDayChip } from "@/components/calendar/calendar-grid";
 import { EventsList } from "@/components/calendar/events-list";
 import { ConfirmationModal } from "@/components/modals/ConfirmationModal";
+import { StatCard } from "@/components/ui/stat-card";
 import { useCategories } from "@/context/category-context";
+import {
+  type CalendarEventItem,
+  getCalendarStorageKey,
+  loadCleanEvents,
+  saveCleanEvents,
+} from "@/lib/calendar-storage";
+import { isTaskCompleted } from "@/lib/project-stats";
+import { useUser } from "@clerk/nextjs";
 import {
   Archive,
   CalendarDays,
@@ -22,67 +31,7 @@ import {
 import { useRouter } from "next/navigation";
 import React, { useState, useEffect, useMemo } from "react";
 
-export interface EventItem {
-  id: string;
-  title: string;
-  description?: string;
-  type: string;
-  date: string;
-  rawDate: string;
-  time?: string;
-  priority?: "High" | "Medium" | "Low";
-  projectName?: string;
-  locationLink?: string;
-  completed?: boolean;
-  archived?: boolean;
-  isDraft?: boolean;
-  createdAt?: string;
-}
-
-const STORAGE_KEY = "syntraflow_custom_events";
-
-const initialDeadlines: EventItem[] = [
-  {
-    id: "dl-1",
-    title: "Website Redesign",
-    type: "Project Deadline",
-    date: "July 25, 2026",
-    rawDate: "2026-07-25",
-    priority: "High",
-    projectName: "Ellen's first project",
-    createdAt: new Date().toISOString(),
-  },
-  {
-    id: "dl-2",
-    title: "Team Sync Meeting",
-    type: "Meeting",
-    date: "July 26, 2026",
-    rawDate: "2026-07-26",
-    priority: "Medium",
-    projectName: "General",
-    createdAt: new Date().toISOString(),
-  },
-  {
-    id: "dl-3",
-    title: "Mobile App Launch",
-    type: "Milestone",
-    date: "July 27, 2026",
-    rawDate: "2026-07-27",
-    priority: "High",
-    projectName: "SyntraFlow Platform",
-    createdAt: new Date().toISOString(),
-  },
-  {
-    id: "dl-4",
-    title: "Capstone Presentation",
-    type: "Presentation",
-    date: "July 28, 2026",
-    rawDate: "2026-07-28",
-    priority: "High",
-    projectName: "Internship Milestone",
-    createdAt: new Date().toISOString(),
-  },
-];
+export type EventItem = CalendarEventItem;
 
 function priorityBadge(p?: string) {
   if (p === "High")
@@ -94,8 +43,15 @@ function priorityBadge(p?: string) {
 
 export default function CalendarPage() {
   const router = useRouter();
+  const { user } = useUser();
   const { eventCategoryNames } = useCategories();
-  const [events, setEvents] = useState<EventItem[]>(initialDeadlines);
+  const storageKey = getCalendarStorageKey(user?.id);
+
+  // Start from an empty array — no hardcoded seed data.
+  // Events are populated from two workspace-scoped sources:
+  //   1. User-created custom events (localStorage, scoped to user)
+  //   2. Task due-dates fetched from the DB via getTasksForProjectsAction
+  const [events, setEvents] = useState<EventItem[]>([]);
   const [search, setSearch] = useState("");
   const [filterStatus, setFilterStatus] = useState("All");
   const [sortBy, setSortBy] = useState("date-asc");
@@ -117,84 +73,66 @@ export default function CalendarPage() {
   } | null>(null);
 
   useEffect(() => {
-    let stored: EventItem[] = [];
-    try {
-      const raw = localStorage.getItem(STORAGE_KEY);
-      if (raw) {
-        const parsed: EventItem[] = JSON.parse(raw);
-        if (Array.isArray(parsed)) stored = parsed;
-      }
-    } catch {}
+    // 1. Load user-created custom events from localStorage (purges any legacy mock data)
+    const stored = loadCleanEvents(storageKey);
+    setEvents(stored);
 
-    // Merge localStorage events with initialDeadlines, deduplicating by id.
-    // localStorage events take precedence (they may have been updated/archived).
-    setEvents(() => {
-      const byId = new Map<string, EventItem>();
-      // Start with the hardcoded defaults so they're always the lowest priority
-      for (const e of initialDeadlines) byId.set(e.id, e);
-      // Override with stored versions (they may carry completed/archived state)
-      for (const e of stored) byId.set(e.id, e);
-      return Array.from(byId.values());
-    });
-
-    // Append task due-date events (deduplicated against what's already in state)
+    // 2. Fetch task due-dates from the DB, workspace-scoped via getProjectsAction.
+    //    getProjectsAction already resolves the active workspace and returns only
+    //    projects belonging to it, so the projectIds passed to the batched action
+    //    are guaranteed to be workspace-scoped.
     getProjectsAction()
       .then(async (projectsList) => {
-        if (!Array.isArray(projectsList)) return;
-        const all = (
-          await Promise.all(
-            projectsList.map(async (p) => {
-              try {
-                const tasks = await getProjectTasksAction(p.id);
-                return tasks
-                  .filter((t) => t.dueDate)
-                  .map((t) => {
-                    const d = new Date(t.dueDate!);
-                    return {
-                      id: `task-dl-${t.id}`,
-                      title: t.title,
-                      description: t.description || undefined,
-                      type: "Task",
-                      date: !isNaN(d.getTime())
-                        ? d.toLocaleDateString("en-US", {
-                            month: "long",
-                            day: "numeric",
-                            year: "numeric",
-                          })
-                        : "",
-                      rawDate: !isNaN(d.getTime()) ? d.toISOString().split("T")[0] : "",
-                      priority: (t.priority as any) || "Medium",
-                      projectName: p.name,
-                      completed: t.status === "Completed" || t.status === "Complete",
-                      createdAt: new Date().toISOString(),
-                    } as EventItem;
-                  });
-              } catch {
-                return [];
-              }
-            }),
-          )
-        ).flat();
-        if (all.length > 0)
-          setEvents((prev) => {
-            const byId = new Map(prev.map((e) => [e.id, e]));
-            for (const t of all) {
-              if (!byId.has(t.id)) byId.set(t.id, t);
-            }
-            return Array.from(byId.values());
+        if (!Array.isArray(projectsList) || projectsList.length === 0) return;
+
+        const projectIds = projectsList.map((p) => p.id);
+        const allTasks = await getTasksForProjectsAction(projectIds);
+
+        // Map tasks with a dueDate to EventItems; skip completed tasks using the
+        // canonical isTaskCompleted() helper from lib/project-stats.ts.
+        const taskEvents: EventItem[] = allTasks
+          .filter((t) => t.dueDate && !isTaskCompleted(t.status))
+          .map((t) => {
+            const d = new Date(t.dueDate!);
+            return {
+              id: `task-dl-${t.id}`,
+              title: t.title,
+              description: t.description || undefined,
+              type: "Task",
+              date: !isNaN(d.getTime())
+                ? d.toLocaleDateString("en-US", {
+                    month: "long",
+                    day: "numeric",
+                    year: "numeric",
+                  })
+                : "",
+              rawDate: !isNaN(d.getTime()) ? d.toISOString().split("T")[0] : "",
+              priority: (t.priority as "High" | "Medium" | "Low") || "Medium",
+              projectName: t.projectName,
+              completed: false,
+              createdAt: t.createdAt ? new Date(t.createdAt).toISOString() : new Date().toISOString(),
+            };
           });
+
+        if (taskEvents.length > 0) {
+          setEvents((prev) => {
+            const merged = new Map(prev.map((e) => [e.id, e]));
+            // Task events don't override existing stored custom events.
+            for (const t of taskEvents) {
+              if (!merged.has(t.id)) merged.set(t.id, t);
+            }
+            return Array.from(merged.values());
+          });
+        }
       })
       .catch(() => {});
-  }, []);
+  }, [storageKey]);
 
   const persistEvents = (updated: EventItem[]) => {
-    // Deduplicate by id before persisting
-    const byId = new Map(updated.map((e) => [e.id, e]));
-    const deduped = Array.from(byId.values());
-    setEvents(deduped);
-    try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(deduped));
-    } catch {}
+    // Only persist custom events to localStorage (exclude DB task items)
+    const customOnly = updated.filter((e) => !e.id.startsWith("task-dl-"));
+    saveCleanEvents(storageKey, customOnly);
+    setEvents(updated);
   };
 
   const handleToggleComplete = (id: string) =>
@@ -238,6 +176,9 @@ export default function CalendarPage() {
   const activeEvents = useMemo(() => events.filter((e) => !e.archived), [events]);
   const archivedEvents = useMemo(() => events.filter((e) => e.archived), [events]);
   const draftEvents = useMemo(() => activeEvents.filter((e) => e.isDraft), [activeEvents]);
+  // Recent Activity: most-recently-created active (non-archived) events, up to 5.
+  // Derived entirely from the events state — no hardcoded stand-in.
+  // Will be empty for users with no events, which is the correct behavior.
   const recentActivity = useMemo(
     () =>
       [...activeEvents]
@@ -348,33 +289,19 @@ export default function CalendarPage() {
           </div>
         </div>
 
-        {/* Stat Cards */}
+        {/* Stat Cards — shared StatCard component, same styling as Calendar & Dashboard */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3.5">
-          {statsCards.map((s) => {
-            const Icon = s.icon;
-            return (
-              <div
-                key={s.label}
-                className="group relative flex flex-col justify-between rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4 shadow-xs hover:shadow-md hover:border-slate-300 dark:hover:border-slate-700 transition-all duration-200 overflow-hidden"
-              >
-                <div
-                  className="absolute top-0 left-0 right-0 h-1 w-full"
-                  style={{ backgroundColor: s.accentColor }}
-                />
-                <div className="flex items-center justify-between gap-2 mb-2">
-                  <span className="text-xs font-extrabold uppercase tracking-wider text-slate-500 dark:text-slate-400">
-                    {s.label}
-                  </span>
-                  <div
-                    className={`h-8 w-8 rounded-xl flex items-center justify-center shrink-0 transition-transform duration-200 group-hover:scale-105 ${s.pillBg}`}
-                  >
-                    <Icon size={16} className="stroke-[2.5]" />
-                  </div>
-                </div>
-                <p className={`text-2xl font-black ${s.color}`}>{s.value}</p>
-              </div>
-            );
-          })}
+          {statsCards.map((s) => (
+            <StatCard
+              key={s.label}
+              label={s.label}
+              value={s.value}
+              icon={s.icon}
+              accentColor={s.accentColor}
+              color={s.color}
+              pillBg={s.pillBg}
+            />
+          ))}
         </div>
 
         {/* Main 2-column Layout */}
@@ -530,7 +457,7 @@ export default function CalendarPage() {
               }}
             />
 
-            {/* Recent Activity */}
+            {/* Recent Activity — derived from events state, empty for new users */}
             <div className="bg-white dark:bg-[#1c304a] rounded-2xl border border-slate-200 dark:border-slate-700 p-5">
               <h3 className="text-sm font-extrabold text-[#142843] dark:text-white mb-3">
                 Recent Activity

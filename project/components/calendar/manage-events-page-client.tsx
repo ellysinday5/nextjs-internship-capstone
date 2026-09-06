@@ -4,6 +4,13 @@ import { type ProjectWithStats, getProjectsAction } from "@/actions/project-acti
 import { ConfirmationModal } from "@/components/modals/ConfirmationModal";
 import { BackButton } from "@/components/ui/back-button";
 import {
+  type CalendarEventItem,
+  getCalendarStorageKey,
+  loadCleanEvents,
+  saveCleanEvents,
+} from "@/lib/calendar-storage";
+import { useUser } from "@clerk/nextjs";
+import {
   Archive,
   ArchiveRestore,
   CalendarDays,
@@ -23,26 +30,7 @@ import {
 import { useRouter, useSearchParams } from "next/navigation";
 import React, { useState, useEffect, useMemo } from "react";
 
-interface EventItem {
-  id: string;
-  title: string;
-  description?: string;
-  type: string;
-  date: string;
-  rawDate: string;
-  time?: string;
-  priority?: "High" | "Medium" | "Low";
-  projectName?: string;
-  locationLink?: string;
-  completed?: boolean;
-  archived?: boolean;
-  isDraft?: boolean;
-  createdAt?: string;
-  invitees?: string[];
-  recurringDays?: number[];
-}
-
-const STORAGE_KEY = "syntraflow_custom_events";
+type EventItem = CalendarEventItem;
 
 function priorityBadge(p?: string) {
   if (p === "High")
@@ -70,6 +58,9 @@ type TabKey = "active" | "drafts" | "archived";
 export function ManageEventsPageClient() {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const { user } = useUser();
+  const storageKey = getCalendarStorageKey(user?.id);
+
   const [activeTab, setActiveTab] = useState<TabKey>(
     (searchParams.get("tab") as TabKey) || "active",
   );
@@ -111,32 +102,19 @@ export function ManageEventsPageClient() {
   } | null>(null);
 
   useEffect(() => {
-    try {
-      const stored = localStorage.getItem(STORAGE_KEY);
-      if (stored) {
-        const parsed: EventItem[] = JSON.parse(stored);
-        if (Array.isArray(parsed)) {
-          // Deduplicate by id on load (heals any historical corruption)
-          const byId = new Map(parsed.map((e) => [e.id, e]));
-          setEvents(Array.from(byId.values()));
-        }
-      }
-    } catch {}
+    const stored = loadCleanEvents(storageKey);
+    setEvents(stored);
+
     getProjectsAction()
       .then((res) => {
         if (Array.isArray(res)) setProjects(res);
       })
       .catch(() => {});
-  }, []);
+  }, [storageKey]);
 
   const persistEvents = (updated: EventItem[]) => {
-    // Deduplicate by id before persisting
-    const byId = new Map(updated.map((e) => [e.id, e]));
-    const deduped = Array.from(byId.values());
-    setEvents(deduped);
-    try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(deduped));
-    } catch {}
+    saveCleanEvents(storageKey, updated);
+    setEvents(updated);
   };
 
   const handleToggleComplete = (id: string) => {
